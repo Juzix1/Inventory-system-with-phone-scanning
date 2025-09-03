@@ -1,5 +1,0 @@
-@InventoryAPI_HostAddress = https://localhost:7164
-
-GET {{InventoryAPI_HostAddress}}/api/inventory/test
-
-###
