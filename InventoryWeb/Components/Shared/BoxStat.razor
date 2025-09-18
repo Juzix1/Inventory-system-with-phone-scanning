@@ -1,0 +1,38 @@
+﻿@using InventoryLibrary.Model.Inventory
+@using InventoryWeb.Models
+@using Microsoft.IdentityModel.Tokens
+<div class="card border border-dark-subtle m-3 text-bg-dark " style="width: 18rem;">
+    @if(!string.IsNullOrEmpty(item.ImagePath)){
+        <img src="/images/@item.ImagePath" class="card-img-top " />
+    }
+    <div class="card-body">
+        <h5 class="card-title"><b>@item.ItemName</b></h5>
+        <p class="card-text m-0">in Stock: <b>@item.InStock</b>
+        <br/><b>@item.ItemCategory</b>
+        </p>
+        <p class="@(IsWarrantEnded()? "text-warning" : "")"><br/>@warrantyLeft</p>
+        <a href="#" class="btn btn-primary">Details</a>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public InventoryItemGroup item { get; set;}
+    private string warrantyLeft;
+
+    private bool IsWarrantEnded(){
+        var dayleft = (item.WarrantyEnd.Date - DateTime.Now.Date).TotalDays;
+        if(dayleft < 0){
+            warrantyLeft = "Warranty Expired";
+            return true;
+        }else if(dayleft>30 && dayleft< 365){
+            warrantyLeft = $"Warranty Ends in {dayleft / 30} Months";
+            return false;
+        }else if(dayleft >365){
+            warrantyLeft = $"Warranty Ends in {dayleft / 365} Years";
+            return false;
+        }
+        return false;
+    }
+
+}

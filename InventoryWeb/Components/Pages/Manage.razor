@@ -1,0 +1,42 @@
+﻿@page "/manage"
+@using InventoryLibrary.Model.Inventory
+@using InventoryLibrary.Services
+@using InventoryWeb.Models
+@using Microsoft.IdentityModel.Tokens
+@inject InventoryService db
+
+<div class="container-head">
+
+</div>
+<div class="container-body">
+@if (!itemList.IsNullOrEmpty()){
+<div class="container-body">
+    @foreach(var item in itemList){
+        <BoxStat item="item"/>
+    }
+</div>
+}else{
+        <h3>No items in Database</h3>
+    }
+</div>
+@code {
+    private IEnumerable<InventoryItemGroup> itemList;
+
+    protected override async Task OnInitializedAsync(){
+        var items = await db.GetAllItemsAsync();
+
+        itemList = items
+            .GroupBy(i => i.itemName)
+            .Select(g => new InventoryItemGroup
+            {
+                ItemName = g.Key,
+                ItemCategory = g.First().itemCategory,
+                ImagePath = g.First().imagePath,
+                WarrantyEnd = g.First().warrantyEnd,
+                InStock = g.Count()
+            });
+
+    }
+
+    
+}
