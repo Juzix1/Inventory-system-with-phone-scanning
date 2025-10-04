@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryAPI.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    [Migration("20250918160437_AddImagePath")]
-    partial class AddImagePath
+    [Migration("20250928113832_itemChange")]
+    partial class itemChange
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -66,15 +66,16 @@ namespace InventoryAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("ItemTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RoomId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("addedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("imagePath")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("itemCategory")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("itemCondition")
@@ -82,10 +83,6 @@ namespace InventoryAPI.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("itemDescription")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("itemLocation")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("itemName")
@@ -112,12 +109,98 @@ namespace InventoryAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ItemTypeId");
+
+                    b.HasIndex("RoomId");
+
                     b.ToTable("InventoryItems", (string)null);
 
                     b.UseTptMappingStrategy();
                 });
 
-            modelBuilder.Entity("InventoryLibrary.Model.Inventory.Computer", b =>
+            modelBuilder.Entity("InventoryLibrary.Model.Inventory.ItemType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("TypeName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ItemTypes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            TypeName = "NoType"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            TypeName = "AGD"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            TypeName = "Furniture"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            TypeName = "Book"
+                        });
+                });
+
+            modelBuilder.Entity("InventoryLibrary.Model.Location.Department", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DepartmentLocation")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DepartmentName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Departments", (string)null);
+                });
+
+            modelBuilder.Entity("InventoryLibrary.Model.Location.Room", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RoomName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.ToTable("Rooms", (string)null);
+                });
+
+            modelBuilder.Entity("InventoryLibrary.Model.Inventory.AGD", b =>
                 {
                     b.HasBaseType("InventoryLibrary.Model.Inventory.InventoryItem");
 
@@ -141,7 +224,7 @@ namespace InventoryAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.ToTable("Computers", (string)null);
+                    b.ToTable("AGD", (string)null);
                 });
 
             modelBuilder.Entity("InventoryLibrary.Model.Inventory.Furniture", b =>
@@ -155,11 +238,39 @@ namespace InventoryAPI.Migrations
                     b.ToTable("Furniture", (string)null);
                 });
 
-            modelBuilder.Entity("InventoryLibrary.Model.Inventory.Computer", b =>
+            modelBuilder.Entity("InventoryLibrary.Model.Inventory.InventoryItem", b =>
+                {
+                    b.HasOne("InventoryLibrary.Model.Inventory.ItemType", "ItemType")
+                        .WithMany("InventoryItems")
+                        .HasForeignKey("ItemTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("InventoryLibrary.Model.Location.Room", "Location")
+                        .WithMany()
+                        .HasForeignKey("RoomId");
+
+                    b.Navigation("ItemType");
+
+                    b.Navigation("Location");
+                });
+
+            modelBuilder.Entity("InventoryLibrary.Model.Location.Room", b =>
+                {
+                    b.HasOne("InventoryLibrary.Model.Location.Department", "Department")
+                        .WithMany("Rooms")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("InventoryLibrary.Model.Inventory.AGD", b =>
                 {
                     b.HasOne("InventoryLibrary.Model.Inventory.InventoryItem", null)
                         .WithOne()
-                        .HasForeignKey("InventoryLibrary.Model.Inventory.Computer", "Id")
+                        .HasForeignKey("InventoryLibrary.Model.Inventory.AGD", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -171,6 +282,16 @@ namespace InventoryAPI.Migrations
                         .HasForeignKey("InventoryLibrary.Model.Inventory.Furniture", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("InventoryLibrary.Model.Inventory.ItemType", b =>
+                {
+                    b.Navigation("InventoryItems");
+                });
+
+            modelBuilder.Entity("InventoryLibrary.Model.Location.Department", b =>
+                {
+                    b.Navigation("Rooms");
                 });
 #pragma warning restore 612, 618
         }

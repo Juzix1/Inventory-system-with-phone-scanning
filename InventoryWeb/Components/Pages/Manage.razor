@@ -5,6 +5,8 @@
 @using Microsoft.IdentityModel.Tokens
 @inject InventoryService db
 
+<PageTitle>Manage Items</PageTitle>
+
 <div class="container-head">
 
 </div>
@@ -30,7 +32,7 @@
             .Select(g => new InventoryItemGroup
             {
                 ItemName = g.Key,
-                ItemCategory = g.First().itemCategory,
+                ItemCategory = g.First().ItemType.TypeName,
                 ImagePath = g.First().imagePath,
                 WarrantyEnd = g.First().warrantyEnd,
                 InStock = g.Count()

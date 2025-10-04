@@ -4,6 +4,7 @@ using InventoryLibrary.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryAPI.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250928124109_itemChange2")]
+    partial class itemChange2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -63,9 +66,6 @@ namespace InventoryAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ItemConditionId")
-                        .HasColumnType("int");
-
                     b.Property<int>("ItemTypeId")
                         .HasColumnType("int");
 
@@ -76,6 +76,10 @@ namespace InventoryAPI.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("imagePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("itemCondition")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("itemDescription")
@@ -105,8 +109,6 @@ namespace InventoryAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ItemConditionId");
-
                     b.HasIndex("ItemTypeId");
 
                     b.HasIndex("RoomId");
@@ -114,50 +116,6 @@ namespace InventoryAPI.Migrations
                     b.ToTable("InventoryItems", (string)null);
 
                     b.UseTptMappingStrategy();
-                });
-
-            modelBuilder.Entity("InventoryLibrary.Model.Inventory.ItemCondition", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ConditionName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ItemConditions", (string)null);
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            ConditionName = "New"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            ConditionName = "Good"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            ConditionName = "Damaged"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            ConditionName = "Lost"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            ConditionName = "Disposed"
-                        });
                 });
 
             modelBuilder.Entity("InventoryLibrary.Model.Inventory.ItemType", b =>
@@ -282,12 +240,6 @@ namespace InventoryAPI.Migrations
 
             modelBuilder.Entity("InventoryLibrary.Model.Inventory.InventoryItem", b =>
                 {
-                    b.HasOne("InventoryLibrary.Model.Inventory.ItemCondition", "ItemCondition")
-                        .WithMany("InventoryItems")
-                        .HasForeignKey("ItemConditionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("InventoryLibrary.Model.Inventory.ItemType", "ItemType")
                         .WithMany("InventoryItems")
                         .HasForeignKey("ItemTypeId")
@@ -298,8 +250,6 @@ namespace InventoryAPI.Migrations
                         .WithMany()
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("ItemCondition");
 
                     b.Navigation("ItemType");
 
@@ -333,11 +283,6 @@ namespace InventoryAPI.Migrations
                         .HasForeignKey("InventoryLibrary.Model.Inventory.Furniture", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("InventoryLibrary.Model.Inventory.ItemCondition", b =>
-                {
-                    b.Navigation("InventoryItems");
                 });
 
             modelBuilder.Entity("InventoryLibrary.Model.Inventory.ItemType", b =>

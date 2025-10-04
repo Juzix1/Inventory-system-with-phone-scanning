@@ -1,8 +1,7 @@
 ﻿using InventoryLibrary.Data;
-using InventoryLibrary.Model;
 using InventoryLibrary.Model.Inventory;
+using InventoryLibrary.Model.Location;
 using InventoryLibrary.Services.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -15,11 +14,13 @@ namespace InventoryAPI.Controllers
     {
         private readonly MyDbContext _context;
         private readonly IInventoryService _inventoryService;
+        private readonly IConditionService _conditionService;
 
-        public InventoryController(MyDbContext context, IInventoryService inventoryService)
+        public InventoryController(MyDbContext context, IInventoryService inventoryService, IConditionService conditionService)
         {
             _context = context;
             _inventoryService = inventoryService;
+            _conditionService = conditionService;
         }
 
         [HttpGet("{id}/barcode")]
@@ -54,25 +55,48 @@ namespace InventoryAPI.Controllers
             var barcodeGen = new BarcodeGenerator();
             var barcodeNumber = await barcodeGen.GenerateBarcodeNumber(_context);
 
-            var computer = new Computer
+            // var agd = new AGD
+            // {
+            //     itemName = "Laptop MSI f123",
+            //     Barcode = barcodeNumber,
+            //     imagePath = "image1.png",
+            //     itemCondition = "Nowy",
+            //     ItemTypeId = 1,
+            //     quantity = 1,
+            //     itemWeight = 2.5,
+            //     itemPrice = 4500,
+            //     addedDate = DateTime.Now,
+            //     warrantyEnd = DateTime.Now.AddYears(2),
+            //     lastInventoryDate = DateTime.Now,
+            //     itemLocation = "Pokój 103",
+            //     ModelName = "MSI AERO 2",
+            //     CPU = "AMD Ryzen 5 5600g",
+            //     RAM = "8GB",
+            //     Storage = "216GB SSD",
+            //     Graphics = "AMD Vega 9"
+            // };
+            var type = await _context.ItemTypes.FindAsync(1);
+            Department department = new Department
             {
-                itemName = "Laptop MSI f123",
+                DepartmentName = "PANS",
+                DepartmentLocation = "32sd-323s",
+            };
+            Room room = new Room
+            {
+                RoomName = "Magazyn",
+                Department = department
+            };
+            _context.Departments.Add(department);
+            _context.Rooms.Add(room);
+            var item = new InventoryItem
+            {
+                itemName = "Laptop",
                 Barcode = barcodeNumber,
-                imagePath = "image1.png",
-                itemCategory = "Elektronika",
-                itemCondition = "Nowy",
-                quantity = 1,
-                itemWeight = 2.5,
-                itemPrice = 4500,
+                ItemType = type,
+                quantity = 5,
                 addedDate = DateTime.Now,
-                warrantyEnd = DateTime.Now.AddYears(2),
                 lastInventoryDate = DateTime.Now,
-                itemLocation = "Pokój 103",
-                ModelName = "MSI AERO 2",
-                CPU = "AMD Ryzen 5 5600g",
-                RAM = "8GB",
-                Storage = "216GB SSD",
-                Graphics = "AMD Vega 9"
+                Location = room
             };
 
             var furniture = new Furniture
@@ -81,19 +105,16 @@ namespace InventoryAPI.Controllers
                 itemName = "Biurko IKEA",
                 imagePath = "image2.png",
                 Barcode = barcodeNumber,
-                itemCategory = "Meble",
-                itemCondition = "Nowy",
                 quantity = 1,
                 itemWeight = 20.0,
                 itemPrice = 300,
                 addedDate = DateTime.Now,
                 warrantyEnd = DateTime.Now.AddYears(1),
                 lastInventoryDate = DateTime.Now,
-                itemLocation = "Pokój 103",
             };
 
-            _context.InventoryItems.Add(furniture);
-            await _context.SaveChangesAsync(); // Use async SaveChanges
+            _context.InventoryItems.Add(item);
+            await _context.SaveChangesAsync();
             return Ok();
         }
 
@@ -108,10 +129,11 @@ namespace InventoryAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<InventoryItem>> GetInventoryItemById(int id)
         {
-            var item  = await _inventoryService.GetItemByIdAsync(id);
-            
+            var item = await _inventoryService.GetItemByIdAsync(id);
+
 
             return Ok(item);
         }
+
     }
 }

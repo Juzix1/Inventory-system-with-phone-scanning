@@ -1,6 +1,6 @@
 ﻿namespace InventoryLibrary.Model.Inventory
 {
-    public class Computer : InventoryItem
+    public class AGD : InventoryItem
     {
         public string ModelName { get; set; }
         public string CPU {  get; set; }

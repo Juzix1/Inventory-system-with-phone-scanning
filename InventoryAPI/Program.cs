@@ -17,6 +17,8 @@ builder.Services.AddHealthChecks();
 
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<IAccountsService, AccountsService>();
+builder.Services.AddScoped<ITypeService, TypeService>();
+builder.Services.AddScoped<IConditionService, ConditionService>();
 
 
 builder.Services.AddDbContext<MyDbContext>(options =>

@@ -21,13 +21,12 @@ public class BarcodeGenerator
         else
         {
             int number = int.Parse(item.Barcode) + 1;
-            return number.ToString("D8"); // Ensure the number is 8 digits long
+            return number.ToString("D8");
         }
     }
 
     public void GenerateBarcode(string barcodeText, string outputPath)
     {
-        // Ensure outputPath is not null or empty
         if (string.IsNullOrWhiteSpace(outputPath))
             throw new ArgumentException("Output path cannot be null or empty.", nameof(outputPath));
 

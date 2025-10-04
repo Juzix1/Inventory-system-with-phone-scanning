@@ -7,11 +7,6 @@ namespace InventoryLibrary.Services
 {
     public class InventoryService : IInventoryService
     {
-        private enum InventoryCategory
-        {
-            Elektronika,
-            Meble
-        }
 
         private readonly MyDbContext _context;
 
@@ -22,31 +17,21 @@ namespace InventoryLibrary.Services
 
         public async Task<IEnumerable<InventoryItem>> GetAllItemsAsync()
         {
-            return await _context.InventoryItems.ToListAsync();
+            var items = await _context.InventoryItems
+                .Include(i => i.Location)
+                    .ThenInclude(r => r.Department)
+                .Include(i => i.ItemType)
+                .ToListAsync();
+            return items;
         }
 
         public async Task<InventoryItem> GetItemByIdAsync(int id)
         {
             var item = await _context.InventoryItems.FindAsync(id);
 
-            if (item == null)
-            {
-                throw new KeyNotFoundException($"Item with ID {id} not found.");
-            }
-
-            switch (item.itemCategory)
-            {
-                case nameof(InventoryCategory.Elektronika):
-                    item = _context.Computers.Find(id) ?? item;
-                    return item;
-
-
-                case nameof(InventoryCategory.Meble):
-                    item = _context.Furnitures.Find(id) ?? item;
-                    return item;
-                default:
-                    return item;
-            }
+            return item;
         }
+
+
     }
 }
