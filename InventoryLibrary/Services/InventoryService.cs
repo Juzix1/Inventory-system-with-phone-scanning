@@ -32,6 +32,23 @@ namespace InventoryLibrary.Services
             return item;
         }
 
+        public async Task<InventoryItem> CreateItemAsync(InventoryItem item)
+        {
+            if (item == null)
+            {
+                throw new ArgumentNullException(nameof(item));
+            }
+            item.addedDate = DateTime.UtcNow;
+            item.lastInventoryDate = DateTime.UtcNow;
+            var barcodeGen = new BarcodeGenerator();
+            var barcodeNumber = await barcodeGen.GenerateBarcodeNumber(_context);
+            item.Barcode = barcodeNumber;
+            _context.InventoryItems.Add(item);
+            await _context.SaveChangesAsync();
+            return item;
+        }
+
+
 
     }
 }

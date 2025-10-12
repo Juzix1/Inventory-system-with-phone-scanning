@@ -11,6 +11,8 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddScoped<InventoryService>();
+builder.Services.AddScoped<TypeService>();
+builder.Services.AddScoped<ConditionService>();
 builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
     b => b.MigrationsAssembly("InventoryAPI")));

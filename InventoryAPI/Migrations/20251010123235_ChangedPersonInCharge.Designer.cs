@@ -4,6 +4,7 @@ using InventoryLibrary.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryAPI.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251010123235_ChangedPersonInCharge")]
+    partial class ChangedPersonInCharge
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,9 +72,6 @@ namespace InventoryAPI.Migrations
                     b.Property<int>("ItemTypeId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("PersonInChargeId")
-                        .HasColumnType("int");
-
                     b.Property<int?>("RoomId")
                         .HasColumnType("int");
 
@@ -97,6 +97,9 @@ namespace InventoryAPI.Migrations
                     b.Property<DateTime>("lastInventoryDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("personInChargeId")
+                        .HasColumnType("int");
+
                     b.Property<int>("quantity")
                         .HasColumnType("int");
 
@@ -109,9 +112,9 @@ namespace InventoryAPI.Migrations
 
                     b.HasIndex("ItemTypeId");
 
-                    b.HasIndex("PersonInChargeId");
-
                     b.HasIndex("RoomId");
+
+                    b.HasIndex("personInChargeId");
 
                     b.ToTable("InventoryItems", (string)null);
 
@@ -296,15 +299,14 @@ namespace InventoryAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("InventoryLibrary.Model.Accounts.Account", "personInCharge")
-                        .WithMany("InventoryItems")
-                        .HasForeignKey("PersonInChargeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("InventoryLibrary.Model.Location.Room", "Location")
                         .WithMany()
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("InventoryLibrary.Model.Accounts.Account", "personInCharge")
+                        .WithMany()
+                        .HasForeignKey("personInChargeId");
 
                     b.Navigation("ItemCondition");
 
@@ -342,11 +344,6 @@ namespace InventoryAPI.Migrations
                         .HasForeignKey("InventoryLibrary.Model.Inventory.Furniture", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("InventoryLibrary.Model.Accounts.Account", b =>
-                {
-                    b.Navigation("InventoryItems");
                 });
 
             modelBuilder.Entity("InventoryLibrary.Model.Inventory.ItemCondition", b =>

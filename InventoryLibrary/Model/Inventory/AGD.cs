@@ -1,4 +1,4 @@
-﻿namespace InventoryLibrary.Model.Inventory
+﻿    namespace InventoryLibrary.Model.Inventory
 {
     public class AGD : InventoryItem
     {

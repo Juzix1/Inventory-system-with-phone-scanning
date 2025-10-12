@@ -6,6 +6,7 @@ namespace InventoryLibrary.Services.Interfaces;
 public interface ITypeService
 {
     ItemType CreateItemType(string name);
-    Task<List<ItemType>> GetAllTypes();
+    Task<List<ItemType>> GetAllTypesAsync();
     void DeleteType(ItemType type);
+    
 }

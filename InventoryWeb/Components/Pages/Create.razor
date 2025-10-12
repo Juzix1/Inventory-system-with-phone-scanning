@@ -1,0 +1,55 @@
+﻿@page "/create"
+@using InventoryLibrary.Model.Inventory
+@using InventoryLibrary.Services
+@using InventoryWeb.Components.Shared.EditForms
+@inject InventoryService db
+@inject TypeService typeService
+@inject IConfiguration config
+@rendermode InteractiveServer
+<h3>Create new item</h3>
+
+    @if(selectedType != null){
+        if(selectedType.TypeName == "AGD"){
+            <AGDEditForm OnCancel="@Cancel" itemtype="@selectedType"/>
+            
+        }else{
+            <BaseEditForm OnCancel="@Cancel" itemtype="@selectedType" SubmitImage="sendFileToServer"/>
+            <p>@path</p>
+        }
+    }
+    else{
+        <form class="form-container" method="post">
+            <EditForm Model="this">
+                <div class="mb-3">
+                    <label for="itemType" class="form-label">Item Type</label>
+                    <InputSelect class="form-select" id="itemType" @bind-Value="selectedTypeId">
+                        <option value="0">Select Type</option>
+                        @foreach(var type in types){
+                            <option value="@type.Id">@type.TypeName</option>
+                        }
+                    </InputSelect>
+                </div>
+            </EditForm>
+        </form>
+    }
+
+
+@code {
+    List<ItemType> types = new ();
+    InventoryItem Item;
+    int selectedTypeId {get;set;}
+    ItemType selectedType => types.FirstOrDefault(t => t.Id == selectedTypeId);
+    protected override async Task OnInitializedAsync(){
+        types = await typeService.GetAllTypesAsync();
+    }
+    private void Cancel(){
+        selectedTypeId = 0;
+    }
+    public string path {get;set;}
+    private async void sendFileToServer(InputFileChangeEventArgs e){
+        var file = e.File;
+        string newfileName = Path.ChangeExtension(Path.GetRandomFileName(), Path.GetExtension(file.Name));
+        path = Path.Combine(config.GetValue<string>("FileStorage"), newfileName);
+
+    }
+}

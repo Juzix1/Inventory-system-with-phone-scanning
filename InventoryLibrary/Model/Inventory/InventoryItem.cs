@@ -1,4 +1,5 @@
-﻿using InventoryLibrary.Model.Location;
+﻿using InventoryLibrary.Model.Accounts;
+using InventoryLibrary.Model.Location;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -27,7 +28,8 @@ namespace InventoryLibrary.Model.Inventory {
 
         public DateTime lastInventoryDate { get; set; }
         //when in charge is null, item is assigned to room
-        public string? personInCharge { get; set; }
+        public int? PersonInChargeId { get; set; }
+        public Account? personInCharge { get; set; }
         public int? RoomId { get; set; }
         public Room? Location { get; set; }
     }

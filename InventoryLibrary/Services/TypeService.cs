@@ -36,7 +36,7 @@ public class TypeService : ITypeService
         return type;
     }
 
-    public async Task<List<ItemType>> GetAllTypes()
+    public async Task<List<ItemType>> GetAllTypesAsync()
     {
         if (!await _context.ItemTypes.AnyAsync())
         {
@@ -51,4 +51,6 @@ public class TypeService : ITypeService
         _context.ItemTypes.Remove(type);
         _context.SaveChanges();
     }
+
+    
 }

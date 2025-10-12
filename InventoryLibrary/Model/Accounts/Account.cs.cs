@@ -1,4 +1,7 @@
-﻿namespace InventoryLibrary.Model.Account
+﻿using System.Text.Json.Serialization;
+using InventoryLibrary.Model.Inventory;
+
+namespace InventoryLibrary.Model.Accounts
 {
     public class Account
     {
@@ -8,5 +11,8 @@
         //do zaszyfrowaniah--
         public string PasswordHash { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
+        
+        [JsonIgnore]
+        public ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
     }
 }

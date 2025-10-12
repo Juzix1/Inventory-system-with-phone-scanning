@@ -1,4 +1,4 @@
-﻿using InventoryLibrary.Model.Account;
+﻿using InventoryLibrary.Model.Accounts;
 
 namespace InventoryLibrary.Services.Interfaces
 {

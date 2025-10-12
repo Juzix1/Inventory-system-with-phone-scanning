@@ -1,0 +1,99 @@
+﻿@using InventoryLibrary.Model.Inventory
+@using InventoryLibrary.Services
+@using Microsoft.EntityFrameworkCore.Metadata.Internal
+
+@inject ILogger<BaseEditForm> Logger
+@inject InventoryService inventoryService
+@inject ConditionService conditionService
+@inject NavigationManager navigationManager
+
+<EditForm Model="Model" OnValidSubmit="Submit" FormName="BaseEditForm">
+    <DataAnnotationsValidator/>
+    <ValidationSummary/>
+    <div>
+        <label>Item Name</label>
+        <InputText @bind-Value="Model.itemName" class="form-control"/>
+    </div>
+    <div>
+        <label>Description</label>
+        <InputTextArea @bind-Value="Model.itemDescription" class="form-control"/>
+    </div>
+    <div>
+        <label>Model Name</label>
+        <InputText @bind-Value="Model.ModelName" class="form-control"/>
+    </div>
+    <div>
+        <label>Cpu</label>
+        <InputText @bind-Value="Model.CPU" class="form-control"/>
+    </div>
+    <div>
+        <label>Ram</label>
+        <InputText @bind-Value="Model.RAM" class="form-control"/>
+    </div>
+    <div>
+        <label>Storage</label>
+        <InputText @bind-Value="Model.Storage" class="form-control"/>
+    </div>
+    <div>
+        <label>Graphics Card</label>
+        <InputText @bind-Value="Model.Graphics" class="form-control"/>
+    </div>
+    <div>
+        <InputSelect @bind-Value="Model.ItemConditionId" class="form-control">
+            <option value="">Select Condition</option>
+            @foreach(var cond in conditions){
+                <option value="@cond.Id">@cond.ConditionName</option>
+            }
+        </InputSelect>
+    </div>
+    <div>
+        @* For Removal *@
+        <label>Quantity</label>
+        <InputNumber @bind-Value="Model.quantity" class="form-control"/>
+
+    </div>
+    <div>
+        <label>Weight</label>
+        <InputNumber @bind-Value="Model.itemWeight" class="form-control"/>
+    </div>
+    <div>
+        <label>Price</label>
+        <InputNumber @bind-Value="Model.itemPrice" class="form-control"/>
+    </div>
+    <div>
+        <label>End of Warranty</label>
+        <InputDate @bind-Value="Model.warrantyEnd" class="form-control"/>
+    </div>
+    <div class="mt-3">
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+    <div class="mt-3">
+        <button type="button" class="btn btn-secondary" @onclick="OnCancel.InvokeAsync">Cancel</button>
+    </div>
+
+</EditForm>
+
+@code {
+    [Parameter]
+    public ItemType? itemType {get;set;}
+    [Parameter]
+    public EventCallback<Task> OnCancel {get;set;}
+    public AGD Model = new AGD();
+
+    List<ItemCondition> conditions = new();
+    protected override async Task OnInitializedAsync(){
+        if(Model == null){
+            throw new ArgumentNullException(nameof(Model), "Model cannot be null. Please provide a valid InventoryItem instance.");
+        }
+        Model.ItemType = itemType;
+        Model.ItemTypeId = itemType?.Id ?? 0;
+        Model.warrantyEnd = DateTime.Now;
+        conditions = (await conditionService.GetAllItemConditions()).ToList();
+    }
+
+    private void Submit(){
+        inventoryService.CreateItemAsync(Model);
+        navigationManager.NavigateTo("/manage");
+    }
+
+}

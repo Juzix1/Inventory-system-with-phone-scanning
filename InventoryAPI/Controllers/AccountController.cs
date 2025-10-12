@@ -1,5 +1,5 @@
 ﻿using InventoryLibrary.Data;
-using InventoryLibrary.Model.Account;
+using InventoryLibrary.Model.Accounts;
 using InventoryLibrary.Services;
 using InventoryLibrary.Services.Interfaces;
 using Microsoft.AspNetCore.Http;

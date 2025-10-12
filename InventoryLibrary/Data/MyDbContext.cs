@@ -1,4 +1,4 @@
-﻿using InventoryLibrary.Model.Account;
+﻿using InventoryLibrary.Model.Accounts;
 using InventoryLibrary.Model.Inventory;
 using InventoryLibrary.Model.Location;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +24,12 @@ namespace InventoryLibrary.Data {
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Account>().ToTable("Accounts");
+            modelBuilder.Entity<Account>()
+                .ToTable("Accounts")
+                .HasMany(a => a.InventoryItems)
+                .WithOne(i => i.personInCharge)
+                .HasForeignKey(i => i.PersonInChargeId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<InventoryItem>()
                 .ToTable("InventoryItems")
