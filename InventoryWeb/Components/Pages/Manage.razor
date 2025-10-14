@@ -26,8 +26,8 @@
 
     protected override async Task OnInitializedAsync(){
         var items = await db.GetAllItemsAsync();
-
-        itemList = items
+        try{
+            itemList = items
             .GroupBy(i => i.itemName)
             .Select(g => new InventoryItemGroup
             {
@@ -37,6 +37,10 @@
                 WarrantyEnd = g.First().warrantyEnd,
                 InStock = g.Count()
             });
+        }catch (Exception ex){
+            Console.WriteLine(ex.Message);
+        }
+        
 
     }
 

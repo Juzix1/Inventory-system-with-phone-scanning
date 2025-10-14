@@ -17,12 +17,21 @@ namespace InventoryLibrary.Services
 
         public async Task<IEnumerable<InventoryItem>> GetAllItemsAsync()
         {
-            var items = await _context.InventoryItems
-                .Include(i => i.Location)
-                    .ThenInclude(r => r.Department)
-                .Include(i => i.ItemType)
-                .ToListAsync();
-            return items;
+            try
+            {
+                var items = await _context.InventoryItems
+                    .Include(i => i.Location)
+                        .ThenInclude(r => r.Department)
+                    .Include(i => i.ItemType)
+                    .ToListAsync();
+                return items;
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (you can use any logging framework)
+                Console.WriteLine($"An error occurred while retrieving items: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<InventoryItem> GetItemByIdAsync(int id)

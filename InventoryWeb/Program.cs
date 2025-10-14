@@ -16,14 +16,19 @@ builder.Services.AddScoped<ConditionService>();
 builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
     b => b.MigrationsAssembly("InventoryAPI")));
+
+
+builder.Services.AddControllers();
+
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    _ = app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
+    _ = app.UseHsts();
 }
 
 using (var scope = app.Services.CreateScope())
@@ -33,7 +38,7 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<MyDbContext>();
         // This will create the database if it doesn't exist
-        context.Database.EnsureCreated();
+        _ = context.Database.EnsureCreated();
     }
     catch (Exception ex)
     {
@@ -59,8 +64,15 @@ app.UseStaticFiles(new StaticFileOptions
     FileProvider = new PhysicalFileProvider(sharedImagesPath),
     RequestPath = "/images"
 });
-
+app.UseRouting();
+app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.UseEndpoints(endpoints =>
+{
+    _ = endpoints.MapControllers();
+    _ = endpoints.MapRazorComponents<App>().AddInteractiveServerRenderMode();
+});
 
 app.Run();
