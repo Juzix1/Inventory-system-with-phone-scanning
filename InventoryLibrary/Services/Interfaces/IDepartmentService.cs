@@ -10,4 +10,5 @@ public interface IDepartmentService
     Task<Department?> GetDepartmentByIdAsync(int id);
     Task DeleteDepartment(Department dep);
     Task<Department> CreateDepartmentAsync(Department department);
+    Task<IEnumerable<Room>> GetAllRooms();
 }

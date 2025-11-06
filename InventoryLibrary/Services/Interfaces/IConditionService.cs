@@ -7,5 +7,4 @@ public interface IConditionService
 {
     Task<IEnumerable<ItemCondition>> GetAllItemConditions();
 
-
 }

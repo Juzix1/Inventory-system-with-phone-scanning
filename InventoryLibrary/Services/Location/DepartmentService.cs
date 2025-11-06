@@ -57,4 +57,10 @@ public class DepartmentService : IDepartmentService
 
     }
 
+    public async Task<IEnumerable<Room?>> GetAllRooms()
+    {
+        var rooms = await _context.Rooms.ToListAsync();
+        return rooms;
+    }
+
 }

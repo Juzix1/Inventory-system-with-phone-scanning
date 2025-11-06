@@ -1,9 +1,9 @@
 ﻿@page "/manage"
 @using InventoryLibrary.Model.Inventory
-@using InventoryLibrary.Services
+@using InventoryLibrary.Services.Interfaces
 @using InventoryWeb.Models
 @using Microsoft.IdentityModel.Tokens
-@inject InventoryService db
+@inject IInventoryService db
 
 <PageTitle>Manage Items</PageTitle>
 

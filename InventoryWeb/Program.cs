@@ -1,5 +1,8 @@
 using InventoryLibrary.Data;
+using InventoryLibrary.Model.Location;
 using InventoryLibrary.Services;
+using InventoryLibrary.Services.Interfaces;
+using InventoryLibrary.Services.Location;
 using InventoryWeb.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -10,9 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddScoped<InventoryService>();
-builder.Services.AddScoped<TypeService>();
-builder.Services.AddScoped<ConditionService>();
+builder.Services.AddScoped<IInventoryService,InventoryService>();
+builder.Services.AddScoped<ITypeService,TypeService>();
+builder.Services.AddScoped<IConditionService,ConditionService>();
+builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
     b => b.MigrationsAssembly("InventoryAPI")));

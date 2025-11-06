@@ -1,0 +1,37 @@
+﻿<div class="edit @closeClass">
+    <div class="edit_window @closeClass">
+        <form method="post" @onsubmit="Submit">
+            <label>
+                Name:
+                <InputText @bind-Value="Name" />
+            </label>
+            <div>
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="Cancel">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+@code {
+    [Parameter]
+    public string Name {get;set;} = string.Empty;
+    private string closeClass= string.Empty;
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+    [Parameter]
+    public EventCallback<string> OnSubmit { get; set; }
+    private void Cancel()
+    {
+        closeClass = "edit--close";
+        Task.Delay(9000);
+        OnClose.InvokeAsync(null);
+
+    }
+
+        private async Task Submit()
+    {
+        closeClass = "edit--close";
+        await OnSubmit.InvokeAsync(Name);
+    }
+}

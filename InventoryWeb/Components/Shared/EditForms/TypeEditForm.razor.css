@@ -1,0 +1,65 @@
+.test{
+    color:red;
+}
+
+.edit{
+    position: fixed;
+    top:0;
+    left: 0;
+    z-index: 1000;
+    width: 100%;
+    height:100%;
+    background: rgba(0,0,0,0.6);
+    padding: 10px;
+    box-sizing: border-box;
+
+    opacity: 0;
+    animation-name: edit---open;
+    animation-duration: 0.2s;
+    animation-fill-mode: forwards;
+
+    display:flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit--close{
+    animation-name: edit---close;
+    animation-duration: 0.2s;
+    animation-fill-mode: forwards;
+}
+
+.edit_window{
+    font-size:14px;
+    border-radius:5px;
+    overflow:hidden;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+
+    background:white;
+    width:100%;
+    max-width: 600px;
+    opacity:0;
+    transform: scale(0.75);
+    animation-name: edit_window---open;
+    animation-duration: 0.2s;
+    animation-fill-mode: forwards;
+    animation-delay: 0.2s;
+    padding:10px;
+}
+
+@keyframes edit---open {
+    from {opacity: 0}
+    to {opacity: 1}
+}
+
+@keyframes edit---close{
+    from {opacity: 1}
+    to {opacity: 0}
+}
+
+@keyframes edit_window---open{
+    to{
+        opacity: 1;
+        transform: scale(1);
+    }
+}

@@ -1,0 +1,36 @@
+﻿@page "/categories"
+@using InventoryLibrary.Services.Interfaces
+@using InventoryWeb.Models
+
+@inject ITypeService categoryService;
+@inject IConditionService conditionService;
+@inject IDepartmentService departmentService;
+<PageTitle>Categories</PageTitle>
+
+<CategoryForm Type="CategoryFormMode.Types" Items="@typesNames"></CategoryForm>
+<CategoryForm Type="CategoryFormMode.Conditions" Items="@conditions"></CategoryForm>
+<CategoryForm Type="CategoryFormMode.Departments" Items="@departments"></CategoryForm>
+@* <CategoryForm Type="CategoryFormMode.Locations" Items="@locations"></CategoryForm> *@
+
+
+@code {
+    private Dictionary<int, string> typesNames = new Dictionary<int, string>();
+    private Dictionary<int, string> conditions = new Dictionary<int, string>();
+    private Dictionary<int, string> departments = new Dictionary<int, string>();
+    private Dictionary<int, string> locations = new Dictionary<int, string>();
+
+    override protected async Task OnInitializedAsync()
+    {
+        typesNames = (await categoryService.GetAllTypesAsync())
+            .ToDictionary(x => x.Id, x => x.TypeName);
+        
+        conditions = (await conditionService.GetAllItemConditions())
+            .ToDictionary(x => x.Id,x => x.ConditionName);
+        
+        departments = (await departmentService.GetAllDepartmentsAsync())
+            .ToDictionary(x => x.Id,x => x.DepartmentName);
+
+        locations = (await categoryService.GetAllTypesAsync())
+            .ToDictionary(x => x.Id,x => x.TypeName);
+    }
+}

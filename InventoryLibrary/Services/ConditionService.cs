@@ -16,9 +16,13 @@ public class ConditionService : IConditionService
 
     public async Task<IEnumerable<ItemCondition>> GetAllItemConditions()
     {
-        var conditions = await _context.itemConditions.ToListAsync();
 
-        return conditions;
+        if (!await _context.ItemTypes.AnyAsync())
+        {
+            return new List<ItemCondition>();
+        }
+        return await _context.itemConditions.ToListAsync();
+;
     }
 
 }

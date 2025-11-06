@@ -1,0 +1,110 @@
+﻿@using InventoryLibrary.Services.Interfaces
+@using InventoryWeb.Models
+@rendermode InteractiveServer
+@inject ITypeService typeService;
+@inject IConditionService conditionService;
+
+
+<div class="card" style="width: 18rem;">
+  <div class="card-body">
+    <h5 class="card-title">
+        <img src="@svgContent" alt="Icon" style="width:24px;height:24px;margin-right:8px;" />
+    <b>@Title</b></h5>
+    <p class="card-text">
+        @if(Items == null || Items.Count == 0){
+            <i>No @Title.ToLower() added yet.</i>
+        }else{
+        @foreach (var item in Items){
+            @item.Value
+            <button class="icon-link" @onclick="@( e => showEditFormDialog(item.Key))">
+                <img src="/svg/pencil-square.svg" alt="Delete" width="16" height="16" class="text-danger" />
+            </button>
+            <button class="icon-link" href="#">
+                <img src="/svg/trash-fill.svg" alt="Delete" width="16" height="16" class="text-danger"/>
+            </button>
+            <br/>
+        }
+        }
+    </p>
+    <hr />
+    <button type="button" class="btn btn-primary btn-sm">+ Add New @buttonText</button>
+  </div>
+</div>
+
+
+
+@if(showEditForm){
+    @switch (Type)
+    {
+        case CategoryFormMode.Types:
+            <TypeEditForm OnClose="@hideEditFormDialog" OnSubmit="@ChangeTitle" Name="@(Items[Id])"/>
+            break;
+        @* case CategoryFormMode.Conditions:
+            <ConditionEditForm></ConditionEditForm>
+            break;
+        case CategoryFormMode.Locations:
+            <LocationEditForm></LocationEditForm>
+            break;
+        case CategoryFormMode.Departments:
+            <DepartmentEditForm></DepartmentEditForm>
+            break; *@
+    }
+}
+
+@code {
+
+
+[Parameter]
+public CategoryFormMode Type {get;set;} = CategoryFormMode.Types;
+private int Id;
+private string Title = "";
+private string svgContent = "";
+bool showEditForm = false;
+
+[Parameter]
+public Dictionary<int, string> Items {get;set;} = new Dictionary<int, string>();
+private string buttonText = "";
+
+override protected async Task OnInitializedAsync()
+{   
+    switch (Type)
+    {
+        case CategoryFormMode.Types:
+            Title = "Types";
+            svgContent = "/svg/tags.svg";
+            buttonText = "Type";
+            break;
+        case CategoryFormMode.Conditions:
+            Title = "Conditions";
+            svgContent = "/svg/card-checklist.svg";
+            buttonText = "Condition";
+            break;
+        case CategoryFormMode.Locations:
+            Title = "Locations";
+            svgContent = "/svg/geo-alt-fill.svg";
+            buttonText = "Location";
+            break;
+        case CategoryFormMode.Departments:
+            Title = "Departments";
+            svgContent = "/svg/stack.svg";
+            buttonText = "Department";
+            break;
+    }
+
+}
+
+
+void hideEditFormDialog(){
+    showEditForm = false;
+}
+
+void showEditFormDialog(int id){
+    Id = id;
+    showEditForm = true;
+}
+
+void ChangeTitle(){
+    
+}
+
+}
