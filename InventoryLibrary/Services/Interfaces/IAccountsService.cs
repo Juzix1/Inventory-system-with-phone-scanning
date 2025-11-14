@@ -7,8 +7,9 @@ namespace InventoryLibrary.Services.Interfaces
         Task<IEnumerable<Account>> GetAllAccountsAsync();
         Task<Account> GetAccountByIdAsync(int id);
         Task<Account> CreateAccountAsync(Account account);
-        Task<Account> UpdateAccountAsync(int id, Account account);
+        Task<Account> UpdateAccountAsync(Account account);
         Task DeleteAccountAsync(int id);
         Task<Account> AuthenticateAsync(string email, string password);
+        Task<bool> CanAccessScanner(int accountId);
     }
 }

@@ -71,12 +71,14 @@ namespace InventoryLibrary.Data {
                     new ItemType { Id = 4, TypeName = "Book" }
                 );
             modelBuilder.Entity<ItemCondition>().HasData(
-                new ItemCondition {Id = 1, ConditionName = "New"},
-                new ItemCondition {Id = 2, ConditionName = "Good"},
-                new ItemCondition {Id = 3, ConditionName = "Damaged"},
-                new ItemCondition {Id = 4, ConditionName = "Lost"},
-                new ItemCondition {Id = 5, ConditionName = "Disposed"}
+                new ItemCondition { Id = 1, ConditionName = "New" },
+                new ItemCondition { Id = 2, ConditionName = "Good" },
+                new ItemCondition { Id = 3, ConditionName = "Damaged" },
+                new ItemCondition { Id = 4, ConditionName = "Lost" },
+                new ItemCondition { Id = 5, ConditionName = "Disposed" }
             );
+            modelBuilder.Entity<Account>().HasData(
+                new Account { Id = 1, Name = "Admin", Email = "", PasswordHash = "admin", Role = "Admin", IsAdmin = true });
         }
     }
 }

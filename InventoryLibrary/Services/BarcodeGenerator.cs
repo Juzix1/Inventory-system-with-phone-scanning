@@ -10,18 +10,24 @@ public class BarcodeGenerator
 
     public async Task<string> GenerateBarcodeNumber(MyDbContext _context)
     {
-        var item = await _context.InventoryItems
+
+        try
+        {
+            var item = await _context.InventoryItems
             .OrderByDescending(i => i.Id)
             .FirstOrDefaultAsync();
 
-        if (item == null)
+            if (item == null){
+                throw new InvalidOperationException("No inventory items found to generate a barcode number.");
+            }else{
+                int number = int.Parse(item.Barcode) + 1;
+                return number.ToString("D8");
+            }
+
+        }catch(Exception ex)
         {
-            return "11111111";
-        }
-        else
-        {
-            int number = int.Parse(item.Barcode) + 1;
-            return number.ToString("D8");
+            Console.WriteLine($"Error generating barcode number: {ex.Message}");
+            return "";
         }
     }
 
@@ -35,7 +41,7 @@ public class BarcodeGenerator
             throw new ArgumentException("Directory part of output path cannot be null or empty.", nameof(outputPath));
 
         Directory.CreateDirectory(directory);
-
+        // Dodać generowanie kodu kreskowego z preferencjii użytkownika
         Barcode b = new Barcode();
         b.IncludeLabel = true;
         var img = b.Encode(

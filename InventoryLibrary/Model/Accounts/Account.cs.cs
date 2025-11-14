@@ -11,7 +11,7 @@ namespace InventoryLibrary.Model.Accounts
         //do zaszyfrowaniah--
         public string PasswordHash { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
-        
+        public bool IsAdmin { get; set; }
         [JsonIgnore]
         public ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
     }

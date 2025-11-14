@@ -13,10 +13,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddBootstrapBlazor();
+
 builder.Services.AddScoped<IInventoryService,InventoryService>();
 builder.Services.AddScoped<ITypeService,TypeService>();
 builder.Services.AddScoped<IConditionService,ConditionService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<IAccountsService, AccountsService>();
 builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
     b => b.MigrationsAssembly("InventoryAPI")));

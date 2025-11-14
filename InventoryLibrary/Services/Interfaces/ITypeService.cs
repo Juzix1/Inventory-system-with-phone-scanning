@@ -8,5 +8,6 @@ public interface ITypeService
     ItemType CreateItemType(string name);
     Task<List<ItemType>> GetAllTypesAsync();
     void DeleteType(ItemType type);
+    void ChangeName(int index, string name);
     
 }

@@ -1,10 +1,11 @@
 ﻿@using InventoryLibrary.Model.Inventory
 @using InventoryLibrary.Services
+@using InventoryLibrary.Services.Interfaces
 @using Microsoft.EntityFrameworkCore.Metadata.Internal
 
 @inject ILogger<BaseEditForm> Logger
-@inject InventoryService inventoryService
-@inject ConditionService conditionService
+@inject IInventoryService inventoryService
+@inject IConditionService conditionService
 @inject NavigationManager navigationManager
 
 <EditForm Model="Model" OnValidSubmit="Submit" FormName="BaseEditForm">
@@ -22,6 +23,7 @@
         <InputTextArea @bind-Value="Model.itemDescription" class="form-control"/>
     </div>
     <div>
+        <label>Item's Condition</label>
         <InputSelect @bind-Value="Model.ItemConditionId" class="form-control">
             <option value="">Select Condition</option>
             @foreach(var cond in conditions){
@@ -47,33 +49,35 @@
         <label>End of Warranty</label>
         <InputDate @bind-Value="Model.warrantyEnd" class="form-control"/>
     </div>
-    <div class="mt-3">
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </div>
-    <div class="mt-3">
-        <button type="button" class="btn btn-secondary" @onclick="OnCancel.InvokeAsync">Cancel</button>
+    <div class="itemForm_buttons">
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+        <div class="mt-3">
+            <button type="button" class="btn btn-secondary" @onclick="OnCancel.InvokeAsync">Cancel</button>
+        </div>
     </div>
 
 </EditForm>
 
 @code {
     [Parameter]
-    public ItemType? itemType {get;set;}
+    public int itemTypeId {get;set;}
 
     [Parameter]
     public EventCallback<Task> OnCancel {get;set;}
 
     [Parameter]
     public EventCallback<InputFileChangeEventArgs> SubmitImage {get;set;}
-    public InventoryItem Model = new InventoryItem();
+    [Parameter]
+    public InventoryItem Model {get;set;} = new InventoryItem();
 
     List<ItemCondition> conditions = new();
     protected override async Task OnInitializedAsync(){
         if(Model == null){
             throw new ArgumentNullException(nameof(Model), "Model cannot be null. Please provide a valid InventoryItem instance.");
         }
-        Model.ItemType = itemType;
-        Model.ItemTypeId = itemType?.Id ?? 0;
+        Model.ItemTypeId = itemTypeId;
         Model.warrantyEnd = DateTime.Now;
         conditions = (await conditionService.GetAllItemConditions()).ToList();
     }

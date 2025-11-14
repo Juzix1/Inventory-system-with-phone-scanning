@@ -52,5 +52,16 @@ public class TypeService : ITypeService
         _context.SaveChanges();
     }
 
+    public async void ChangeName(int index,string name)
+    {
+        var item = await _context.ItemTypes.FindAsync(index);
+        if(item == null)
+        {
+            return;
+        }
+        item.TypeName = name;
+        _context.SaveChanges();
+    }
+
     
 }

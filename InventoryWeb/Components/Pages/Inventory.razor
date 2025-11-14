@@ -1,0 +1,49 @@
+﻿@page "/inventory"
+@using InventoryLibrary.Model.Inventory
+@using InventoryLibrary.Services.Interfaces
+
+@inject IInventoryService InventoryService
+
+<PageTitle>Inventory</PageTitle>
+<div class="itemForm">
+
+    <h3>Inventory Management</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Item Name</th>
+                <th>Last Inventory Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (items != null)
+            {
+                @foreach (var item in items)
+                {
+                <tr>
+                @* Dodać zmienną odstępu między inwentaryzacją wybraną przez użytkownika *@
+                    <td>@item.itemName</td>
+                    <td class="@(item.lastInventoryDate >= DateTime.Now.AddYears(2) ? "text-success" : 
+                                item.lastInventoryDate > DateTime.Now.AddYears(1) ? "text-warning" : 
+                                "text-danger")">
+                        @item.lastInventoryDate.ToShortDateString()
+                    </td>
+                </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+</div>
+
+@code {
+
+List<InventoryItem>? items;
+
+protected override async Task OnInitializedAsync()
+    {
+        items = (await InventoryService.GetAllItemsAsync()).ToList();
+
+        items.OrderBy(x => x.lastInventoryDate).ToList();
+    }
+}

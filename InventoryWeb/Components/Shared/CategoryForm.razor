@@ -1,8 +1,12 @@
-﻿@using InventoryLibrary.Services.Interfaces
+﻿@using BootstrapBlazor.Components
+@using InventoryLibrary.Data
+@using InventoryLibrary.Services.Interfaces
 @using InventoryWeb.Models
+@using Microsoft.EntityFrameworkCore
 @rendermode InteractiveServer
 @inject ITypeService typeService;
 @inject IConditionService conditionService;
+@inject NavigationManager navigation;
 
 
 <div class="card" style="width: 18rem;">
@@ -17,7 +21,10 @@
         @foreach (var item in Items){
             @item.Value
             <button class="icon-link" @onclick="@( e => showEditFormDialog(item.Key))">
-                <img src="/svg/pencil-square.svg" alt="Delete" width="16" height="16" class="text-danger" />
+                @* <img src="/svg/pencil-square.svg" alt="Delete" width="16" height="16" class="text-danger" /> *@
+                <BootstrapBlazorIcon Name="PencilSquare" Width="16" Height="16" Class="text-primary"/>
+
+
             </button>
             <button class="icon-link" href="#">
                 <img src="/svg/trash-fill.svg" alt="Delete" width="16" height="16" class="text-danger"/>
@@ -63,6 +70,8 @@ bool showEditForm = false;
 
 [Parameter]
 public Dictionary<int, string> Items {get;set;} = new Dictionary<int, string>();
+
+
 private string buttonText = "";
 
 override protected async Task OnInitializedAsync()
@@ -94,8 +103,9 @@ override protected async Task OnInitializedAsync()
 }
 
 
-void hideEditFormDialog(){
+private async Task hideEditFormDialog(){
     showEditForm = false;
+    await Task.CompletedTask;
 }
 
 void showEditFormDialog(int id){
@@ -103,8 +113,24 @@ void showEditFormDialog(int id){
     showEditForm = true;
 }
 
-void ChangeTitle(){
-    
+private async Task ChangeTitle(string title){
+    switch (Type)
+    {
+        case CategoryFormMode.Types:
+            typeService.ChangeName(Id,title);
+            break;
+        case CategoryFormMode.Conditions:
+
+            break;
+        case CategoryFormMode.Locations:
+
+            break;
+        case CategoryFormMode.Departments:
+
+            break;
+    }
+    await Task.Delay(10);
+    navigation.Refresh();
 }
 
 }

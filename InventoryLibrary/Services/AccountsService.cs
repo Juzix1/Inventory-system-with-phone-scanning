@@ -52,15 +52,22 @@ namespace InventoryLibrary.Services
             if (account == null)
             {
                 throw new KeyNotFoundException($"Account with ID {id} not found.");
+            }else if(account.Id == 1)
+            {
+                throw new InvalidOperationException("Cannot delete the admin account.");
             }
-
-            _context.Accounts.Remove(account);
-            await _context.SaveChangesAsync();
+            else
+            {
+                _context.Accounts.Remove(account);
+                await _context.SaveChangesAsync();
+            }
         }
 
         public async Task<Account> GetAccountByIdAsync(int id)
         {
-            var account = await _context.Accounts.FindAsync(id);
+            var account = await _context.Accounts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == id);
 
             if (account == null)
             {
@@ -75,24 +82,29 @@ namespace InventoryLibrary.Services
             var accounts = await _context.Accounts.ToListAsync();
             if (accounts == null || !accounts.Any())
             {
-                throw new KeyNotFoundException("No accounts found.");
+                return Enumerable.Empty<Account>();
             }
             return accounts;
         }
 
-        public async Task<Account> UpdateAccountAsync(int id, Account account)
+        public async Task<Account> UpdateAccountAsync(Account account)
         {
-            var existingAccount = await _context.Accounts.FindAsync(id);
+            var existingAccount = await _context.Accounts.FindAsync(account.Id);
             if (existingAccount == null)
             {
-                throw new KeyNotFoundException($"Account with ID {id} not found.");
+                throw new KeyNotFoundException($"Account with ID {account.Id} not found.");
             }
-
-            if (!await IsEmailUniqueAsync(account.Email))
+            
+            if(existingAccount.Email != account.Email){
+                if (!await IsEmailUniqueAsync(account.Email))
+                {
+                    throw new ArgumentException("Email must be unique and valid.");
+                }
+            }
+            if(existingAccount.Role != account.Role && existingAccount.Id == 1)
             {
-                throw new ArgumentException("Email must be unique and valid.");
+                throw new InvalidOperationException("Cannot change the role of the first admin account.");
             }
-
             _context.Entry(existingAccount).CurrentValues.SetValues(account);
             await _context.SaveChangesAsync();
             return account;
@@ -107,6 +119,23 @@ namespace InventoryLibrary.Services
 
             var existingAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == email);
             return existingAccount == null;
+        }
+
+        public async Task<bool> CanAccessScanner(int accountId)
+        {
+            var account = await _context.Accounts.FindAsync(accountId);
+            if (account == null)
+            {
+                throw new KeyNotFoundException($"Account with ID {accountId} not found.");
+            }
+            if (account.IsAdmin == true)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

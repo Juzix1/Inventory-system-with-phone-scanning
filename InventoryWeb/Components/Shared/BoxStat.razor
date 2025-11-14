@@ -29,7 +29,7 @@
             warrantyLeft = $"Warranty Ends in {dayleft / 30} Months";
             return false;
         }else if(dayleft >365){
-            warrantyLeft = $"Warranty Ends in {dayleft / 365} Years";
+            warrantyLeft = $"Warranty Ends in {Math.Round(dayleft / 365)} Years";
             return false;
         }
         return false;

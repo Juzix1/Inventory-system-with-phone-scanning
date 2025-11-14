@@ -1,55 +1,81 @@
 ﻿@page "/create"
 @using InventoryLibrary.Model.Inventory
 @using InventoryLibrary.Services
+@using InventoryLibrary.Services.Interfaces
 @using InventoryWeb.Components.Shared.EditForms
-@inject InventoryService db
-@inject TypeService typeService
+@inject IInventoryService db
+@inject ITypeService typeService
 @inject IConfiguration config
 @rendermode InteractiveServer
-<h3>Create new item</h3>
 
-    @if(selectedType != null){
-        if(selectedType.TypeName == "AGD"){
-            <AGDEditForm OnCancel="@Cancel" itemtype="@selectedType"/>
-            
-        }else{
-            <BaseEditForm OnCancel="@Cancel" itemtype="@selectedType" SubmitImage="sendFileToServer"/>
-            <p>@path</p>
-        }
-    }
-    else{
-        <form class="form-container" method="post">
-            <EditForm Model="this">
-                <div class="mb-3">
-                    <label for="itemType" class="form-label">Item Type</label>
-                    <InputSelect class="form-select" id="itemType" @bind-Value="selectedTypeId">
-                        <option value="0">Select Type</option>
-                        @foreach(var type in types){
-                            <option value="@type.Id">@type.TypeName</option>
-                        }
-                    </InputSelect>
-                </div>
-            </EditForm>
-        </form>
-    }
 
+<div class="itemForm">
+    <h3>Create new item</h3>
+
+@if (selectedTypeId != 0)
+{
+    if (selectedTypeId == 2)
+    {
+        <AGDEditForm OnCancel="Cancel" itemTypeId="selectedTypeId" />
+    }
+    else
+    {
+        <BaseEditForm OnCancel="Cancel" SubmitImage="sendFileToServer" itemTypeId="selectedTypeId" />
+        <p>@path</p>
+    }
+}
+else
+
+{
+    <form class="form-container" method="post">
+        <div class="mb-3">
+            <label for="itemType" class="form-label">Item Type</label>
+            <select id="itemType" class="form-select" @bind="selectedTypeId">
+                <option value="0">Select a type</option>
+                @foreach (var type in types)
+                {
+                    <option value="@type.Id">@type.TypeName</option>
+                }
+            </select>
+        </div>
+    </form>
+}
+
+</div>
 
 @code {
-    List<ItemType> types = new ();
+
+    List<ItemType> types = new List<ItemType>();
+
+    public class ItemTypeModel
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
     InventoryItem Item;
-    int selectedTypeId {get;set;}
-    ItemType selectedType => types.FirstOrDefault(t => t.Id == selectedTypeId);
-    protected override async Task OnInitializedAsync(){
+    int selectedTypeId;
+    string selectedType => types.FirstOrDefault(t => t.Id == selectedTypeId)?.TypeName;
+
+    protected override async Task OnInitializedAsync()
+    {
         types = await typeService.GetAllTypesAsync();
+        await Task.CompletedTask;
     }
-    private void Cancel(){
+
+    private Task Cancel()
+    {
         selectedTypeId = 0;
+        return Task.CompletedTask;
     }
-    public string path {get;set;}
-    private async void sendFileToServer(InputFileChangeEventArgs e){
+
+    public string path { get; set; }
+
+    private async Task sendFileToServer(InputFileChangeEventArgs e)
+    {
         var file = e.File;
         string newfileName = Path.ChangeExtension(Path.GetRandomFileName(), Path.GetExtension(file.Name));
         path = Path.Combine(config.GetValue<string>("FileStorage"), newfileName);
-
+        await Task.CompletedTask;
     }
 }

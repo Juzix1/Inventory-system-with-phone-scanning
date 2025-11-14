@@ -38,11 +38,5 @@ namespace InventoryAPI.Controllers
 
         }
 
-        [HttpGet]
-        public async Task<ActionResult> GetAllTypes()
-        {
-            var types = await _service.GetAllTypes();
-            return Ok(types);
-        }
     }
 }

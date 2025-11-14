@@ -49,6 +49,24 @@ namespace InventoryAPI.Controllers
             }
         }
 
+        [HttpGet("privilage-check/{id}")]
+        public async Task<IActionResult> CheckPrivilageForApp(int id)
+        {
+            try
+            {
+                var hasPrivilage = await _service.CanAccessScanner(id);
+                if(!hasPrivilage)
+                {
+                    return Forbid("Account does not have privilage to access the scanner app.");
+                }
+                return Ok(hasPrivilage);
+                
+            }catch(Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Error checking privilage: {ex.Message}");
+            }
+        }
+
         public class LoginRequest
         {
             public string Email { get; set; }

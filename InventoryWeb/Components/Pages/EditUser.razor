@@ -1,0 +1,95 @@
+﻿@page "/edit-user/{UserId:int?}"
+@using InventoryLibrary.Model.Accounts
+@using InventoryLibrary.Services.Interfaces
+@rendermode InteractiveServer
+@inject IAccountsService AccountsService
+@inject NavigationManager NavigationManager
+<div class="itemForm">
+@if(UserId == null)
+{
+    <h3>Create a new user</h3>
+}
+else
+{
+    <h3>Edit User</h3>
+}
+<EditForm Model="@user" OnValidSubmit="Submit" FormName="UserEdit">
+    <DataAnnotationsValidator/>
+    <ValidationSummary />
+    <div class="mb-3">
+            <label>
+                Username:
+                <InputText @bind-Value="user.Name"/>
+            </label>
+    </div>
+    <div class="mb-3">
+        <label>
+            Email:
+            <InputText @bind-Value="user.Email" type="email"/>
+        </label>
+    </div>
+    <div class="mb-3">
+        <label>
+            Role:
+            <InputSelect @bind-Value="user.Role">
+                <option value="User">User</option>
+                <option value="Moderator">Moderator</option>
+                <option value="Admin">Admin</option>
+            </InputSelect>
+        </label>
+    </div>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <button type="button" class="btn btn-secondary" @onclick='() => NavigationManager.NavigateTo("/Users")'>Cancel</button>
+    
+</EditForm>
+<br />
+@if(!string.IsNullOrEmpty(errorMessage)){
+    <div class="alert alert-danger" role="alert">
+        @errorMessage
+    </div>
+}
+</div>
+@code {
+    [Parameter]
+    public int? UserId { get; set; }
+    private string errorMessage = string.Empty;
+    private Account user = new Account();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (UserId != null)
+        {
+            try{
+                user = await AccountsService.GetAccountByIdAsync(UserId.Value);
+            }catch(Exception ex){
+                Console.WriteLine(ex.Message);
+                errorMessage += $"\n{ex.Message}";
+            }
+        }
+    }
+
+    private async Task Submit()
+    {
+        try
+        {
+            if (UserId == null)
+            {
+                if (user.Role == "Admin")
+                    user.IsAdmin = true;
+
+                await AccountsService.CreateAccountAsync(user);
+            }
+            else
+            {
+                await AccountsService.UpdateAccountAsync(user);
+            }
+
+            NavigationManager.NavigateTo("/Users");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            errorMessage = ex.Message; // show the server-side validation/exception
+        }
+    }
+}
