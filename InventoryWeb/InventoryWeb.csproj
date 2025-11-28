@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <Folder Include="Services/" />
+    <Folder Include="wwwroot/lib/" />
     <Folder Include="wwwroot/svg/" />
   </ItemGroup>
 
@@ -16,6 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Blazor.Bootstrap" Version="3.4.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

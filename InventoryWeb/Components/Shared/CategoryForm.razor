@@ -1,5 +1,4 @@
-﻿@using BootstrapBlazor.Components
-@using InventoryLibrary.Data
+﻿@using InventoryLibrary.Data
 @using InventoryLibrary.Services.Interfaces
 @using InventoryWeb.Models
 @using Microsoft.EntityFrameworkCore
@@ -12,25 +11,30 @@
 <div class="card" style="width: 18rem;">
   <div class="card-body">
     <h5 class="card-title">
-        <img src="@svgContent" alt="Icon" style="width:24px;height:24px;margin-right:8px;" />
-    <b>@Title</b></h5>
+        <Icon Name="icon" Color="color" Size="IconSize.x4"/>
+        <b>@Title</b>
+    </h5>
     <p class="card-text">
         @if(Items == null || Items.Count == 0){
             <i>No @Title.ToLower() added yet.</i>
-        }else{
-        @foreach (var item in Items){
-            @item.Value
-            <button class="icon-link" @onclick="@( e => showEditFormDialog(item.Key))">
-                @* <img src="/svg/pencil-square.svg" alt="Delete" width="16" height="16" class="text-danger" /> *@
-                <BootstrapBlazorIcon Name="PencilSquare" Width="16" Height="16" Class="text-primary"/>
+            }else{
+                @foreach (var item in Items){
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>@item.Value</span>
+                        <div>
+                            @* Change Name *@
+                            <a class="text-decoration-none me-2" style="cursor: pointer;" @onclick="@( e => showEditFormDialog(item.Key))" >
+                                <Icon Name="IconName.PencilFill" Color="color"/>
+                            </a>
 
-
-            </button>
-            <button class="icon-link" href="#">
-                <img src="/svg/trash-fill.svg" alt="Delete" width="16" height="16" class="text-danger"/>
-            </button>
-            <br/>
-        }
+                            @* Delete                                                                       add here deleting*@
+                            <a class="text-decoration-none me-2" style="cursor: pointer;" @onclick="@( () => {})" >
+                                <Icon Name="IconName.TrashFill" Color="IconColor.Danger"/>
+                            </a>
+                            <br/>
+                        </div>
+                    </div>
+                }
         }
     </p>
     <hr />
@@ -65,8 +69,10 @@
 public CategoryFormMode Type {get;set;} = CategoryFormMode.Types;
 private int Id;
 private string Title = "";
-private string svgContent = "";
+private IconName icon;
 bool showEditForm = false;
+
+private IconColor color = IconColor.None;
 
 [Parameter]
 public Dictionary<int, string> Items {get;set;} = new Dictionary<int, string>();
@@ -80,23 +86,26 @@ override protected async Task OnInitializedAsync()
     {
         case CategoryFormMode.Types:
             Title = "Types";
-            svgContent = "/svg/tags.svg";
+            icon = IconName.TagFill;
             buttonText = "Type";
+            color = IconColor.Primary;
             break;
         case CategoryFormMode.Conditions:
             Title = "Conditions";
-            svgContent = "/svg/card-checklist.svg";
+            icon = IconName.ClipboardCheckFill;
             buttonText = "Condition";
+            color = IconColor.Success;
             break;
         case CategoryFormMode.Locations:
             Title = "Locations";
-            svgContent = "/svg/geo-alt-fill.svg";
+            icon = IconName.MapFill;
             buttonText = "Location";
             break;
         case CategoryFormMode.Departments:
             Title = "Departments";
-            svgContent = "/svg/stack.svg";
+            icon = IconName.BuildingFill;
             buttonText = "Department";
+            color = IconColor.Info;
             break;
     }
 

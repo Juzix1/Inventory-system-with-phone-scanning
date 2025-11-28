@@ -1,0 +1,27 @@
+﻿@using InventoryLibrary.Model.Inventory
+    <div class="StatContainer" style="box-shadow: -4px 0 0 0 blue;">
+        <div class="StatBody">
+            <p>@Title</p>
+            <p>@value.ToString()</p>
+        </div>
+                            <Icon Name="@icon" style="position: absolute !important;
+        right: 1rem !important;
+        bottom: -1rem !important;
+        font-size: 6rem !important;
+        opacity: 0.15 !important;
+        z-index: 0 !important;" ></Icon>
+    </div>
+
+@code {
+[Parameter]
+public string Title {get;set;} = "";
+[Parameter]
+public string value {get;set;}
+
+[Parameter]
+public IconName icon {get;set;}
+
+private string color = "#3A506B";
+
+
+}

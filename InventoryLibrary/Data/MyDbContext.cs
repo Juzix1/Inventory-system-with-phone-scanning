@@ -1,6 +1,7 @@
 ﻿using InventoryLibrary.Model.Accounts;
 using InventoryLibrary.Model.Inventory;
 using InventoryLibrary.Model.Location;
+using InventoryWeb.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -20,6 +21,8 @@ namespace InventoryLibrary.Data {
         public DbSet<ItemCondition> itemConditions{ get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<Room> Rooms { get; set; }
+
+        public DbSet<Setting> Settings {get;set;}
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -79,6 +82,16 @@ namespace InventoryLibrary.Data {
             );
             modelBuilder.Entity<Account>().HasData(
                 new Account { Id = 1, Name = "Admin", Email = "", PasswordHash = "admin", Role = "Admin", IsAdmin = true });
+
+            modelBuilder.Entity<Setting>().HasData(
+                new Setting { Id = 1, Key = "FileStoragePath", Value = "C:\\uploads",},
+                new Setting { Id = 2, Key = "MaxFileSize", Value = "10485760"},
+                new Setting { Id = 3, Key = "EnableNotifications", Value = "true"},
+                new Setting { Id = 4, Key = "CompanyName", Value = "My Company"}
+            );
+            modelBuilder.Entity<Setting>()
+                .HasIndex(s => s.Key)
+                .IsUnique();
         }
     }
 }

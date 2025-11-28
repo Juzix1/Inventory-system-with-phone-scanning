@@ -17,9 +17,7 @@ namespace InventoryLibrary.Model.Inventory {
         public int ItemTypeId { get; set; }
         public ItemType? ItemType { get; set; }
         public int ItemConditionId { get; set; }
-        public ItemCondition? ItemCondition { get; set; } //Good condition, Damaged, Lost, Broken, Missing, etc.
-        public int quantity { get; set; }
-
+        public ItemCondition? ItemCondition { get; set; }
         public double itemWeight { get; set; }
         public double itemPrice { get; set; }
 

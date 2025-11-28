@@ -7,6 +7,8 @@ namespace InventoryLibrary.Services.Interfaces
         Task<IEnumerable<InventoryItem>> GetAllItemsAsync();
         Task<InventoryItem> GetItemByIdAsync(int id);
         Task<InventoryItem> CreateItemAsync(InventoryItem item);
+        Task<IEnumerable<InventoryItem>> GetItemsByName(string name);
+        Task<InventoryItem> UpdateItemAsync(InventoryItem item);
     }
 
 }

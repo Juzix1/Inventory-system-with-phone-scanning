@@ -74,13 +74,25 @@ else
         {
             if (UserId == null)
             {
-                if (user.Role == "Admin")
+                if (user.Role == "Admin"){
                     user.IsAdmin = true;
+                    user.IsModerator = false;
+                }else if(user.Role == "Moderator"){
+                    user.IsAdmin = false;
+                    user.IsModerator = true;
+                }
 
                 await AccountsService.CreateAccountAsync(user);
             }
             else
             {
+                if (user.Role == "Admin"){
+                    user.IsAdmin = true;
+                    user.IsModerator = false;
+                }else if(user.Role == "Moderator"){
+                    user.IsAdmin = false;
+                    user.IsModerator = true;
+                }
                 await AccountsService.UpdateAccountAsync(user);
             }
 

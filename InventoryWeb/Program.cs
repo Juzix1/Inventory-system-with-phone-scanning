@@ -4,6 +4,8 @@ using InventoryLibrary.Services;
 using InventoryLibrary.Services.Interfaces;
 using InventoryLibrary.Services.Location;
 using InventoryWeb.Components;
+using InventoryWeb.Models;
+using InventoryWeb.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 
@@ -13,14 +15,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddBootstrapBlazor();
+builder.Services.AddBlazorBootstrap();
+
 
 builder.Services.AddScoped<IInventoryService,InventoryService>();
 builder.Services.AddScoped<ITypeService,TypeService>();
 builder.Services.AddScoped<IConditionService,ConditionService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IAccountsService, AccountsService>();
-builder.Services.AddDbContext<MyDbContext>(options =>
+
+builder.Services.AddScoped<ISettingsService, SettingsService>();
+
+builder.Services.AddDbContextFactory<MyDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
     b => b.MigrationsAssembly("InventoryAPI")));
 
@@ -46,6 +52,7 @@ using (var scope = app.Services.CreateScope())
         var context = services.GetRequiredService<MyDbContext>();
         // This will create the database if it doesn't exist
         _ = context.Database.EnsureCreated();
+
     }
     catch (Exception ex)
     {

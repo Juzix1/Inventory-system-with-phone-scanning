@@ -2,13 +2,14 @@
 @using InventoryLibrary.Services
 @using InventoryLibrary.Services.Interfaces
 @using Microsoft.EntityFrameworkCore.Metadata.Internal
+@using Microsoft.IdentityModel.Tokens
 
 @inject ILogger<BaseEditForm> Logger
 @inject IInventoryService inventoryService
 @inject IConditionService conditionService;
 @inject NavigationManager navigationManager
 
-<EditForm Model="Model" OnValidSubmit="Submit" FormName="BaseEditForm">
+<EditForm Model="@Model" OnValidSubmit="Submit" FormName="BaseEditForm">
     <DataAnnotationsValidator/>
     <ValidationSummary/>
     <div>
@@ -48,13 +49,6 @@
             }
         </InputSelect>
     </div>
-
-    <div>
-        @* For Removal *@
-        <label>Quantity</label>
-        <InputNumber @bind-Value="Model.quantity" class="form-control"/>
-
-    </div>
     <div>
         <label>Weight</label>
         <InputNumber @bind-Value="Model.itemWeight" class="form-control"/>
@@ -79,6 +73,7 @@
 </EditForm>
 
 @code {
+    private bool IsUpdating = false;
     [Parameter]
     public int itemTypeId {get;set;}
     [Parameter]
@@ -91,13 +86,26 @@
         if(Model == null){
             throw new ArgumentNullException(nameof(Model), "Model cannot be null. Please provide a valid InventoryItem instance.");
         }
-        Model.ItemTypeId = itemTypeId;
-        Model.warrantyEnd = DateTime.Now;
         conditions = (await conditionService.GetAllItemConditions()).ToList();
+
+        if(Model.itemName.IsNullOrEmpty()){
+            IsUpdating = false;
+            Logger.LogInformation("AGDEditForm initialized for editing item: {ItemName}", Model.itemName);
+            Model.ItemTypeId = itemTypeId;
+            Model.warrantyEnd = DateTime.Now;
+        }else{
+            IsUpdating = true;
+        }
     }
 
     private async Task Submit(){
-        await inventoryService.CreateItemAsync(Model);
+        if(IsUpdating){
+            Logger.LogInformation("Submitting update for AGD item: {ItemName}", Model.itemName);
+            await inventoryService.UpdateItemAsync(Model);
+        }else{
+            await inventoryService.CreateItemAsync(Model);
+        }
+        
         navigationManager.NavigateTo("/manage");
     }
 

@@ -4,6 +4,7 @@ using InventoryLibrary.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryAPI.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251118235706_AddIsModeratorFields_removeQunatity")]
+    partial class AddIsModeratorFields_removeQunatity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -257,57 +260,6 @@ namespace InventoryAPI.Migrations
                     b.HasIndex("DepartmentId");
 
                     b.ToTable("Rooms", (string)null);
-                });
-
-            modelBuilder.Entity("InventoryWeb.Models.Setting", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Key")
-                        .IsUnique();
-
-                    b.ToTable("Settings");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Key = "FileStoragePath",
-                            Value = "C:\\uploads"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Key = "MaxFileSize",
-                            Value = "10485760"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Key = "EnableNotifications",
-                            Value = "true"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Key = "CompanyName",
-                            Value = "My Company"
-                        });
                 });
 
             modelBuilder.Entity("InventoryLibrary.Model.Inventory.AGD", b =>

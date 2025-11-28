@@ -93,7 +93,6 @@ namespace InventoryAPI.Controllers
                 itemName = "Laptop",
                 Barcode = barcodeNumber,
                 ItemType = type,
-                quantity = 5,
                 addedDate = DateTime.Now,
                 lastInventoryDate = DateTime.Now,
                 Location = room
@@ -105,7 +104,6 @@ namespace InventoryAPI.Controllers
                 itemName = "Biurko IKEA",
                 imagePath = "image2.png",
                 Barcode = barcodeNumber,
-                quantity = 1,
                 itemWeight = 20.0,
                 itemPrice = 300,
                 addedDate = DateTime.Now,

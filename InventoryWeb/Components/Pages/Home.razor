@@ -1,19 +1,38 @@
 ﻿@page "/"
 @using InventoryLibrary.Model.Inventory
 @using InventoryLibrary.Services
+@using InventoryLibrary.Services.Interfaces
 @using Microsoft.IdentityModel.Tokens
+@inject IInventoryService inventory;
 
 <PageTitle>Home</PageTitle>
 
-<div class="container-head">
-    <h1>Activity</h1>
+@if(isLoading){
+<p>Loading...</p>
+}else{
+    <div class="container-head">
     <div class="container-head-content">
+        <SmallBoxStat Title="Total Items" value="@(items.Count().ToString())" Icon=IconName.Box2Fill/>
+        <SmallBoxStat Title="Broken Items" value="@(items.Where(i => i.ItemCondition.Id == 3).Count().ToString())" Icon=IconName.XCircleFill/>
+        <SmallBoxStat Title="Expired Items" value="@(items.Where(i => i.warrantyEnd < DateTime.Now).Count().ToString())" Icon=IconName.Clock/>
+        <SmallBoxStat Title="Financial Status" value="@(items.Sum(c=> c.itemPrice).ToString() + " PLN")" Icon=IconName.Amazon/>
     </div>
 </div>
+}
 
 
 
 @code {
+private bool isLoading = true;
+private IEnumerable<InventoryItem> items;
+
+protected override async Task OnInitializedAsync(){
+    items = await inventory.GetAllItemsAsync();
+
+    if(!items.IsNullOrEmpty()){
+        isLoading = false;
+    }
+}
 
 
 }

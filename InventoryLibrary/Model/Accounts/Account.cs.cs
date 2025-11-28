@@ -12,6 +12,7 @@ namespace InventoryLibrary.Model.Accounts
         public string PasswordHash { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
         public bool IsAdmin { get; set; }
+        public bool IsModerator {get;set;}
         [JsonIgnore]
         public ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
     }

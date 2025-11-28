@@ -1,4 +1,4 @@
-﻿@page "/create"
+﻿@page "/create/{EditID:int?}"
 @using InventoryLibrary.Model.Inventory
 @using InventoryLibrary.Services
 @using InventoryLibrary.Services.Interfaces
@@ -10,7 +10,30 @@
 
 
 <div class="itemForm">
-    <h3>Create new item</h3>
+    @if(EditID.HasValue)
+    {
+        <h3>Edit Item</h3>
+        
+        @if(Item != null){
+
+            if (Item.ItemType.Id == 2)
+            { 
+                <AGDEditForm OnCancel="Cancel" itemTypeId="Item.ItemType.Id" Model="@AgdItem" />
+            }
+            else
+            {
+                <BaseEditForm OnCancel="Cancel" SubmitImage="sendFileToServer" itemTypeId="Item.ItemType.Id" Model="@Item"/>
+                <p>@path</p>
+            }
+        }
+        else
+        {
+            <p>Item not found.</p>
+        }
+    }
+    else
+    {
+        <h3>Create new item</h3>
 
 @if (selectedTypeId != 0)
 {
@@ -41,10 +64,12 @@ else
     </form>
 }
 
+    }
 </div>
 
 @code {
-
+    [Parameter]
+    public int? EditID {get;set;}
     List<ItemType> types = new List<ItemType>();
 
     public class ItemTypeModel
@@ -54,6 +79,7 @@ else
     }
 
     InventoryItem Item;
+    AGD AgdItem;
     int selectedTypeId;
     string selectedType => types.FirstOrDefault(t => t.Id == selectedTypeId)?.TypeName;
 
@@ -61,6 +87,18 @@ else
     {
         types = await typeService.GetAllTypesAsync();
         await Task.CompletedTask;
+
+        if(EditID.HasValue)
+        {
+            Item = await db.GetItemByIdAsync(EditID.Value);
+            if(Item != null)
+            {
+                selectedTypeId = Item.ItemType.Id;
+                if(Item.ItemType.Id == 2){
+                    AgdItem = await db.GetItemByIdAsync(EditID.Value) as AGD;
+                }
+            }
+        }
     }
 
     private Task Cancel()

@@ -75,7 +75,8 @@ h1:focus {
 .container-body{
     display:flex;
     flex-flow:row;
-}
+    width:100%;
+    flex-wrap: wrap;}
 
 .itemForm{
     margin-top:1rem;

@@ -8,6 +8,7 @@ namespace InventoryLibrary.Services
     public class AccountsService : IAccountsService
     {
         private readonly MyDbContext _context;
+        
 
         public AccountsService(MyDbContext context)
         {
@@ -121,6 +122,7 @@ namespace InventoryLibrary.Services
             return existingAccount == null;
         }
 
+        // do wywalenia bo i tak inaczej to będzie się sprawdzało 
         public async Task<bool> CanAccessScanner(int accountId)
         {
             var account = await _context.Accounts.FindAsync(accountId);
@@ -128,7 +130,7 @@ namespace InventoryLibrary.Services
             {
                 throw new KeyNotFoundException($"Account with ID {accountId} not found.");
             }
-            if (account.IsAdmin == true)
+            if (account.IsAdmin || account.IsModerator)
             {
                 return true;
             }

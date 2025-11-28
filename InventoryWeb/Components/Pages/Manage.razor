@@ -1,47 +1,102 @@
 ﻿@page "/manage"
 @using InventoryLibrary.Model.Inventory
+@using InventoryLibrary.Services
 @using InventoryLibrary.Services.Interfaces
 @using InventoryWeb.Models
 @using Microsoft.IdentityModel.Tokens
+@rendermode InteractiveServer
 @inject IInventoryService db
 
 <PageTitle>Manage Items</PageTitle>
 
-<div class="container-head">
 
+<div class="container-head">
+    <div class="row">
+        <div class="col-md-5 col-sm-12">
+            <AutoComplete @bind-Value="ItemName"
+            TItem="InventoryItem"
+            DataProvider="InventoryNameDataProvider"
+            PropertyName="itemName"
+            Placeholder="Search for inventory items..."
+            OnChanged="(InventoryItem item) => OnAutoCompleteChanged(item)"
+            />
+        </div>
+    </div>
 </div>
 <div class="container-body">
-@if (!itemList.IsNullOrEmpty()){
-<div class="container-body">
-    @foreach(var item in itemList){
-        <BoxStat item="item"/>
+@if(isLoading){
+    @for(var i=0;i<5;i++){
+        <BoxStat item="@null"/>
     }
-</div>
 }else{
-        <h3>No items in Database</h3>
+    @if(modelList.IsNullOrEmpty()){
+            @if (!itemList.IsNullOrEmpty()){
+                <div class="container-body">
+                    @foreach(var item in itemList){
+                        <BoxStat item="item" showDetails="showDetails" />
+                    }
+                </div>
+            }else{
+                <h3>No items in Database</h3>
+            }
+    }else{
+
+    <InventoryDataTable ItemList="modelList" onBack="@(() => {modelList = null;})"/>
+
     }
+}
 </div>
 @code {
+
+    private bool isLoading = true;
+    private string? ItemName;
     private IEnumerable<InventoryItemGroup> itemList;
+    private IEnumerable<InventoryItem?> modelList = null;
+    private IEnumerable<InventoryItem?> items = new List<InventoryItem?>();
+
+    private async Task<AutoCompleteDataProviderResult<InventoryItem>> InventoryNameDataProvider(AutoCompleteDataProviderRequest<InventoryItem> request){
+        if (items is null){
+            return null;
+        }
+
+        var distinctItems = items.DistinctBy(item => item.itemName).OrderBy(item=>item.itemName);
+        return await Task.FromResult(request.ApplyTo(distinctItems.OrderBy(item => item.itemName)));
+    }
 
     protected override async Task OnInitializedAsync(){
-        var items = await db.GetAllItemsAsync();
+        
         try{
-            itemList = items
-            .GroupBy(i => i.itemName)
-            .Select(g => new InventoryItemGroup
-            {
-                ItemName = g.Key,
-                ItemCategory = g.First().ItemType.TypeName,
-                ImagePath = g.First().imagePath,
-                WarrantyEnd = g.First().warrantyEnd,
-                InStock = g.Count()
-            });
+            items = await db.GetAllItemsAsync();
+
+            if(!items.IsNullOrEmpty())
+                isLoading = false;
+                itemList = items
+                .GroupBy(i => i.itemName)
+                .Select(g => new InventoryItemGroup
+                {
+                    ItemName = g.Key,
+                    ItemCategory = g.First().ItemType.TypeName,
+                    ImagePath = g.First().imagePath,
+                    WarrantyEnd = g.First().warrantyEnd,
+                    InStock = g.Count()
+                });
         }catch (Exception ex){
             Console.WriteLine(ex.Message);
         }
         
 
+    }
+
+    private async Task showDetails(string item){
+        modelList = items.Where(i => i.itemName == item);
+    }
+
+    private async void OnAutoCompleteChanged(InventoryItem item){
+        if (item == null){
+            modelList = null;
+            return;
+        }
+        await showDetails(item.itemName);
     }
 
     

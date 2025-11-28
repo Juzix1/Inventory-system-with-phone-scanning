@@ -1,0 +1,84 @@
+﻿@using InventoryLibrary.Model.Inventory
+@inject NavigationManager navigationManager
+<div class="itemform px-2">
+<div class="py-2">
+    <button @onclick="onBack" class="btn btn-primary btn-l">@("<") Back</button>
+</div>
+<Grid @ref="grid"
+    TItem="InventoryItem"
+    Class="table table-hover table-bordered"
+    Data="ItemList"
+    FixedHeader="true"
+    Responsive="true"
+    AllowSorting="true"
+    Unit="Unit.Px"
+    RowClass="GetRowClass">
+
+    <GridColumns>
+        <GridColumn TItem="InventoryItem" HeaderText="Id" PropertyName="Id">
+            @context.Id
+        </GridColumn>
+        <GridColumn TItem="InventoryItem" HeaderText="Name" PropertyName="Name" SortKeySelector="i => i.itemName">
+            @context.itemName
+        </GridColumn>
+        <GridColumn TItem="InventoryItem" HeaderText="Type" PropertyName="Type" SortKeySelector="i => i.ItemType.TypeName">
+            @context.ItemType.TypeName
+        </GridColumn>
+        <GridColumn TItem="InventoryItem" HeaderText="Condition" PropertyName="Condition" SortKeySelector="i => i.ItemCondition.Id">
+            @context.ItemCondition.ConditionName
+        </GridColumn>
+        <GridColumn TItem="InventoryItem" HeaderText="Price" PropertyName="Price" SortKeySelector="i => i.itemPrice">
+            @context.itemPrice
+        </GridColumn>
+        <GridColumn TItem="InventoryItem" HeaderText="Added Date" PropertyName="AddedDate">
+            @context.addedDate
+        </GridColumn>
+        <GridColumn TItem="InventoryItem" HeaderText="Warranty's End" PropertyName="WarrantyEnd" SortKeySelector="i=>i.warrantyEnd">
+            <p class='@GetTextClass(context)'>@context.warrantyEnd</p>
+        </GridColumn>
+        <GridColumn TItem="InventoryItem" HeaderText="Last Inventory" PropertyName="LastInventory" SortKeySelector="i=>i.lastInventoryDate">
+            @context.lastInventoryDate
+        </GridColumn>
+        <GridColumn TItem="InventoryItem" HeaderText="Actions">
+            <button class="btn btn-primary btn-sm" @onclick='() => navigationManager.NavigateTo($"/create/{context.Id}")'>
+                Edit <Icon Name="IconName.PencilFill" />
+            </button>
+            <button class="btn btn-danger btn-sm" @onclick="() => {}">
+                <Icon Name="IconName.TrashFill"/>
+            </button>
+        </GridColumn>
+    </GridColumns>
+
+</Grid>
+</div>
+@code {
+    BlazorBootstrap.Grid<InventoryItem> grid = default;
+
+    [Parameter]
+    public IEnumerable<InventoryItem> ItemList {get;set;}
+
+    [Parameter]
+    public EventCallback onBack {get;set;}
+
+    private string GetRowClass(InventoryItem item){
+        var dayleft = (item.warrantyEnd.Date - DateTime.Now.Date).TotalDays;
+        if(dayleft < 0){
+            return "table-danger";
+        }else if(dayleft>30 && dayleft< 365){
+            return "table-warning";
+        }else{
+            return "";
+        }
+    }
+
+    private string GetTextClass(InventoryItem item){
+        var dayleft = (item.warrantyEnd.Date - DateTime.Now.Date).TotalDays;
+        if(dayleft < 0){
+            return "text-danger fw-bold";
+        }else if(dayleft>30 && dayleft< 365){
+            return "text-warning fw-bold";
+        }else{
+            return "";
+        }
+    }
+}
