@@ -1,6 +1,194 @@
 ﻿@page "/data/import"
-<h3>Data</h3>
+@using System.Net.Http.Headers
+@using static InventoryLibrary.Services.data.ImportService
+@rendermode InteractiveServer
+@inject HttpClient Http
+@inject IJSRuntime JS
 
+<PageTitle>Import Data</PageTitle>
+<div class="container mt-4">
+    <h3>Import Data from Excel</h3>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Step 1: Download Template</h5>
+            <p class="card-text">Download Excel template with example data and format</p>
+            <button class="btn btn-primary" @onclick="DownloadTemplate" disabled="@isDownloading">
+                @if (isDownloading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                <i class="bi bi-download me-2"></i>
+                Download Excel template
+            </button>
+        </div>
+    </div>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Step 2: Send filled file</h5>
+            <p class="card-text">Choose excel file (.xlsx) with data to import</p>
+            
+            <div class="mb-3">
+                <InputFile OnChange="HandleFileSelected" class="form-control" accept=".xlsx,.xls" />
+            </div>
+
+            @if (selectedFile != null)
+            {
+                <div class="alert alert-info">
+                    <i class="bi bi-file-earmark-excel me-2"></i>
+                    Wybrany plik: <strong>@selectedFile.Name</strong> (@FormatFileSize(selectedFile.Size))
+                </div>
+            }
+
+            <button class="btn btn-success" @onclick="UploadFile" disabled="@(selectedFile == null || isUploading)">
+                @if (isUploading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2">Importing...</span>
+                
+                }
+                else
+                {
+                    <i class="bi bi-upload me-2"></i>
+                    <text>Import data</text>
+                }
+            </button>
+        </div>
+    </div>
+
+    @if (importResult != null)
+    {
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title">Raport result</h5>
+                
+                @if (importResult.IsSuccess)
+                {
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>Success!</strong> Imported @importResult.SuccessCount items.
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Import completed with errors.</strong>
+                        <br />
+                        Imported Successfully: @importResult.SuccessCount items
+                    </div>
+
+                    @if (importResult.Errors.Any())
+                    {
+                        <div class="mt-3">
+                            <h6>Errors:</h6>
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    @foreach (var error in importResult.Errors)
+                                    {
+                                        <li>@error</li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-4">
+            <i class="bi bi-x-circle me-2"></i>
+            <strong>Error:</strong> @errorMessage
+        </div>
+    }
+</div>
 @code {
+    private IBrowserFile? selectedFile;
+    private bool isUploading = false;
+    private bool isDownloading = false;
+    private string errorMessage = string.Empty;
+    private ImportResult? importResult;
 
+    private async Task DownloadTemplate(){
+        try{
+            isDownloading = true;
+            errorMessage = string.Empty;
+
+            var response = await Http.GetAsync("/api/import/template");
+
+            if(response.IsSuccessStatusCode){
+                var fileBytes = await response.Content.ReadAsByteArrayAsync();
+                var fileName = "InventoryTemplate.xlsx";
+
+                await JS.InvokeVoidAsync("downloadFile", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileBytes);
+            }else{
+                errorMessage = "Couldn't download the template";
+            }
+        }catch (Exception ex){
+            errorMessage = $"Error while downloading template: {ex.Message} ";
+        }finally{
+            isDownloading = false;
+        }
+    }
+
+    private void HandleFileSelected(InputFileChangeEventArgs e){
+        selectedFile = e.File;
+        errorMessage = string.Empty;
+        importResult = null;
+    }
+
+    private async Task UploadFile(){
+        if (selectedFile == null) return;
+
+        try{
+            isUploading = true;
+            errorMessage = string.Empty;
+            importResult = null;
+
+            var maxFileSize = 10 * 1024 * 1024;
+            if (selectedFile.Size > maxFileSize){
+                errorMessage = "File is too big. Maximum size is 10MB.";
+                return;
+            }
+
+            using var content = new MultipartFormDataContent();
+            var fileContent = new StreamContent(selectedFile.OpenReadStream(maxFileSize));
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(selectedFile.ContentType);
+            content.Add(fileContent, "file", selectedFile.Name);
+
+            var response = await Http.PostAsync("/api/import/upload", content);
+
+            if (response.IsSuccessStatusCode){
+                importResult = await response.Content.ReadFromJsonAsync<ImportResult>();
+            }else{
+                var errorContent = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Server Error: {errorContent}";
+            }
+        }catch (Exception ex){
+            errorMessage = $"Error while importing: {ex.Message}";
+        }finally{
+            isUploading = false;
+        }
+    }
+
+    private string FormatFileSize(long bytes){
+        string[] sizes = {"B","KB","MB","GB"};
+        double len = bytes;
+        int order = 0;
+        while (len>= 1024 && order < sizes.Length - 1){
+            order ++;
+            len = len/1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    public class ImportResult{
+        public int SuccessCount {get;set;}
+        public List<string> Errors{get;set;} = new();
+        public bool IsSuccess => Errors.Count == 0;
+        public string? Message {get;set;}
+    }
 }

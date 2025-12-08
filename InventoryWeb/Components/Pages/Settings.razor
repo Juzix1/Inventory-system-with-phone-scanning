@@ -4,73 +4,74 @@
 @inject ISettingsService SettingsService
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
+<div class="container mt-4">
+    <h3>Application Settings</h3>
 
-<h3>Application Settings</h3>
+    @if (settings == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else
+    {
+        <EditForm Model="settingsModel" OnValidSubmit="SaveSettings">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
 
-@if (settings == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <EditForm Model="settingsModel" OnValidSubmit="SaveSettings">
-        <DataAnnotationsValidator />
-        <ValidationSummary />
-
-        <div class="mb-3">
-            <label class="form-label">File Storage Path</label>
-            <InputText class="form-control" @bind-Value="settingsModel.FileStoragePath" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Max File Size (MB)</label>
-            <InputNumber class="form-control" @bind-Value="settingsModel.MaxFileSizeMB" />
-        </div>
-
-        <div class="mb-3">
-            <div class="form-check">
-                <InputCheckbox class="form-check-input" @bind-Value="settingsModel.EnableNotifications" />
-                <label class="form-check-label">Enable Notifications</label>
+            <div class="mb-3">
+                <label class="form-label">File Storage Path</label>
+                <InputText class="form-control" @bind-Value="settingsModel.FileStoragePath" />
             </div>
-        </div>
 
-        <div class="mb-3">
-            <label class="form-label">Company Name</label>
-            <InputText class="form-control" @bind-Value="settingsModel.CompanyName" />
-        </div>
+            <div class="mb-3">
+                <label class="form-label">Max File Size (MB)</label>
+                <InputNumber class="form-control" @bind-Value="settingsModel.MaxFileSizeMB" />
+            </div>
 
-        <button type="submit" class="btn btn-primary">Save Settings</button>
-        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
-        
-        @if (showMessage)
-        {
-            <div class="alert alert-success mt-3">Settings saved successfully!</div>
-        }
-    </EditForm>
+            <div class="mb-3">
+                <div class="form-check">
+                    <InputCheckbox class="form-check-input" @bind-Value="settingsModel.EnableNotifications" />
+                    <label class="form-check-label">Enable Notifications</label>
+                </div>
+            </div>
 
-    <hr class="my-4" />
-    
-    <h4>All Settings (Advanced)</h4>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Key</th>
-                <th>Value</th>
-                <th>Description</th>
-                <th>Last Modified</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var setting in settings)
+            <div class="mb-3">
+                <label class="form-label">Company Name</label>
+                <InputText class="form-control" @bind-Value="settingsModel.CompanyName" />
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+            <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+            
+            @if (showMessage)
             {
-                <tr>
-                    <td>@setting.Key</td>
-                    <td>@setting.Value</td>
-                </tr>
+                <div class="alert alert-success mt-3">Settings saved successfully!</div>
             }
-        </tbody>
-    </table>
-}
+        </EditForm>
+
+        <hr class="my-4" />
+        
+        <h4>All Settings (Advanced)</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th>Description</th>
+                    <th>Last Modified</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var setting in settings)
+                {
+                    <tr>
+                        <td>@setting.Key</td>
+                        <td>@setting.Value</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
 
 @code {
     private List<Setting>? settings;

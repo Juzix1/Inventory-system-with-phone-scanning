@@ -1,11 +1,13 @@
 using InventoryLibrary.Data;
 using InventoryLibrary.Model.Location;
 using InventoryLibrary.Services;
+using InventoryLibrary.Services.data;
 using InventoryLibrary.Services.Interfaces;
 using InventoryLibrary.Services.Location;
 using InventoryWeb.Components;
 using InventoryWeb.Models;
 using InventoryWeb.Services;
+using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 
@@ -25,6 +27,24 @@ builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IAccountsService, AccountsService>();
 
 builder.Services.AddScoped<ISettingsService, SettingsService>();
+builder.Services.AddScoped<ImportService>();
+
+builder.Services.AddScoped(sp =>
+{
+    var navigationManager = sp.GetRequiredService<NavigationManager>();
+    var baseUri = navigationManager.BaseUri;
+    
+    // Zamień 0.0.0.0 na localhost
+    if (baseUri.Contains("0.0.0.0"))
+    {
+        baseUri = baseUri.Replace("0.0.0.0", "localhost");
+    }
+    
+    return new HttpClient
+    {
+        BaseAddress = new Uri(baseUri)
+    };
+});
 
 builder.Services.AddDbContextFactory<MyDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
@@ -82,7 +102,6 @@ app.UseRouting();
 app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
 app.UseEndpoints(endpoints =>
 {
     _ = endpoints.MapControllers();
