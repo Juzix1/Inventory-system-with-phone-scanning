@@ -15,15 +15,14 @@ namespace InventoryLibrary.Services
             _context = context;
         }
 
-        public async Task<Account> AuthenticateAsync(string email, string password)
+        public async Task<Account?> AuthenticateAsync(int index, string password)
         {
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
+            if (index == 0 || string.IsNullOrEmpty(password))
             {
                 throw new ArgumentException("Email and password cannot be null or empty.");
             }
 
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == email && a.PasswordHash == password);
-
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == index && a.PasswordHash == password);
 
             return account;
         }

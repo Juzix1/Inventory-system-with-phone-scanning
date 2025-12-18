@@ -1,6 +1,8 @@
 ﻿@page "/categories"
 @using InventoryLibrary.Services.Interfaces
 @using InventoryWeb.Models
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
 
 @inject ITypeService categoryService;
 @inject IConditionService conditionService;

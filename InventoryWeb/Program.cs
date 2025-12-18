@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +19,21 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddBlazorBootstrap();
+
+//Authorization
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(option =>
+    {
+        option.Cookie.Name = "auth_token";
+        option.LoginPath = "/login";
+        option.LogoutPath = "/logout";
+        option.Cookie.MaxAge = TimeSpan.FromMinutes(30);
+        option.AccessDeniedPath = "/access-denied";
+
+        
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
 
 //Inventory
 builder.Services.AddScoped<IInventoryService,InventoryService>();
@@ -110,6 +127,10 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseRouting();
 app.UseAntiforgery();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 app.UseEndpoints(endpoints =>
@@ -117,5 +138,6 @@ app.UseEndpoints(endpoints =>
     _ = endpoints.MapControllers();
     _ = endpoints.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 });
+
 
 app.Run();

@@ -2,6 +2,9 @@
 @using InventoryLibrary.Model.Accounts
 @using InventoryLibrary.Services.Interfaces
 @rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+
 @inject IAccountsService AccountsService
 @inject NavigationManager NavigationManager
 <div class="itemForm">

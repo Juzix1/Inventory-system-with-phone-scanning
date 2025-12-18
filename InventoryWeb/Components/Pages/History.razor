@@ -1,4 +1,7 @@
 ﻿@page "/history"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+
 
 <h3>History</h3>
 

@@ -3,6 +3,9 @@
 @using InventoryLibrary.Services
 @using InventoryLibrary.Services.Interfaces
 @using Microsoft.IdentityModel.Tokens
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+
 @inject IInventoryService inventory;
 
 <PageTitle>Home</PageTitle>

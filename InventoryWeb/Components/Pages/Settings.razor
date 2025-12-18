@@ -1,6 +1,9 @@
 ﻿@page "/settings"
 @using InventoryLibrary.Services.Interfaces
 @using InventoryWeb.Models
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+
 @inject ISettingsService SettingsService
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer

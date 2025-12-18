@@ -1,0 +1,73 @@
+﻿@page "/login"
+@using InventoryLibrary.Model.Accounts
+@using InventoryLibrary.Services.Interfaces
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Authorization
+
+@inject IAccountsService accountService;
+@inject NavigationManager nav;
+
+<PageTitle>Inventory Management</PageTitle>
+
+<div class="row">
+    <div class="col-lg-4 offset-lg-4 pt-4 pb-4 border">
+        <EditForm Model="@Model" OnValidSubmit="Authenticate" FormName="LoginForm">
+            <DataAnnotationsValidator />
+            <div class="mb-3 text-center flex-column">
+                <h3>Login</h3>
+            </div>
+            <div class="mb-3">
+                <label>Album Index</label>
+                <InputNumber @bind-Value="Model.Id" class="form-control" placeholder="Index number" />
+                <ValidationMessage For="() => Model.Id"/>
+            </div>
+            <div class="mb-3">
+                <label>Password</label>
+                <InputText @bind-Value="Model.Password" placeholder="Password" type="password" class="form-control"/>
+                <ValidationMessage For="() => Model.Password" />
+            </div>
+            <div class="mb-3 text-center">
+                <span class="text-danger">@errorMessage</span>
+            </div>
+            <div class="mb-3 d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Login</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask {get;set;}
+
+    [CascadingParameter]
+    public HttpContext? HttpContext{get;set;}
+
+    [SupplyParameterFromForm]
+    public LoginViewModel Model {get;set;} = new();
+
+    private string? errorMessage;
+
+    private async Task Authenticate(){
+        var account = await accountService.AuthenticateAsync(Model.Id,Model.Password);
+        if(account is null){
+            errorMessage = "Invalid Index or Password";
+            return;
+        }
+
+        var claims = new List<Claim>{
+            new Claim(ClaimTypes.Name, account.Name),
+            new Claim(ClaimTypes.Role, account.Role),
+        };
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+        await HttpContext.SignInAsync(principal);
+        nav.NavigateTo("/");
+    }
+
+}

@@ -2,6 +2,7 @@ using InventoryLibrary.Data;
 using InventoryLibrary.Model.Inventory;
 using InventoryLibrary.Services.data;
 using InventoryLibrary.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ namespace InventoryWeb.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class ImportController : ControllerBase
     {
         

@@ -9,7 +9,7 @@ namespace InventoryLibrary.Services.Interfaces
         Task<Account> CreateAccountAsync(Account account);
         Task<Account> UpdateAccountAsync(Account account);
         Task DeleteAccountAsync(int id);
-        Task<Account> AuthenticateAsync(string email, string password);
+        Task<Account> AuthenticateAsync(int index, string password);
         Task<bool> CanAccessScanner(int accountId);
     }
 }

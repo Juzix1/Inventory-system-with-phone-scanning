@@ -1,5 +1,8 @@
 ﻿@page "/Error"
 @using System.Diagnostics
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize(Roles = "Admin")]
+
 
 <PageTitle>Error</PageTitle>
 
