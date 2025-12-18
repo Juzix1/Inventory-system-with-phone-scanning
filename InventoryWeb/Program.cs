@@ -1,12 +1,11 @@
 using InventoryLibrary.Data;
-using InventoryLibrary.Model.Location;
 using InventoryLibrary.Services;
 using InventoryLibrary.Services.data;
 using InventoryLibrary.Services.Interfaces;
 using InventoryLibrary.Services.Location;
 using InventoryWeb.Components;
-using InventoryWeb.Models;
 using InventoryWeb.Services;
+using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -19,15 +18,20 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddBlazorBootstrap();
 
-
+//Inventory
 builder.Services.AddScoped<IInventoryService,InventoryService>();
 builder.Services.AddScoped<ITypeService,TypeService>();
 builder.Services.AddScoped<IConditionService,ConditionService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
-builder.Services.AddScoped<IAccountsService, AccountsService>();
+builder.Services.AddScoped<IStocktakeService, StocktakeService>();
+builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IFileService, FileService>();
 
+//Account
+builder.Services.AddScoped<IAccountsService, AccountsService>();
+//Settings
 builder.Services.AddScoped<ISettingsService, SettingsService>();
-builder.Services.AddScoped<ImportService>();
+
 
 builder.Services.AddScoped(sp =>
 {
@@ -52,6 +56,12 @@ builder.Services.AddDbContextFactory<MyDbContext>(options =>
 
 
 builder.Services.AddControllers();
+
+// Enable detailed Blazor circuit exceptions in development to aid debugging
+builder.Services.Configure<CircuitOptions>(options =>
+{
+    options.DetailedErrors = true;
+});
 
 var app = builder.Build();
 

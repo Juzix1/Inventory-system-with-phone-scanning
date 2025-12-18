@@ -7,66 +7,96 @@
 @inject NavigationManager NavigationManager
 
 <PageTitle>Manage Users</PageTitle>
-<div class="itemForm">
-    <h3>
-        <Icon Name="IconName.PersonBadgeFill" Size="IconSize.x3"/>
-        Users  
-    </h3>
-    @if(users == null || users.Count == 0){
-        <p><em>No Users found.</em></p>
-    }else{
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach(var user in users){
+@if (isLoading)
+{
+    <h3>Loading...</h3>
+}
+else
+{
+    <div class="itemForm">
+        <h3>
+            <Icon Name="IconName.PersonBadgeFill" Size="IconSize.x3" />
+            Users
+        </h3>
+        @if (users == null || users.Count == 0)
+        {
+            <p><em>No Users found.</em></p>
+        }
+        else
+        {
+            <table class="table table-striped">
+                <thead>
                     <tr>
-                        <td>@user.Name</td>
-                        <td>@user.Email</td>
-                        <td>@user.Role</td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-primary" @onclick='() => NavigationManager.NavigateTo($"/edit-user/{user.Id}")'>Edit</button>
-                            <button disabled=@(user.Id==1) type="button" class="btn btn-sm btn-danger" @onclick='() => {userIdToDelete = user.Id; showEditForm = true;}'>Delete</button>
-                        </td>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var user in users)
+                    {
+                        <tr>
+                            <td>@user.Name</td>
+                            <td>@user.Email</td>
+                            <td>@user.Role</td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-primary"
+                                    @onclick='() => NavigationManager.NavigateTo($"/edit-user/{user.Id}")'>Edit</button>
+                                <button disabled=@(user.Id == 1) type="button" class="btn btn-sm btn-danger"
+                                    @onclick='() => { userIdToDelete = user.Id; showEditForm = true; }'>Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+
+        <button type="button" class="btn btn-primary mb-3" @onclick='() => NavigationManager.NavigateTo("/edit-user")'>Add
+            New User</button>
+
+    </div>
+    @if (showEditForm)
+    {
+
+        <ConfirmationBox OnClose="() => { showEditForm = false; }" OnAccept="DeleteUser"
+            Title="Are you sure you want to delete this user?" AcceptButtonText="Yes, Delete" CancelButtonText="Cancel" />
     }
-
-
-    <button type="button" class="btn btn-primary mb-3" @onclick='() => NavigationManager.NavigateTo("/edit-user")'>Add New User</button>
-
-</div>
-@if(showEditForm){
-
-    <ConfirmationBox 
-        OnClose="() => {showEditForm = false;}" 
-        OnAccept="DeleteUser" 
-        Title="Are you sure you want to delete this user?" 
-        AcceptButtonText="Yes, Delete"
-        CancelButtonText="Cancel"
-        />
 }
 
 
 @code {
+    private bool isLoading = true;
+    private bool hasError = true;
     private List<Account> users = new List<Account>();
     private bool showEditForm = false;
     private int userIdToDelete;
 
     protected override async Task OnInitializedAsync()
     {
-        users = (await AccountsService.GetAllAccountsAsync()).ToList();
+        _ = LoadDataAsync();
     }
 
-    private void DeleteUser(){
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            users = (await AccountsService.GetAllAccountsAsync()).ToList();
+        }
+        catch (Exception e)
+        {
+            hasError = true;
+            Console.WriteLine($"Users management Error: {e.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void DeleteUser()
+    {
         AccountsService.DeleteAccountAsync(userIdToDelete);
         users = users.Where(u => u.Id != userIdToDelete).ToList();
     }

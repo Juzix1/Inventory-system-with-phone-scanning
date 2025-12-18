@@ -1,6 +1,7 @@
 ﻿@using InventoryLibrary.Model.Inventory
 @using InventoryLibrary.Services
 @using InventoryLibrary.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore.Metadata.Internal
 @using Microsoft.IdentityModel.Tokens
 
@@ -8,58 +9,66 @@
 @inject IInventoryService inventoryService
 @inject IConditionService conditionService;
 @inject NavigationManager navigationManager
+@inject IImageService imageService
+@inject IJSRuntime JS
 
 <EditForm Model="@Model" OnValidSubmit="Submit" FormName="BaseEditForm">
-    <DataAnnotationsValidator/>
-    <ValidationSummary/>
+    <DataAnnotationsValidator />
+    <ValidationSummary />
     <div>
         <label>Item Name</label>
-        <InputText @bind-Value="Model.itemName" class="form-control"/>
+        <InputText @bind-Value="Model.itemName" class="form-control" />
     </div>
     <div>
         <label>Description</label>
-        <InputTextArea @bind-Value="Model.itemDescription" class="form-control"/>
+        <InputTextArea @bind-Value="Model.itemDescription" class="form-control" />
     </div>
     <div>
         <label>Model Name</label>
-        <InputText @bind-Value="Model.ModelName" class="form-control"/>
+        <InputText @bind-Value="Model.ModelName" class="form-control" />
     </div>
     <div>
         <label>Cpu</label>
-        <InputText @bind-Value="Model.CPU" class="form-control"/>
+        <InputText @bind-Value="Model.CPU" class="form-control" />
     </div>
     <div>
         <label>Ram</label>
-        <InputText @bind-Value="Model.RAM" class="form-control"/>
+        <InputText @bind-Value="Model.RAM" class="form-control" />
     </div>
     <div>
         <label>Storage</label>
-        <InputText @bind-Value="Model.Storage" class="form-control"/>
+        <InputText @bind-Value="Model.Storage" class="form-control" />
     </div>
     <div>
         <label>Graphics Card</label>
-        <InputText @bind-Value="Model.Graphics" class="form-control"/>
+        <InputText @bind-Value="Model.Graphics" class="form-control" />
     </div>
     <div>
         <label>Item's Condition</label>
         <InputSelect @bind-Value="Model.ItemConditionId" class="form-control">
             <option value="">Select Condition</option>
-            @foreach(var cond in conditions){
+            @foreach (var cond in conditions)
+            {
                 <option value="@cond.Id">@cond.ConditionName</option>
             }
         </InputSelect>
     </div>
     <div>
         <label>Weight</label>
-        <InputNumber @bind-Value="Model.itemWeight" class="form-control"/>
+        <InputNumber @bind-Value="Model.itemWeight" class="form-control" />
     </div>
     <div>
         <label>Price</label>
-        <InputNumber @bind-Value="Model.itemPrice" class="form-control"/>
+        <InputNumber @bind-Value="Model.itemPrice" class="form-control" />
     </div>
     <div>
         <label>End of Warranty</label>
-        <InputDate @bind-Value="Model.warrantyEnd" class="form-control"/>
+        <InputDate @bind-Value="Model.warrantyEnd" class="form-control" />
+    </div>
+    <div class="form-group image-upload">
+        <label>Item Image (optional):</label>
+        <InputFile id="@fileInputId" OnChange="HandleImageSend" accept="image/*" class="form-control" />
+        
     </div>
     <div class="itemForm_buttons">
         <div class="mt-3">
@@ -74,39 +83,105 @@
 
 @code {
     private bool IsUpdating = false;
+    private string imagePreview = string.Empty;
+    private string errorMessage = string.Empty;
+    private bool isSubmitting;
+    private string fileInputId = "";
     [Parameter]
-    public int itemTypeId {get;set;}
+    public int itemTypeId { get; set; }
     [Parameter]
-    public EventCallback<Task> OnCancel {get;set;}
+    public EventCallback<Task> OnCancel { get; set; }
     [Parameter]
-    public AGD Model{get;set;} = new AGD();
+    public AGD Model { get; set; } = new AGD();
+
+    private string oldImagePath = "";
 
     List<ItemCondition> conditions = new();
-    protected override async Task OnInitializedAsync(){
-        if(Model == null){
+    protected override async Task OnInitializedAsync()
+    {
+        if (Model == null)
+        {
             throw new ArgumentNullException(nameof(Model), "Model cannot be null. Please provide a valid InventoryItem instance.");
         }
         conditions = (await conditionService.GetAllItemConditions()).ToList();
+        oldImagePath = Model.imagePath;
 
-        if(Model.itemName.IsNullOrEmpty()){
+        if (Model.itemName.IsNullOrEmpty())
+        {
             IsUpdating = false;
             Logger.LogInformation("AGDEditForm initialized for editing item: {ItemName}", Model.itemName);
             Model.ItemTypeId = itemTypeId;
             Model.warrantyEnd = DateTime.Now;
-        }else{
+        }
+        else
+        {
             IsUpdating = true;
+        }
+        fileInputId = "file_" + Guid.NewGuid().ToString("N");
+    }
+    private async Task Submit()
+    {
+        isSubmitting = true;
+        errorMessage = string.Empty;
+        try
+        {
+            InventoryItem item;
+
+            if (IsUpdating)
+            {
+                item = await inventoryService.UpdateItemAsync(Model);
+            }
+            else
+            {
+                item = await inventoryService.CreateItemAsync(Model);
+            }
+
+
+            navigationManager.NavigateTo("/manage");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error {(IsUpdating ? "updating" : "creating")} item: {ex}\n";
+        }
+        finally
+        {
+            isSubmitting = false;
         }
     }
 
-    private async Task Submit(){
-        if(IsUpdating){
-            Logger.LogInformation("Submitting update for AGD item: {ItemName}", Model.itemName);
-            await inventoryService.UpdateItemAsync(Model);
-        }else{
-            await inventoryService.CreateItemAsync(Model);
+    private async Task HandleImageSend(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (file == null)
+            return;
+
+        const long maxFileSize = 5 * 1024 * 1024;
+        if (file.Size > maxFileSize)
+        {
+
+            return;
         }
-        
-        navigationManager.NavigateTo("/manage");
+        try
+        {
+            
+            using var stream = file.OpenReadStream(maxFileSize);
+            var result = await imageService.SendImageAsync(stream, file.Name, Model.Id);
+
+            if (result.Success)
+            {
+                if (!oldImagePath.IsNullOrEmpty())
+                {
+                    await imageService.DeleteImageAsync(oldImagePath);
+                }
+
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Upload error: {ex.Message}");
+        }
+
     }
 
 }

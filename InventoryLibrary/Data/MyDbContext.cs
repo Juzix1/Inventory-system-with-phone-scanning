@@ -1,6 +1,7 @@
 ﻿using InventoryLibrary.Model.Accounts;
 using InventoryLibrary.Model.Inventory;
 using InventoryLibrary.Model.Location;
+using InventoryLibrary.Model.StockTake;
 using InventoryWeb.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -21,6 +22,7 @@ namespace InventoryLibrary.Data {
         public DbSet<ItemCondition> itemConditions{ get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<Room> Rooms { get; set; }
+        public DbSet<Stocktake> Stocktakes {get;set;}
 
         public DbSet<Setting> Settings {get;set;}
 
@@ -40,7 +42,12 @@ namespace InventoryLibrary.Data {
                 .WithMany()
                 .HasForeignKey(i => i.RoomId)
                 .OnDelete(DeleteBehavior.SetNull);
-
+            modelBuilder.Entity<Stocktake>()
+                .ToTable("Stocktakes")
+                .HasMany(a => a.ItemsToCheck)
+                .WithOne(i => i.Stocktake)
+                .HasForeignKey(i => i.StocktakeId)
+                .OnDelete(DeleteBehavior.SetNull);
             modelBuilder.Entity<AGD>().ToTable("AGD");
             modelBuilder.Entity<Furniture>().ToTable("Furniture");
 

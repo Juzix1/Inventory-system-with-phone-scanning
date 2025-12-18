@@ -34,10 +34,10 @@
             @context.addedDate
         </GridColumn>
         <GridColumn TItem="InventoryItem" HeaderText="Warranty's End" PropertyName="WarrantyEnd" SortKeySelector="i=>i.warrantyEnd">
-            <p class='@GetTextClass(context)'>@context.warrantyEnd</p>
+            @context.warrantyEnd
         </GridColumn>
         <GridColumn TItem="InventoryItem" HeaderText="Last Inventory" PropertyName="LastInventory" SortKeySelector="i=>i.lastInventoryDate">
-            @context.lastInventoryDate
+            <p class='@GetTextClass(context)'>@context.lastInventoryDate</p>
         </GridColumn>
         <GridColumn TItem="InventoryItem" HeaderText="Actions">
             <button class="btn btn-primary btn-sm" @onclick='() => navigationManager.NavigateTo($"/create/{context.Id}")'>
@@ -61,8 +61,8 @@
     public EventCallback onBack {get;set;}
 
     private string GetRowClass(InventoryItem item){
-        var dayleft = (item.warrantyEnd.Date - DateTime.Now.Date).TotalDays;
-        if(dayleft < 0){
+        var dayleft = (item.lastInventoryDate.Date.AddYears(2) - item.lastInventoryDate.Date).TotalDays;
+        if(dayleft < 30){
             return "table-danger";
         }else if(dayleft>30 && dayleft< 365){
             return "table-warning";
@@ -72,10 +72,10 @@
     }
 
     private string GetTextClass(InventoryItem item){
-        var dayleft = (item.warrantyEnd.Date - DateTime.Now.Date).TotalDays;
-        if(dayleft < 0){
+        var dayleft = (item.lastInventoryDate.Date.AddYears(2) - item.lastInventoryDate.Date).TotalDays;
+        if(dayleft < 30){
             return "text-danger fw-bold";
-        }else if(dayleft>30 && dayleft< 365){
+        }else if(dayleft>30 && dayleft< 180){
             return "text-warning fw-bold";
         }else{
             return "";

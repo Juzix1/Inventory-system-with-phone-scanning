@@ -3,6 +3,7 @@ using InventoryLibrary.Model.Inventory;
 using InventoryLibrary.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging;
 
 namespace InventoryLibrary.Services
 {
@@ -10,10 +11,12 @@ namespace InventoryLibrary.Services
     {
 
         private readonly MyDbContext _context;
+        private readonly ILogger<InventoryService> _logger;
 
-        public InventoryService(MyDbContext context)
+        public InventoryService(MyDbContext context, ILogger<InventoryService> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<InventoryItem>> GetAllItemsAsync()
@@ -30,33 +33,48 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                // Log the exception (you can use any logging framework)
-                Console.WriteLine($"An error occurred while retrieving items: {ex.Message}");
-                return null;
+                _logger?.LogError(ex, "Error in GetAllItemsAsync");
+                throw;
             }
         }
 
         public async Task<InventoryItem> GetItemByIdAsync(int id)
         {
-            var item = await _context.InventoryItems.FindAsync(id);
-
-            return item;
+            try
+            {
+                var item = await _context.InventoryItems.FindAsync(id);
+                return item;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error in GetItemByIdAsync for id {Id}", id);
+                throw;
+            }
         }
 
         public async Task<InventoryItem> CreateItemAsync(InventoryItem item)
         {
-            if (item == null)
+            try
             {
-                throw new ArgumentNullException(nameof(item));
+                if (item == null)
+                {
+                    throw new ArgumentNullException(nameof(item));
+                }
+                item.addedDate = DateTime.UtcNow;
+                item.lastInventoryDate = DateTime.UtcNow;
+                var barcodeGen = new BarcodeGenerator();
+                var barcodeNumber = await barcodeGen.GenerateBarcodeNumber(_context);
+                item.Barcode = barcodeNumber;
+                _context.InventoryItems.Add(item);
+                
+                await _context.SaveChangesAsync();
+                return item;
             }
-            item.addedDate = DateTime.UtcNow;
-            item.lastInventoryDate = DateTime.UtcNow;
-            var barcodeGen = new BarcodeGenerator();
-            var barcodeNumber = await barcodeGen.GenerateBarcodeNumber(_context);
-            item.Barcode = barcodeNumber;
-            _context.InventoryItems.Add(item);
-            await _context.SaveChangesAsync();
-            return item;
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error creating item: {@Item}", item);
+                throw;
+            }
         }
 
         public async Task<IEnumerable<InventoryItem>> GetItemsByName(string name)
@@ -93,17 +111,62 @@ namespace InventoryLibrary.Services
 
         public async Task<InventoryItem> UpdateItemAsync(InventoryItem item)
         {
-            var existingItem = await _context.InventoryItems.FindAsync(item.Id);
-            if (existingItem == null)
+            try
             {
-                throw new KeyNotFoundException($"Item with ID {item.Id} not found.");
-            }
+                var existingItem = await _context.InventoryItems.FindAsync(item.Id);
+                if (existingItem == null)
+                {
+                    throw new KeyNotFoundException($"Item with ID {item.Id} not found.");
+                }
 
-            // Update properties
-            existingItem = item;
-            _context.InventoryItems.Update(existingItem);
-            await _context.SaveChangesAsync();
-            return existingItem;
+                // Update properties safely on the tracked entity
+                _context.Entry(existingItem).CurrentValues.SetValues(item);
+                await _context.SaveChangesAsync();
+                return existingItem;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error updating item: {@Item}", item);
+                throw;
+            }
         }
+
+        public async Task UpdateItemInventory(InventoryItem item)
+        {
+            try
+            {
+                var existingItem = await _context.InventoryItems.FindAsync(item.Id) ?? throw new KeyNotFoundException($"Item with ID {item.Id} not found.");
+                existingItem.lastInventoryDate = DateTime.Now;
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error in UpdateItemInventory for item {ItemId}", item?.Id);
+                throw;
+            }
+        }
+
+        public async Task DeleteImageAsync(int inventoryItemId)
+    {
+        try
+        {
+            var inventoryItem = await _context.InventoryItems.FindAsync(inventoryItemId);
+            if (inventoryItem == null)
+                throw new InvalidOperationException("Inventory item not found");
+
+            if (!string.IsNullOrEmpty(inventoryItem.imagePath))
+            {
+                inventoryItem.imagePath = null;
+                await _context.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error deleting image reference for item {ItemId}", inventoryItemId);
+            throw;
+        }
+    }
+
+
     }
 }

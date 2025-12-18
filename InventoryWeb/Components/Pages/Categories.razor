@@ -7,13 +7,26 @@
 @inject IDepartmentService departmentService;
 <PageTitle>Categories</PageTitle>
 
-<CategoryForm Type="CategoryFormMode.Types" Items="@typesNames"></CategoryForm>
-<CategoryForm Type="CategoryFormMode.Conditions" Items="@conditions"></CategoryForm>
-<CategoryForm Type="CategoryFormMode.Departments" Items="@departments"></CategoryForm>
-@* <CategoryForm Type="CategoryFormMode.Locations" Items="@locations"></CategoryForm> *@
+@if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+else
+{
+    <CategoryForm Type="CategoryFormMode.Types" Items="@typesNames"></CategoryForm>
+    <CategoryForm Type="CategoryFormMode.Conditions" Items="@conditions"></CategoryForm>
+    <CategoryForm Type="CategoryFormMode.Departments" Items="@departments"></CategoryForm>
+    @* <CategoryForm Type="CategoryFormMode.Locations" Items="@locations"></CategoryForm> *@
+}
 
 
 @code {
+    private bool isLoading = true;
+    private bool hasError = false;
     private Dictionary<int, string> typesNames = new Dictionary<int, string>();
     private Dictionary<int, string> conditions = new Dictionary<int, string>();
     private Dictionary<int, string> departments = new Dictionary<int, string>();
@@ -21,16 +34,33 @@
 
     override protected async Task OnInitializedAsync()
     {
-        typesNames = (await categoryService.GetAllTypesAsync())
-            .ToDictionary(x => x.Id, x => x.TypeName);
-        
-        conditions = (await conditionService.GetAllItemConditions())
-            .ToDictionary(x => x.Id,x => x.ConditionName);
-        
-        departments = (await departmentService.GetAllDepartmentsAsync())
-            .ToDictionary(x => x.Id,x => x.DepartmentName);
+        _ = LoadDataAsync();
+    }
 
-        locations = (await categoryService.GetAllTypesAsync())
-            .ToDictionary(x => x.Id,x => x.TypeName);
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            typesNames = (await categoryService.GetAllTypesAsync())
+            .ToDictionary(x => x.Id, x => x.TypeName);
+
+            conditions = (await conditionService.GetAllItemConditions())
+            .ToDictionary(x => x.Id, x => x.ConditionName);
+
+            departments = (await departmentService.GetAllDepartmentsAsync())
+            .ToDictionary(x => x.Id, x => x.DepartmentName);
+
+            locations = (await categoryService.GetAllTypesAsync())
+            .ToDictionary(x => x.Id, x => x.TypeName);
+        }
+        catch (Exception e)
+        {
+            hasError = true;
+            Console.WriteLine($"Categories Error: {e.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }

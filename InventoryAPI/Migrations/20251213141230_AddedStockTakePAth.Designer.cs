@@ -4,6 +4,7 @@ using InventoryLibrary.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryAPI.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251213141230_AddedStockTakePAth")]
+    partial class AddedStockTakePAth
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,12 +55,7 @@ namespace InventoryAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("StocktakeId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("StocktakeId");
 
                     b.ToTable("Accounts", (string)null);
 
@@ -280,10 +278,6 @@ namespace InventoryAPI.Migrations
                     b.Property<int>("AllItems")
                         .HasColumnType("int");
 
-                    b.PrimitiveCollection<string>("CheckedItemIdList")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -396,13 +390,6 @@ namespace InventoryAPI.Migrations
                     b.ToTable("Furniture", (string)null);
                 });
 
-            modelBuilder.Entity("InventoryLibrary.Model.Accounts.Account", b =>
-                {
-                    b.HasOne("InventoryLibrary.Model.StockTake.Stocktake", null)
-                        .WithMany("AuthorizedAccounts")
-                        .HasForeignKey("StocktakeId");
-                });
-
             modelBuilder.Entity("InventoryLibrary.Model.Inventory.InventoryItem", b =>
                 {
                     b.HasOne("InventoryLibrary.Model.Inventory.ItemCondition", "ItemCondition")
@@ -428,7 +415,7 @@ namespace InventoryAPI.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("InventoryLibrary.Model.StockTake.Stocktake", "Stocktake")
-                        .WithMany("ItemsToCheck")
+                        .WithMany("CheckedItems")
                         .HasForeignKey("StocktakeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
@@ -494,9 +481,7 @@ namespace InventoryAPI.Migrations
 
             modelBuilder.Entity("InventoryLibrary.Model.StockTake.Stocktake", b =>
                 {
-                    b.Navigation("AuthorizedAccounts");
-
-                    b.Navigation("ItemsToCheck");
+                    b.Navigation("CheckedItems");
                 });
 #pragma warning restore 612, 618
         }

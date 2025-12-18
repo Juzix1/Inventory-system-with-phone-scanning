@@ -4,6 +4,7 @@ using InventoryLibrary.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryAPI.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251213135950_AddedStockTakeID")]
+    partial class AddedStockTakeID
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -52,12 +55,7 @@ namespace InventoryAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("StocktakeId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("StocktakeId");
 
                     b.ToTable("Accounts", (string)null);
 
@@ -101,6 +99,9 @@ namespace InventoryAPI.Migrations
                     b.Property<int?>("StocktakeId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("StocktakeId1")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("addedDate")
                         .HasColumnType("datetime2");
 
@@ -134,9 +135,9 @@ namespace InventoryAPI.Migrations
 
                     b.HasIndex("PersonInChargeId");
 
-                    b.HasIndex("RoomId");
-
                     b.HasIndex("StocktakeId");
+
+                    b.HasIndex("StocktakeId1");
 
                     b.ToTable("InventoryItems", (string)null);
 
@@ -280,10 +281,6 @@ namespace InventoryAPI.Migrations
                     b.Property<int>("AllItems")
                         .HasColumnType("int");
 
-                    b.PrimitiveCollection<string>("CheckedItemIdList")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -304,7 +301,7 @@ namespace InventoryAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Stocktakes", (string)null);
+                    b.ToTable("Stocktakes");
                 });
 
             modelBuilder.Entity("InventoryWeb.Models.Setting", b =>
@@ -396,13 +393,6 @@ namespace InventoryAPI.Migrations
                     b.ToTable("Furniture", (string)null);
                 });
 
-            modelBuilder.Entity("InventoryLibrary.Model.Accounts.Account", b =>
-                {
-                    b.HasOne("InventoryLibrary.Model.StockTake.Stocktake", null)
-                        .WithMany("AuthorizedAccounts")
-                        .HasForeignKey("StocktakeId");
-                });
-
             modelBuilder.Entity("InventoryLibrary.Model.Inventory.InventoryItem", b =>
                 {
                     b.HasOne("InventoryLibrary.Model.Inventory.ItemCondition", "ItemCondition")
@@ -424,21 +414,18 @@ namespace InventoryAPI.Migrations
 
                     b.HasOne("InventoryLibrary.Model.Location.Room", "Location")
                         .WithMany()
-                        .HasForeignKey("RoomId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("InventoryLibrary.Model.StockTake.Stocktake", "Stocktake")
-                        .WithMany("ItemsToCheck")
                         .HasForeignKey("StocktakeId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("InventoryLibrary.Model.StockTake.Stocktake", null)
+                        .WithMany("CheckedItems")
+                        .HasForeignKey("StocktakeId1");
 
                     b.Navigation("ItemCondition");
 
                     b.Navigation("ItemType");
 
                     b.Navigation("Location");
-
-                    b.Navigation("Stocktake");
 
                     b.Navigation("personInCharge");
                 });
@@ -494,9 +481,7 @@ namespace InventoryAPI.Migrations
 
             modelBuilder.Entity("InventoryLibrary.Model.StockTake.Stocktake", b =>
                 {
-                    b.Navigation("AuthorizedAccounts");
-
-                    b.Navigation("ItemsToCheck");
+                    b.Navigation("CheckedItems");
                 });
 #pragma warning restore 612, 618
         }

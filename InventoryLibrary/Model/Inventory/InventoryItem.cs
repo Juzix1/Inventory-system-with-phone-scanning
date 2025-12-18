@@ -1,5 +1,6 @@
 ﻿using InventoryLibrary.Model.Accounts;
 using InventoryLibrary.Model.Location;
+using InventoryLibrary.Model.StockTake;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
@@ -30,5 +31,7 @@ namespace InventoryLibrary.Model.Inventory {
         public Account? personInCharge { get; set; }
         public int? RoomId { get; set; }
         public Room? Location { get; set; }
+        public int? StocktakeId {get;set;}
+        public Stocktake? Stocktake {get;set;}
     }
 }

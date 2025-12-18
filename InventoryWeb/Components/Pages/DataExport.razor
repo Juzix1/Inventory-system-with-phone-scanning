@@ -1,7 +1,61 @@
 ﻿@page "/data/export"
+@rendermode InteractiveServer
 
-<h3>DataExport</h3>
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>Export Data</PageTitle>
+<div class="container mt-4">
+    <h3>Excport data to Excel</h3>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Download</h5>
+            <button class="btn btn-primary" @onclick="DownloadFile" disabled="@isDownloading">
+                @if (isDownloading){
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                }
+                <i class="bi bi-download me-2"></i>
+                Download Excel file
+            </button>
+        </div>
+    </div>
+
+    @if (exportResult != null){
+
+    }
+</div>
 
 @code {
+    private bool isDownloading = false;
+    private string errorMessage = string.Empty;
+    private Result? exportResult;
 
+    private async Task DownloadFile(){
+        try{
+            isDownloading = true;
+            errorMessage = string.Empty;
+
+            var response = await Http.GetAsync("/api/import/download");
+            if(response.IsSuccessStatusCode){
+                var fileBytes = await response.Content.ReadAsByteArrayAsync();
+                var fileName = $"InventoryStatus.xlsx";
+
+                await JS.InvokeVoidAsync("downloadFile", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileBytes);
+            }else{
+                errorMessage = "Couldn't download the exported data";
+            }
+
+        }catch (Exception ex){
+            errorMessage = $"Error while downloading file: {ex.Message}";
+        }finally{
+            isDownloading = false;
+        }
+    }
+    public class Result{
+        public int SuccessCount {get;set;}
+        public List<string> Errors{get;set;} = new();
+        public bool IsSuccess => Errors.Count == 0;
+        public string? Message {get;set;}
+    }
 }

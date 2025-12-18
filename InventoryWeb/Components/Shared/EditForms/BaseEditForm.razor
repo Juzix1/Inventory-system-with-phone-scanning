@@ -1,87 +1,203 @@
 ﻿@using InventoryLibrary.Model.Inventory
 @using InventoryLibrary.Services
 @using InventoryLibrary.Services.Interfaces
-@using Microsoft.EntityFrameworkCore.Metadata.Internal
-
+@using InventoryLibrary.Services.data
+@using Microsoft.IdentityModel.Tokens
 @inject ILogger<BaseEditForm> Logger
 @inject IInventoryService inventoryService
 @inject IConditionService conditionService
 @inject NavigationManager navigationManager
+@inject IImageService imageService
+@inject IJSRuntime JS
 
-<EditForm Model="Model" OnValidSubmit="Submit" FormName="BaseEditForm">
-    <DataAnnotationsValidator/>
-    <ValidationSummary/>
+
+@using Microsoft.AspNetCore.Components.Forms
+<EditForm Model="Model" OnValidSubmit="Submit" OnInvalidSubmit="HandleInvalidSubmit" FormName="BaseEditForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
     <div>
         <label>Item Name</label>
-        <InputText @bind-Value="Model.itemName" class="form-control"/>
+        <InputText @bind-Value="Model.itemName" class="form-control" />
     </div>
-    <div class="mb-3">
-        <InputFile class="file-pond-input" OnChange="@SubmitImage" multiple="false" />
-    </div>
+
+
     <div>
         <label>Description</label>
-        <InputTextArea @bind-Value="Model.itemDescription" class="form-control"/>
+        <InputTextArea @bind-Value="Model.itemDescription" class="form-control" />
     </div>
+
     <div>
         <label>Item's Condition</label>
         <InputSelect @bind-Value="Model.ItemConditionId" class="form-control">
             <option value="">Select Condition</option>
-            @foreach(var cond in conditions){
+            @foreach (var cond in conditions)
+            {
                 <option value="@cond.Id">@cond.ConditionName</option>
             }
         </InputSelect>
     </div>
+
     <div>
         <label>Weight</label>
-        <InputNumber @bind-Value="Model.itemWeight" class="form-control"/>
-    </div>
-    <div>
-        <label>Price</label>
-        <InputNumber @bind-Value="Model.itemPrice" class="form-control"/>
-    </div>
-    <div>
-        <label>End of Warranty</label>
-        <InputDate @bind-Value="Model.warrantyEnd" class="form-control"/>
-    </div>
-    <div class="itemForm_buttons">
-        <div class="mt-3">
-            <button type="submit" class="btn btn-primary">Submit</button>
-        </div>
-        <div class="mt-3">
-            <button type="button" class="btn btn-secondary" @onclick="OnCancel.InvokeAsync">Cancel</button>
-        </div>
+        <InputNumber @bind-Value="Model.itemWeight" class="form-control" />
     </div>
 
+    <div>
+        <label>Price</label>
+        <InputNumber @bind-Value="Model.itemPrice" class="form-control" />
+    </div>
+
+    <div>
+        <label>End of Warranty</label>
+        <InputDate @bind-Value="Model.warrantyEnd" class="form-control" />
+    </div>
+    <div class="form-group image-upload">
+        <label>Item Image (optional):</label>
+        <InputFile id="@fileInputId" OnChange="HandleImageSend" accept="image/*" class="form-control" />
+        
+
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">@errorMessage</div>
+    }
+
+    <div class="itemForm_buttons">
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                @(isSubmitting ? "Saving..." : "Submit")
+            </button>
+        </div>
+        <div class="mt-3">
+            <button type="button" class="btn btn-secondary" @onclick="OnCancel.InvokeAsync" disabled="@isSubmitting">
+                Cancel
+            </button>
+        </div>
+    </div>
 </EditForm>
 
 @code {
+    private bool IsUpdating = false;
     [Parameter]
-    public int itemTypeId {get;set;}
+    public int itemTypeId { get; set; }
 
     [Parameter]
-    public EventCallback<Task> OnCancel {get;set;}
+    public EventCallback<Task> OnCancel { get; set; }
 
     [Parameter]
-    public EventCallback<InputFileChangeEventArgs> SubmitImage {get;set;}
-    [Parameter]
-    public InventoryItem Model {get;set;} = new InventoryItem();
+    public InventoryItem Model { get; set; } = new InventoryItem();
 
-    List<ItemCondition> conditions = new();
-    protected override async Task OnInitializedAsync(){
-        if(Model == null){
+    private List<ItemCondition> conditions = new();
+    private IBrowserFile? selectedFile;
+    private string errorMessage = string.Empty;
+    private bool isSubmitting;
+    private string fileInputId = "";
+    private string oldImagePath = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Model == null)
+        {
             throw new ArgumentNullException(nameof(Model), "Model cannot be null. Please provide a valid InventoryItem instance.");
         }
-        Model.ItemTypeId = itemTypeId;
-        Model.warrantyEnd = DateTime.Now;
+        
         conditions = (await conditionService.GetAllItemConditions()).ToList();
+        oldImagePath = Model.imagePath;
+
+        // Check if this is an update or create
+        if (!string.IsNullOrEmpty(Model.itemName) && Model.Id > 0)
+        {
+            IsUpdating = true;
+            
+            Logger.LogInformation("BaseEditForm initialized for editing item: {ItemName} (ID: {ItemId})", Model.itemName, Model.Id);
+        }
+        else
+        {
+            IsUpdating = false;
+            Logger.LogInformation("BaseEditForm initialized for creating new item");
+            Model.ItemTypeId = itemTypeId;
+            Model.addedDate = DateTime.Now;
+            Model.warrantyEnd = DateTime.Now.AddYears(1);
+            Model.lastInventoryDate = DateTime.Now;
+        }
+        fileInputId = "file_" + Guid.NewGuid().ToString("N");
     }
 
-    private async Task Submit(){
-        await inventoryService.CreateItemAsync(Model);
-        navigationManager.NavigateTo("/manage");
+    private async Task HandleImageSend(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (file == null)
+            return;
+
+        const long maxFileSize = 5 * 1024 * 1024;
+        if (file.Size > maxFileSize)
+        {
+
+            return;
+        }
+        try
+        {
+            
+            using var stream = file.OpenReadStream(maxFileSize);
+            var result = await imageService.SendImageAsync(stream, file.Name, Model.Id);
+
+            if (result.Success)
+            {
+                if (!oldImagePath.IsNullOrEmpty())
+                {
+                    await imageService.DeleteImageAsync(oldImagePath);
+                }
+
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Upload error: {ex.Message}");
+        }
+
+    }
+    private async Task Submit()
+    {
+        isSubmitting = true;
+        errorMessage = string.Empty;
+        Logger.LogInformation("Submit invoked. IsUpdating={IsUpdating}, ItemName={ItemName}", IsUpdating, Model?.itemName);
+
+        try
+        {
+            InventoryItem item;
+
+            if (IsUpdating)
+            {
+                item = await inventoryService.UpdateItemAsync(Model);
+            }
+            else
+            {
+                item = await inventoryService.CreateItemAsync(Model);
+            }
+
+
+
+            navigationManager.NavigateTo("/manage");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error {(IsUpdating ? "updating" : "creating")} item: {ex}\n";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
     }
 
-
-
+    private void HandleInvalidSubmit(EditContext editContext)
+    {
+        isSubmitting = false;
+        errorMessage = "Form validation failed. Please check required fields.";
+        Logger.LogWarning("Form invalid on submit. Validation messages count: {Count}",
+        editContext.GetValidationMessages().Count());
+    }
 
 }

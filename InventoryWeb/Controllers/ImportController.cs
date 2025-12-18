@@ -1,6 +1,10 @@
+using InventoryLibrary.Data;
+using InventoryLibrary.Model.Inventory;
 using InventoryLibrary.Services.data;
+using InventoryLibrary.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace InventoryWeb.Controllers
 {
@@ -9,11 +13,13 @@ namespace InventoryWeb.Controllers
     public class ImportController : ControllerBase
     {
         
-        private readonly ImportService _importService;
+        private readonly IFileService _importService;
+        private readonly MyDbContext _context;
 
-        public ImportController(ImportService importService)
+        public ImportController(IFileService importService, MyDbContext context)
         {
             _importService = importService;
+            _context = context;
         }
 
         [HttpPost("upload")]
@@ -49,6 +55,18 @@ namespace InventoryWeb.Controllers
                     errors = result.Errors
                 });
             }
+        }
+
+        [HttpGet("download")]
+        public async Task<IActionResult> DownloadInventoryItems()
+        {
+            List<InventoryItem> items = await _context.InventoryItems
+                .Include(i => i.ItemType)
+                .Include(i => i.ItemCondition)
+                .Include(i => i.Location)
+                .ToListAsync();
+            var fileBytes = await _importService.ExportInventoryItemsAsync(items);
+            return File(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "InventoryStatus.xlsx");
         }
 
         [HttpGet("template")]

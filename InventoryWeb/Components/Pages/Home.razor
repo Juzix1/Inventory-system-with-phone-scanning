@@ -7,32 +7,61 @@
 
 <PageTitle>Home</PageTitle>
 
-@if(isLoading){
-<p>Loading...</p>
-}else{
-    <div class="container-head">
-    <div class="container-head-content">
-        <SmallBoxStat Title="Total Items" value="@(items.Count().ToString())" Icon=IconName.Box2Fill/>
-        <SmallBoxStat Title="Broken Items" value="@(items.Where(i => i.ItemCondition.Id == 3).Count().ToString())" Icon=IconName.XCircleFill/>
-        <SmallBoxStat Title="Expired Items" value="@(items.Where(i => i.warrantyEnd < DateTime.Now).Count().ToString())" Icon=IconName.Clock/>
-        <SmallBoxStat Title="Financial Status" value="@(items.Sum(c=> c.itemPrice).ToString() + " PLN")" Icon=IconName.Amazon/>
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
     </div>
-</div>
+}
+else if(!hasError)
+{
+    <div class="container-head">
+        <div class="container-head-content">
+            <SmallBoxStat Title="Total Items" value="@(items.Count().ToString())" Icon=IconName.Box2Fill />
+            <SmallBoxStat Title="Broken Items" value="@(items.Where(i => i.ItemCondition.Id == 3).Count().ToString())"
+                Icon=IconName.XCircleFill />
+            <SmallBoxStat Title="Expired Items"
+                value="@(items.Where(i => i.lastInventoryDate < DateTime.Now).Count().ToString())" Icon=IconName.Clock />
+            <SmallBoxStat Title="Financial Status" value="@(items.Sum(c => c.itemPrice).ToString() + " PLN")"
+                Icon=IconName.Amazon />
+        </div>
+    </div>
+}else{
+    <h3>No connection with Database</h3>
 }
 
 
 
 @code {
-private bool isLoading = true;
-private IEnumerable<InventoryItem> items;
+    private bool isLoading = true;
+    private bool hasError = false;
+    private IEnumerable<InventoryItem> items;
 
-protected override async Task OnInitializedAsync(){
-    items = await inventory.GetAllItemsAsync();
-
-    if(!items.IsNullOrEmpty()){
-        isLoading = false;
+    protected override async Task OnInitializedAsync()
+    {
+        _ = LoadDataASync();
     }
-}
+
+    private async Task LoadDataASync()
+    {
+        try
+        {
+            items = await inventory.GetAllItemsAsync();
+            hasError = false;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"Error: {e.Message}");
+            hasError = true;
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
 
 }

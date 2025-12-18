@@ -1,29 +1,37 @@
 ﻿@page "/create/{EditID:int?}"
+@using InventoryLibrary.Model.Data
 @using InventoryLibrary.Model.Inventory
 @using InventoryLibrary.Services
 @using InventoryLibrary.Services.Interfaces
+@using InventoryLibrary.Services.data
 @using InventoryWeb.Components.Shared.EditForms
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
 @inject IInventoryService db
 @inject ITypeService typeService
-@inject IConfiguration config
+@inject HttpClient Http
+@inject ILogger<Create> Logger
 @rendermode InteractiveServer
-
 
 <div class="itemForm">
     @if(EditID.HasValue)
     {
         <h3>Edit Item</h3>
-        
-        @if(Item != null){
-
+            @if(Item != null)
+        {
             if (Item.ItemType.Id == 2)
             { 
-                <AGDEditForm OnCancel="Cancel" itemTypeId="Item.ItemType.Id" Model="@AgdItem" />
+                <AGDEditForm 
+                OnCancel="Cancel" 
+                itemTypeId="Item.ItemType.Id" 
+                Model="@AgdItem" />
             }
             else
             {
-                <BaseEditForm OnCancel="Cancel" SubmitImage="sendFileToServer" itemTypeId="Item.ItemType.Id" Model="@Item"/>
-                <p>@path</p>
+                <BaseEditForm 
+                OnCancel="Cancel" 
+                itemTypeId="Item.ItemType.Id"
+                Model="@Item"/>
             }
         }
         else
@@ -34,86 +42,75 @@
     else
     {
         <h3>Create new item</h3>
-
-@if (selectedTypeId != 0)
-{
-    if (selectedTypeId == 2)
-    {
-        <AGDEditForm OnCancel="Cancel" itemTypeId="selectedTypeId" />
+        @if (selectedTypeId != 0)
+        {
+            if (selectedTypeId == 2)
+            {
+                <AGDEditForm OnCancel="Cancel" itemTypeId="selectedTypeId" />
+            }
+            else
+            {
+                <BaseEditForm OnCancel="Cancel" itemTypeId="selectedTypeId" />
+            }
+        }
+        else
+        {
+            <form class="form-container" method="post">
+                <div class="mb-3">
+                    <label for="itemType" class="form-label">Item Type</label>
+                    <select id="itemType" class="form-select" @bind="selectedTypeId">
+                        <option value="0">Select a type</option>
+                        @foreach (var type in types)
+                        {
+                            <option value="@type.Id">@type.TypeName</option>
+                        }
+                    </select>
+                </div>
+            </form>
+        }
     }
-    else
+    
+    @if (!string.IsNullOrEmpty(uploadMessage))
     {
-        <BaseEditForm OnCancel="Cancel" SubmitImage="sendFileToServer" itemTypeId="selectedTypeId" />
-        <p>@path</p>
-    }
-}
-else
-
-{
-    <form class="form-container" method="post">
-        <div class="mb-3">
-            <label for="itemType" class="form-label">Item Type</label>
-            <select id="itemType" class="form-select" @bind="selectedTypeId">
-                <option value="0">Select a type</option>
-                @foreach (var type in types)
-                {
-                    <option value="@type.Id">@type.TypeName</option>
-                }
-            </select>
-        </div>
-    </form>
-}
-
+        <div class="alert alert-info mt-3">@uploadMessage</div>
     }
 </div>
 
 @code {
     [Parameter]
-    public int? EditID {get;set;}
+    public int? EditID { get; set; }
+    
     List<ItemType> types = new List<ItemType>();
-
-    public class ItemTypeModel
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-    }
-
     InventoryItem Item;
     AGD AgdItem;
     int selectedTypeId;
-    string selectedType => types.FirstOrDefault(t => t.Id == selectedTypeId)?.TypeName;
-
+    string uploadMessage;
+    
     protected override async Task OnInitializedAsync()
     {
         types = await typeService.GetAllTypesAsync();
-        await Task.CompletedTask;
-
+        
         if(EditID.HasValue)
         {
             Item = await db.GetItemByIdAsync(EditID.Value);
             if(Item != null)
             {
                 selectedTypeId = Item.ItemType.Id;
-                if(Item.ItemType.Id == 2){
+                if(Item.ItemType.Id == 2)
+                {
                     AgdItem = await db.GetItemByIdAsync(EditID.Value) as AGD;
                 }
             }
         }
     }
 
+    
+    
     private Task Cancel()
     {
         selectedTypeId = 0;
         return Task.CompletedTask;
     }
-
-    public string path { get; set; }
-
-    private async Task sendFileToServer(InputFileChangeEventArgs e)
-    {
-        var file = e.File;
-        string newfileName = Path.ChangeExtension(Path.GetRandomFileName(), Path.GetExtension(file.Name));
-        path = Path.Combine(config.GetValue<string>("FileStorage"), newfileName);
-        await Task.CompletedTask;
-    }
+    
+    
 }

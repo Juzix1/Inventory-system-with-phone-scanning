@@ -6,6 +6,7 @@
 @using Microsoft.IdentityModel.Tokens
 @rendermode InteractiveServer
 @inject IInventoryService db
+@inject NavigationManager Nav
 
 <PageTitle>Manage Items</PageTitle>
 
@@ -13,91 +14,266 @@
 <div class="container-head">
     <div class="row">
         <div class="col-md-5 col-sm-12">
-            <AutoComplete @bind-Value="ItemName"
-            TItem="InventoryItem"
-            DataProvider="InventoryNameDataProvider"
-            PropertyName="itemName"
-            Placeholder="Search for inventory items..."
-            OnChanged="(InventoryItem item) => OnAutoCompleteChanged(item)"
-            />
+            <AutoComplete @bind-Value="ItemName" TItem="InventoryItem" DataProvider="InventoryNameDataProvider"
+                PropertyName="itemName" Placeholder="Search for inventory items..."
+                OnChanged="(InventoryItem item) => OnAutoCompleteChanged(item)" />
+        </div>
+        <div class="col-md-4 col-sm-12">
+            <select class="form-select" @onchange="OnSortChanged">
+                <option value="">Sort by..</option>
+                <option value="name-asc">Name (A-Z)</option>
+                <option value="name-desc">Name (Z-A)</option>
+                <option value="date-newest">Newest Items</option>
+                <option value="date-oldest">Oldest Items</option>
+                <option value="price-low">Price (Low to High)</option>
+                <option value="price-high">Price (High to Low)</option>
+                <option value="category">Category</option>
+                <option value="location">Location</option>
+                <option value="inventory-date">Last Inventory Date</option>
+                <option value="warranty">Warranty End Date</option>
+                <option value="condition">condition</option>
+            </select>
+        </div>
+        <div class="col-md-2 col-sm-12">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="showAllSwitch" @bind="showAllItems"
+                    @bind:after="OnViewModeChanged" disabled="@(disableSwitch)">
+                <label class="form-check-label" for="showAllSwitch">
+                    Show All Items
+                </label>
+            </div>
+        </div>
+        <div class="col-md-2 col-sm-12">
+            <button class="btn btn-secondary w-100" @onclick="ResetFilters">Reset</button>
+        </div>
+        <div class="col-md-2 col-sm-12">
+            <button class="btn btn-primary w-100" @onclick='() => { Nav.NavigateTo("/create"); }'>Create new Item</button>
         </div>
     </div>
 </div>
 <div class="container-body">
-@if(isLoading){
-    @for(var i=0;i<5;i++){
-        <BoxStat item="@null"/>
+    @if (isLoading)
+    {
+        @for (var i = 0; i < 5; i++)
+        {
+            <BoxStat item="@null" />
+        }
     }
-}else{
-    @if(modelList.IsNullOrEmpty()){
-            @if (!itemList.IsNullOrEmpty()){
+    else
+    {
+        @if (showAllItems || !string.IsNullOrEmpty(currentSort))
+        {
+            @if (!sortedItems.IsNullOrEmpty())
+            {
                 <div class="container-body">
-                    @foreach(var item in itemList){
+                    <InventoryDataTable ItemList="sortedItems" onBack="@(() => ResetToGroupView())" />
+                </div>
+            }
+            else
+            {
+                <h3>No items found</h3>
+            }
+        }
+        else
+        {
+            @if (modelList != null && !modelList.IsNullOrEmpty())
+            {
+                <InventoryDataTable ItemList="modelList" onBack="@(() => { modelList = null; })" />
+            }
+            else if (!itemList.IsNullOrEmpty())
+            {
+                <div class="container-body">
+                    @foreach (var item in itemList)
+                    {
                         <BoxStat item="item" showDetails="showDetails" />
                     }
                 </div>
-            }else{
-                <h3>No items in Database</h3>
             }
-    }else{
-
-    <InventoryDataTable ItemList="modelList" onBack="@(() => {modelList = null;})"/>
-
+            else
+            {
+                if(hasError){
+                    <h3>No Connection with Database</h3>
+                }else{
+                    <h3>No items in Database</h3>
+                }
+            }
+        }
     }
-}
 </div>
 @code {
 
     private bool isLoading = true;
+    private bool hasError = false;
+
+    private bool showAllItems = false;
     private string? ItemName;
+    private string currentSort = "";
     private IEnumerable<InventoryItemGroup> itemList;
     private IEnumerable<InventoryItem?> modelList = null;
     private IEnumerable<InventoryItem?> items = new List<InventoryItem?>();
+    private IEnumerable<InventoryItem?> sortedItems = new List<InventoryItem?>();
 
-    private async Task<AutoCompleteDataProviderResult<InventoryItem>> InventoryNameDataProvider(AutoCompleteDataProviderRequest<InventoryItem> request){
-        if (items is null){
+    private bool disableSwitch = false;
+
+
+    private async Task<AutoCompleteDataProviderResult<InventoryItem>>
+    InventoryNameDataProvider(AutoCompleteDataProviderRequest<InventoryItem> request)
+    {
+        if (items is null)
+        {
             return null;
         }
 
-        var distinctItems = items.DistinctBy(item => item.itemName).OrderBy(item=>item.itemName);
+        var distinctItems = items.DistinctBy(item => item.itemName).OrderBy(item => item.itemName);
         return await Task.FromResult(request.ApplyTo(distinctItems.OrderBy(item => item.itemName)));
     }
 
-    protected override async Task OnInitializedAsync(){
-        
-        try{
+    protected override async Task OnInitializedAsync()
+    {
+
+        _ = LoadDataAsync();
+    }
+    private async Task LoadDataAsync()
+    {
+        try
+        {
             items = await db.GetAllItemsAsync();
 
-            if(!items.IsNullOrEmpty())
+            if (!items.IsNullOrEmpty())
+            {
                 isLoading = false;
-                itemList = items
-                .GroupBy(i => i.itemName)
-                .Select(g => new InventoryItemGroup
-                {
-                    ItemName = g.Key,
-                    ItemCategory = g.First().ItemType.TypeName,
-                    ImagePath = g.First().imagePath,
-                    WarrantyEnd = g.First().warrantyEnd,
-                    InStock = g.Count()
-                });
-        }catch (Exception ex){
+                sortedItems = items;
+                UpdateGroupedItemList();
+            }
+        }
+        catch (Exception ex)
+        {
+            hasError = true;
             Console.WriteLine(ex.Message);
         }
-        
-
+        finally
+        {
+            isLoading = false;
+        }
     }
 
-    private async Task showDetails(string item){
+    private void UpdateGroupedItemList()
+    {
+        itemList = items
+        .GroupBy(i => i.itemName)
+        .Select(g => new InventoryItemGroup
+        {
+            ItemName = g.Key,
+            ItemCategory = g.First().ItemType.TypeName,
+            ImagePath = g.First().imagePath,
+            WarrantyEnd = g.First().warrantyEnd,
+            InStock = g.Count()
+        });
+    }
+
+    private async Task OnSortChanged(ChangeEventArgs e)
+    {
+        currentSort = e.Value?.ToString() ?? "";
+
+        if (!string.IsNullOrEmpty(currentSort))
+        {
+            ApplySorting();
+            showAllItems = true;
+            disableSwitch = true;
+        }
+        else
+        {
+            sortedItems = items;
+            disableSwitch = false;
+
+        }
+        StateHasChanged();
+    }
+
+    private void ApplySorting()
+    {
+        if (string.IsNullOrEmpty(currentSort))
+        {
+            sortedItems = items;
+            return;
+        }
+        sortedItems = currentSort switch
+        {
+            "name-asc" => items.OrderBy(i => i.itemName),
+            "name-desc" => items.OrderByDescending(i => i.itemName),
+            "date-newest" => items.OrderByDescending(i => i.addedDate),
+            "date-oldest" => items.OrderBy(i => i.addedDate),
+            "price-low" => items.OrderBy(i => i.itemPrice),
+            "price-high" => items.OrderByDescending(i => i.itemPrice),
+            "category" => items.OrderBy(i => i.ItemType?.TypeName ?? "Uncategorized")
+            .ThenBy(i => i.itemName),
+            "location" => items.OrderBy(i => i.Location?.RoomName ?? "Unassigned")
+            .ThenBy(i => i.itemName),
+            "inventory-date" => items.OrderBy(i => i.lastInventoryDate)
+            .ThenBy(i => i.itemName),
+            "warranty" => items.OrderBy(i => i.warrantyEnd)
+            .ThenBy(i => i.itemName),
+            "condition" => items.OrderBy(i => i.ItemCondition?.ConditionName ?? "Unknown")
+            .ThenBy(i => i.itemName),
+            _ => items
+        };
+    }
+    private void OnViewModeChanged()
+    {
+        if (showAllItems)
+        {
+            if (!string.IsNullOrEmpty(currentSort))
+            {
+                ApplySorting();
+            }
+            else
+            {
+                sortedItems = items;
+            }
+        }
+        else
+        {
+            sortedItems = items;
+        }
+
+        StateHasChanged();
+    }
+
+    private void ResetToGroupView()
+    {
+        showAllItems = false;
+        currentSort = "";
+        sortedItems = items;
+        modelList = null;
+        StateHasChanged();
+    }
+
+    private void ResetFilters()
+    {
+        currentSort = "";
+        ItemName = null;
+        showAllItems = false;
+        sortedItems = items;
+        modelList = null;
+        UpdateGroupedItemList();
+        StateHasChanged();
+    }
+
+    private async Task showDetails(string item)
+    {
         modelList = items.Where(i => i.itemName == item);
+        StateHasChanged();
     }
 
-    private async void OnAutoCompleteChanged(InventoryItem item){
-        if (item == null){
+    private async void OnAutoCompleteChanged(InventoryItem item)
+    {
+        if (item == null)
+        {
             modelList = null;
             return;
         }
         await showDetails(item.itemName);
     }
 
-    
+
 }

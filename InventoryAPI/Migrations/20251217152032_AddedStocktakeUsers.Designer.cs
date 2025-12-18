@@ -4,6 +4,7 @@ using InventoryLibrary.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryAPI.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251217152032_AddedStocktakeUsers")]
+    partial class AddedStocktakeUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -280,10 +283,6 @@ namespace InventoryAPI.Migrations
                     b.Property<int>("AllItems")
                         .HasColumnType("int");
 
-                    b.PrimitiveCollection<string>("CheckedItemIdList")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
@@ -428,7 +427,7 @@ namespace InventoryAPI.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("InventoryLibrary.Model.StockTake.Stocktake", "Stocktake")
-                        .WithMany("ItemsToCheck")
+                        .WithMany("CheckedItems")
                         .HasForeignKey("StocktakeId")
                         .OnDelete(DeleteBehavior.SetNull);
 
@@ -496,7 +495,7 @@ namespace InventoryAPI.Migrations
                 {
                     b.Navigation("AuthorizedAccounts");
 
-                    b.Navigation("ItemsToCheck");
+                    b.Navigation("CheckedItems");
                 });
 #pragma warning restore 612, 618
         }

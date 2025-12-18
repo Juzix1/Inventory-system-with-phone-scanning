@@ -1,25 +1,35 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
 using InventoryLibrary.Data;
 using InventoryLibrary.Model.Inventory;
+using InventoryLibrary.Services.Interfaces;
+using InventoryWeb.Services;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
+using System.IO;
+using Microsoft.Extensions.Logging;
+
+
 
 namespace InventoryLibrary.Services.data;
 
-public class ImportService
+public class FileService : IFileService
 {
     private readonly MyDbContext _context;
 
-    public ImportService(MyDbContext context)
+    public FileService(MyDbContext context, ISettingsService settings)
     {
         _context = context;
-        
     }
 
-    public async Task<ImportResult> ImportInventoryItemsAsync(Stream excelStream)
+
+
+   
+    public async Task<Result> ImportInventoryItemsAsync(Stream excelStream)
     {
-        var result = new ImportResult();
+        var result = new Result();
         ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
 
@@ -77,6 +87,7 @@ public class ImportService
 
         return result;
     }
+
 
     private InventoryItem CreateInventoryItem(ExcelWorksheet worksheet, int row)
     {
@@ -184,22 +195,19 @@ public class ImportService
 
         return null;
     }
-
-    public byte[] GenerateExampleTemplate()
+    public async Task<byte[]> ExportInventoryItemsAsync(List<InventoryItem> items)
     {
         ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
-
         using var package = new ExcelPackage();
-        var worksheet = package.Workbook.Worksheets.Add("Inventory Template");
+        var worksheet = package.Workbook.Worksheets.Add("Inventory Status");
 
-        // Nagłówki
         var headers = new[]
         {
-            "ItemType", "ItemName", "Barcode", "Description", "Condition",
+            "ItemType", "ItemName","ItemTypeId", "Condition",
             "Weight", "Price", "AddedDate", "WarrantyEnd", "LastInventoryDate",
             "ModelName/FurnitureType", "CPU", "RAM", "Storage", "Graphics",
-            "PersonEmail", "RoomName"
+            "PersonEmail", "RoomName", "Description"
         };
 
         for (int i = 0; i < headers.Length; i++)
@@ -208,47 +216,87 @@ public class ImportService
             worksheet.Cells[1, i + 1].Style.Font.Bold = true;
         }
 
-        // Przykładowe dane
-        worksheet.Cells[2, 1].Value = "AGD";
-        worksheet.Cells[2, 2].Value = "Laptop Dell";
-        worksheet.Cells[2, 3].Value = "123456789";
-        worksheet.Cells[2, 4].Value = "Laptop służbowy";
-        worksheet.Cells[2, 5].Value = "Good";
-        worksheet.Cells[2, 6].Value = 2.5;
-        worksheet.Cells[2, 7].Value = 3500.00;
-        worksheet.Cells[2, 8].Value = DateTime.Now.ToString("yyyy-MM-dd");
-        worksheet.Cells[2, 9].Value = DateTime.Now.AddYears(2).ToString("yyyy-MM-dd");
-        worksheet.Cells[2, 10].Value = DateTime.Now.ToString("yyyy-MM-dd");
-        worksheet.Cells[2, 11].Value = "Dell Latitude 5520";
-        worksheet.Cells[2, 12].Value = "Intel i5-1135G7";
-        worksheet.Cells[2, 13].Value = "16GB";
-        worksheet.Cells[2, 14].Value = "512GB SSD";
-        worksheet.Cells[2, 15].Value = "Intel Iris Xe";
-        worksheet.Cells[2, 16].Value = "admin@example.com";
-        worksheet.Cells[2, 17].Value = "Office 101";
+        var index = 1;
+        foreach(var item in items)
+        {
+            index ++;
+            WriteRows(worksheet, item, index);
+            
+        }
+        worksheet.Cells.AutoFitColumns();
 
-        worksheet.Cells[3, 1].Value = "Furniture";
-        worksheet.Cells[3, 2].Value = "Biurko Ikea";
-        worksheet.Cells[3, 3].Value = "987654321";
-        worksheet.Cells[3, 4].Value = "Biurko z regulacją wysokości";
-        worksheet.Cells[3, 5].Value = "New";
-        worksheet.Cells[3, 6].Value = 25.0;
-        worksheet.Cells[3, 7].Value = 1200.00;
-        worksheet.Cells[3, 8].Value = DateTime.Now.ToString("yyyy-MM-dd");
-        worksheet.Cells[3, 9].Value = DateTime.Now.AddYears(5).ToString("yyyy-MM-dd");
-        worksheet.Cells[3, 10].Value = DateTime.Now.ToString("yyyy-MM-dd");
-        worksheet.Cells[3, 11].Value = "Desk";
+        return await package.GetAsByteArrayAsync();
+
+    }
+    public byte[] GenerateExampleTemplate()
+    {
+        ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+
+
+        using var package = new ExcelPackage();
+        var worksheet = package.Workbook.Worksheets.Add("Inventory Template");
+
+                var headers = new[]
+        {
+            "ItemType", "ItemName","ItemTypeId", "Condition",
+            "Weight", "Price", "AddedDate", "WarrantyEnd", "LastInventoryDate",
+            "ModelName/FurnitureType", "CPU", "RAM", "Storage", "Graphics",
+            "PersonEmail", "RoomName", "Description"
+        };
+
+        for (int i = 0; i < headers.Length; i++)
+        {
+            worksheet.Cells[1, i + 1].Value = headers[i];
+            worksheet.Cells[1, i + 1].Style.Font.Bold = true;
+        }
+
+        // Nagłówki
+        
 
         worksheet.Cells.AutoFitColumns();
 
         return package.GetAsByteArray();
     }
 
-    public class ImportResult
+    public class Result
     {
         public int SuccessCount { get; set; }
         public List<string> Errors { get; set; } = new List<string>();
         public bool IsSuccess => Errors.Count == 0;
+    }
+
+    private void WriteRows(ExcelWorksheet worksheet, InventoryItem item, int column)
+    {
+
+        worksheet.Cells[column,1].Value = $"{item.ItemType?.TypeName??"General"}";
+        worksheet.Cells[column,2].Value = $"{item.itemName ?? ""}";
+        worksheet.Cells[column,3].Value = $"{item.ItemTypeId.ToString() ?? ""}";
+        worksheet.Cells[column,4].Value = $"{item.ItemCondition?.ConditionName ?? ""}";
+        worksheet.Cells[column,5].Value = $"{item.itemWeight.ToString()??""}";
+        worksheet.Cells[column,6].Value = $"{item.itemPrice.ToString()?? "0"}";
+        worksheet.Cells[column,7].Value = $"{item.addedDate.ToString()?? ""}";
+        worksheet.Cells[column,8].Value = $"{item.warrantyEnd.ToString()??""}";
+        worksheet.Cells[column,9].Value = $"{item.lastInventoryDate.ToString()??""}";
+        worksheet.Cells[column,15].Value = $"{item.personInCharge?.Email?? ""}";
+        worksheet.Cells[column,16].Value = $"{item.Location?.RoomName?? ""}";
+        worksheet.Cells[column,17].Value = $"{item.itemDescription?? ""}";
+        switch (item)
+        {
+            case AGD agd:
+                //AGD
+                worksheet.Cells[column,10].Value = $"{agd.ModelName}";
+                worksheet.Cells[column,11].Value = $"{agd.CPU}";
+                worksheet.Cells[column,12].Value = $"{agd.RAM}";
+                worksheet.Cells[column,13].Value = $"{agd.Storage}";
+                worksheet.Cells[column,14].Value = $"{agd.Graphics}";
+                break;
+            case Furniture furniture:
+                //Meble
+                worksheet.Cells[column,10].Value = $"{furniture.FurnitureType}";
+
+                break;
+        }
+        
     }
 
 }
