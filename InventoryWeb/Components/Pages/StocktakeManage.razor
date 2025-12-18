@@ -312,7 +312,7 @@
     };
     protected override async Task OnInitializedAsync()
     {
-        _ =  LoadData();
+        await LoadData();
     }
     private async Task LoadData(){
         isLoading = true;

@@ -15,7 +15,7 @@
             </div>
         </div>
     }
-    else
+    else if(!hasError)
     {
             <EditForm Model="settingsModel" OnValidSubmit="SaveSettings">
                 <DataAnnotationsValidator />
@@ -66,6 +66,8 @@
                     }
                 </tbody>
             </table>
+        }else{
+            <h3>No connection with Database</h3>
         }
 </div>
 
@@ -79,7 +81,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _ = LoadDataAsync();
+        await LoadDataAsync();
     }
 
     private async Task LoadDataAsync()

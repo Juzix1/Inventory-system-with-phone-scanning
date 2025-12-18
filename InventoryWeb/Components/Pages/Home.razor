@@ -41,7 +41,7 @@ else if(!hasError)
 
     protected override async Task OnInitializedAsync()
     {
-        _ = LoadDataASync();
+        await LoadDataASync();
     }
 
     private async Task LoadDataASync()

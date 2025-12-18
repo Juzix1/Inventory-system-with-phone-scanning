@@ -34,7 +34,7 @@ else
 
     override protected async Task OnInitializedAsync()
     {
-        _ = LoadDataAsync();
+        await LoadDataAsync();
     }
 
     private async Task LoadDataAsync()
