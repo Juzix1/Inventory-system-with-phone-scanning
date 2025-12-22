@@ -14,6 +14,7 @@
 @inject ITypeService typeService
 @inject HttpClient Http
 @inject ILogger<Create> Logger
+@inject NavigationManager nav
 @rendermode InteractiveServer
 
 <div class="itemForm">
@@ -108,11 +109,15 @@
     }
 
     
-    
     private Task Cancel()
     {
-        selectedTypeId = 0;
-        return Task.CompletedTask;
+        if(EditID == null){
+            selectedTypeId = 0;
+            return Task.CompletedTask;
+        }else{
+            nav.NavigateTo("/manage");
+            return Task.CompletedTask;
+        }
     }
     
     

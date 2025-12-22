@@ -18,9 +18,7 @@
     </div>
 }else{
     <div class="card border border-dark-subtle m-3 text-bg-dark " style="width: 18rem;">
-        @if(!string.IsNullOrEmpty(item.ImagePath)){
-            <img src="/images/@item.ImagePath" class="card-img-top " />
-        }
+            <img src="/images/@(item.ImagePath==""?"no_image.png":item.ImagePath)" class="card-img-top " />
     <div class="card-body">
         <h5 class="card-title"><b>@item.ItemName</b></h5>
         <p class="card-text m-0">in Stock: <b>@item.InStock</b>

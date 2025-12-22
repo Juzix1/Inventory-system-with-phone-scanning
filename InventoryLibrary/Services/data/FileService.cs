@@ -10,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
 using System.IO;
 using Microsoft.Extensions.Logging;
+using InventoryLibrary.Model.Accounts;
+using InventoryLibrary.Model.Location;
 
 
 
@@ -26,61 +28,91 @@ public class FileService : IFileService
 
 
 
-   
+
     public async Task<Result> ImportInventoryItemsAsync(Stream excelStream)
     {
         var result = new Result();
         ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
-
 
         try
         {
             using var package = new ExcelPackage(excelStream);
             var worksheet = package.Workbook.Worksheets[0];
 
-            if(worksheet.Dimension == null)
+            if (worksheet.Dimension == null)
             {
-                result.Errors.Add("worksheet is empty");
+                result.Errors.Add("Worksheet is empty");
                 return result;
             }
 
             var rowCount = worksheet.Dimension.Rows;
 
-            var itemTypes = await _context.ItemTypes.ToDictionaryAsync(t => t.TypeName, t=> t.Id);
-            var itemConditions = await _context.itemConditions.ToDictionaryAsync(c => c.ConditionName, c => c.Id);
-            var accounts = await _context.Accounts.ToDictionaryAsync(a => a.Email, a=>a.Id);
-            var rooms = await _context.Rooms.Include(r => r.Department).ToDictionaryAsync(r => r.RoomName, r=> r.Id);
+            // Załaduj słowniki referencyjne
+            var itemTypes = await _context.ItemTypes
+                .ToDictionaryAsync(t => t.TypeName.ToLower(), t => t);
+            var itemConditions = await _context.itemConditions
+                .ToDictionaryAsync(c => c.ConditionName.ToLower(), c => c);
+            var accounts = await _context.Accounts
+                .ToDictionaryAsync(a => a.Email.ToLower(), a => a);
+            var rooms = await _context.Rooms
+                .Include(r => r.Department)
+                .ToDictionaryAsync(r => r.RoomName.ToLower(), r => r);
+
+            var itemsToAdd = new List<InventoryItem>();
 
             for (int row = 2; row <= rowCount; row++)
             {
                 try
                 {
                     var itemTypeName = GetCellValue(worksheet, row, 1);
-
-                    if(string.IsNullOrWhiteSpace(itemTypeName))
+                    if (string.IsNullOrWhiteSpace(itemTypeName))
                         continue;
 
-                    InventoryItem item = itemTypeName.ToLower() switch
+                    // Sprawdź czy ItemType istnieje
+                    if (!itemTypes.ContainsKey(itemTypeName.ToLower()))
                     {
-                        "agd" => CreateAGD(worksheet, row),
+                        result.Errors.Add($"Row {row}: Unknown ItemType '{itemTypeName}'");
+                        continue;
+                    }
+
+                    var itemType = itemTypes[itemTypeName.ToLower()];
+
+                    // Utwórz odpowiedni typ obiektu
+                    InventoryItem item = itemType.TypeName.ToLower() switch
+                    {
+                        "computer" or "electronics" or "agd" => CreateAGD(worksheet, row),
                         "furniture" => CreateFurniture(worksheet, row),
                         _ => CreateInventoryItem(worksheet, row)
                     };
 
-                    //wspólne pola
-                    MapCommonFields(item, worksheet, row, itemTypes,itemConditions, accounts, rooms);
+                    // Mapuj wspólne pola
+                    var mappingResult = MapCommonFields(
+                        item, worksheet, row,
+                        itemTypes, itemConditions, accounts, rooms);
 
-                    _context.InventoryItems.Add(item);
-                    result.SuccessCount++;
+                    if (!mappingResult.IsSuccess)
+                    {
+                        result.Errors.Add($"Row {row}: {string.Join(", ", mappingResult.Errors)}");
+                        continue;
+                    }
 
-                }catch(Exception ex)
+                    itemsToAdd.Add(item);
+                }
+                catch (Exception ex)
                 {
                     result.Errors.Add($"Row {row}: {ex.Message}");
                 }
             }
 
-            await _context.SaveChangesAsync();
-        }catch(Exception ex)
+            // Zapisz wszystko naraz (transakcja)
+            if (itemsToAdd.Any())
+            {
+                await _context.InventoryItems.AddRangeAsync(itemsToAdd);
+                await _context.SaveChangesAsync();
+                result.SuccessCount = itemsToAdd.Count;
+            }
+        }
+        catch (Exception ex)
         {
             result.Errors.Add($"Critical Error: {ex.Message}");
         }
@@ -98,11 +130,11 @@ public class FileService : IFileService
     {
         return new AGD
         {
-            ModelName = GetCellValue(worksheet, row, 11) ?? "",
-                CPU = GetCellValue(worksheet, row, 12) ?? "",
-                RAM = GetCellValue(worksheet, row, 13) ?? "",
-                Storage = GetCellValue(worksheet, row, 14) ?? "",
-                Graphics = GetCellValue(worksheet, row, 15) ?? ""
+            ModelName = GetCellValue(worksheet, row, 10),
+            CPU = GetCellValue(worksheet, row, 11),
+            RAM = GetCellValue(worksheet, row, 12),
+            Storage = GetCellValue(worksheet, row, 13),
+            Graphics = GetCellValue(worksheet, row, 14)
         };
     }
 
@@ -110,75 +142,128 @@ public class FileService : IFileService
     {
         return new Furniture
         {
-            FurnitureType = GetCellValue(worksheet, row, 11) ?? ""
+            FurnitureType = GetCellValue(worksheet, row, 10)
         };
     }
 
-    private void MapCommonFields(
-        InventoryItem item,
-        ExcelWorksheet worksheet,
-        int row,
-        Dictionary<string, int> itemTypes,
-        Dictionary<string, int> itemConditions,
-        Dictionary<string, int> accounts,
-        Dictionary<string, int> rooms)
+    private Result MapCommonFields(
+    InventoryItem item,
+    ExcelWorksheet worksheet,
+    int row,
+    Dictionary<string, ItemType> itemTypes,
+    Dictionary<string, ItemCondition> itemConditions,
+    Dictionary<string, Account> accounts,
+    Dictionary<string, Room> rooms)
+    {
+        var result = new Result();
+
+        try
         {
-            item.itemName = GetCellValue(worksheet, row, 2) ?? throw new Exception("Brak nazwy przedmiotu");
-            item.Barcode = GetCellValue(worksheet, row, 3) ?? "";
-            item.itemDescription = GetCellValue(worksheet, row, 4);
-            //type
-            var itemTypeName = GetCellValue(worksheet, row,1);
-            if(!string.IsNullOrEmpty(itemTypeName) && itemTypes.ContainsKey(itemTypeName))
-        {
-            item.ItemTypeId = itemTypes[itemTypeName];
+            // ItemType (kolumna 1)
+            var itemTypeName = GetCellValue(worksheet, row, 1);
+            if (!string.IsNullOrWhiteSpace(itemTypeName) &&
+                itemTypes.TryGetValue(itemTypeName.ToLower(), out var itemType))
+            {
+                item.ItemType = itemType;
+                item.ItemTypeId = itemType.Id;
+            }
+            else
+            {
+                result.Errors.Add($"Invalid ItemType: {itemTypeName}");
+                return result;
+            }
+
+            // ItemName (kolumna 2)
+            item.itemName = GetCellValue(worksheet, row, 2);
+            if (string.IsNullOrWhiteSpace(item.itemName))
+            {
+                result.Errors.Add("ItemName is required");
+            }
+
+            // Condition (kolumna 4)
+            var conditionName = GetCellValue(worksheet, row, 4);
+            if (!string.IsNullOrWhiteSpace(conditionName) &&
+                itemConditions.TryGetValue(conditionName.ToLower(), out var condition))
+            {
+                item.ItemCondition = condition;
+            }
+
+            // Weight (kolumna 5)
+            if (double.TryParse(GetCellValue(worksheet, row, 5), out var weight))
+            {
+                item.itemWeight = weight;
+            }
+
+            // Price (kolumna 6)
+            if (double.TryParse(GetCellValue(worksheet, row, 6), out var price))
+            {
+                item.itemPrice = price;
+            }
+
+            // AddedDate (kolumna 7)
+            if (DateTime.TryParse(GetCellValue(worksheet, row, 7), out var addedDate))
+            {
+                item.addedDate = addedDate;
+            }
+            else
+            {
+                item.addedDate = DateTime.Now;
+            }
+
+            // WarrantyEnd (kolumna 8)
+            if (DateTime.TryParse(GetCellValue(worksheet, row, 8), out var warrantyEnd))
+            {
+                item.warrantyEnd = warrantyEnd;
+            }
+
+            // LastInventoryDate (kolumna 9)
+            if (DateTime.TryParse(GetCellValue(worksheet, row, 9), out var lastInventory))
+            {
+                item.lastInventoryDate = lastInventory;
+            }
+
+            // PersonEmail (kolumna 15)
+            var personEmail = GetCellValue(worksheet, row, 15);
+            if (!string.IsNullOrWhiteSpace(personEmail) &&
+                accounts.TryGetValue(personEmail.ToLower(), out var account))
+            {
+                item.personInCharge = account;
+            }
+
+            // RoomName (kolumna 16)
+            var roomName = GetCellValue(worksheet, row, 16);
+            if (!string.IsNullOrWhiteSpace(roomName) &&
+                rooms.TryGetValue(roomName.ToLower(), out var room))
+            {
+                item.Location = room;
+            }
+
+            // Description (kolumna 17)
+            item.itemDescription = GetCellValue(worksheet, row, 17);
+
+            result.IsSuccess = !result.Errors.Any();
         }
-        else
+        catch (Exception ex)
         {
-            item.ItemTypeId = 1;
-        }
-        //Condition
-        var conditionName = GetCellValue(worksheet, row, 5);
-        if(!string.IsNullOrEmpty(conditionName) && itemConditions.ContainsKey(conditionName))
-        {
-            item.ItemConditionId = itemConditions[conditionName];
-        }
-        else
-        {
-            item.ItemConditionId = 1;
+            result.Errors.Add($"Mapping error: {ex.Message}");
         }
 
-        item.itemWeight = GetDoubleValue(worksheet, row, 6);
-        item.itemPrice = GetDoubleValue(worksheet, row, 7);
-        item.addedDate = GetDateValue(worksheet, row, 8) ?? DateTime.Now;
-        item.warrantyEnd = GetDateValue(worksheet, row, 9) ?? DateTime.Now.AddYears(1);
-        item.lastInventoryDate = GetDateValue(worksheet, row, 10) ?? DateTime.Now;
-
-        var personEmail = GetCellValue(worksheet, row, 16);
-        if (!string.IsNullOrEmpty(personEmail) && accounts.ContainsKey(personEmail))
-        {
-            item.PersonInChargeId = accounts[personEmail];
-        }
-
-        var roomName = GetCellValue(worksheet, row, 17);
-        if(!string.IsNullOrEmpty(roomName) && rooms.ContainsKey(roomName))
-        {
-            item.RoomId = rooms[roomName];
-        }
+        return result;
     }
 
-    private string? GetCellValue(ExcelWorksheet worksheet, int row, int col)
+    private string GetCellValue(ExcelWorksheet worksheet, int row, int col)
     {
-        return worksheet.Cells[row, col].Value?.ToString()?.Trim();
+        return worksheet.Cells[row, col].Value?.ToString()?.Trim() ?? string.Empty;
     }
 
     private double GetDoubleValue(ExcelWorksheet worksheet, int row, int col)
     {
         var value = worksheet.Cells[row, col].Value;
         if (value == null) return 0;
-        
+
         if (double.TryParse(value.ToString(), out double result))
             return result;
-        
+
         return 0;
     }
 
@@ -217,11 +302,11 @@ public class FileService : IFileService
         }
 
         var index = 1;
-        foreach(var item in items)
+        foreach (var item in items)
         {
-            index ++;
+            index++;
             WriteRows(worksheet, item, index);
-            
+
         }
         worksheet.Cells.AutoFitColumns();
 
@@ -236,8 +321,8 @@ public class FileService : IFileService
         using var package = new ExcelPackage();
         var worksheet = package.Workbook.Worksheets.Add("Inventory Template");
 
-                var headers = new[]
-        {
+        var headers = new[]
+{
             "ItemType", "ItemName","ItemTypeId", "Condition",
             "Weight", "Price", "AddedDate", "WarrantyEnd", "LastInventoryDate",
             "ModelName/FurnitureType", "CPU", "RAM", "Storage", "Graphics",
@@ -250,8 +335,75 @@ public class FileService : IFileService
             worksheet.Cells[1, i + 1].Style.Font.Bold = true;
         }
 
-        // Nagłówki
-        
+        var items = new List<InventoryItem>();
+
+        // Przykładowy ItemType i Condition
+        var computerType = new ItemType { Id = 1, TypeName = "Computer" };
+        var furnitureType = new ItemType { Id = 2, TypeName = "Furniture" };
+        var electronicsType = new ItemType { Id = 3, TypeName = "Electronics" };
+
+        var goodCondition = new ItemCondition { Id = 1, ConditionName = "Good" };
+        var excellentCondition = new ItemCondition { Id = 2, ConditionName = "New" };
+        var fairCondition = new ItemCondition { Id = 3, ConditionName = "Fair" };
+
+        var person1 = new Account { Email = "john.doe@company.com" };
+        var person2 = new Account { Email = "jane.smith@company.com" };
+
+        var room1 = new Department { DepartmentName = "Wyższa szkoła", Rooms = new List<Room> { new Room { RoomName = "Dziekanat" } } };
+        var room2 = new Department { DepartmentName = "Biblioteka", Rooms = new List<Room> { new Room { RoomName = "112" } } };
+        var room3 = new Department { DepartmentName = "Magazyn", Rooms = new List<Room> { new Room { RoomName = "001" } } };
+
+        // 1. Laptop Dell
+        items.Add(new AGD
+        {
+            ItemType = computerType,
+            itemName = "Dell Latitude 5520",
+            ItemTypeId = 1,
+            ItemCondition = excellentCondition,
+            itemWeight = 1.8,
+            itemPrice = 3500.00,
+            addedDate = DateTime.Now.AddMonths(-6),
+            warrantyEnd = DateTime.Now.AddYears(2),
+            lastInventoryDate = DateTime.Now.AddDays(-30),
+            ModelName = "Latitude 5520",
+            CPU = "Intel Core i7-1185G7",
+            RAM = "16GB DDR4",
+            Storage = "512GB NVMe SSD",
+            Graphics = "Intel Iris Xe",
+            personInCharge = person1,
+            Location = room1.Rooms.First(),
+            itemDescription = "High-performance business laptop for development work"
+        });
+
+        // 2. Desktop HP
+        items.Add(new AGD
+        {
+            ItemType = computerType,
+            itemName = "HP EliteDesk 800 G6",
+            ItemTypeId = 1,
+            ItemCondition = goodCondition,
+            itemWeight = 5.2,
+            itemPrice = 4200.00,
+            addedDate = DateTime.Now.AddMonths(-12),
+            warrantyEnd = DateTime.Now.AddYears(1),
+            lastInventoryDate = DateTime.Now.AddDays(-45),
+            ModelName = "EliteDesk 800 G6",
+            CPU = "Intel Core i9-10900",
+            RAM = "32GB DDR4",
+            Storage = "1TB NVMe SSD",
+            Graphics = "NVIDIA RTX 3060",
+            personInCharge = person2,
+            Location = room3.Rooms.First(),
+            itemDescription = "Powerful workstation for graphics and video editing"
+        });
+
+        int row = 2;
+        foreach (var item in items)
+        {
+            WriteRows(worksheet, item, row);
+            row++;
+        }
+
 
         worksheet.Cells.AutoFitColumns();
 
@@ -262,41 +414,41 @@ public class FileService : IFileService
     {
         public int SuccessCount { get; set; }
         public List<string> Errors { get; set; } = new List<string>();
-        public bool IsSuccess => Errors.Count == 0;
+        public bool IsSuccess { get; set; }
     }
 
     private void WriteRows(ExcelWorksheet worksheet, InventoryItem item, int column)
     {
 
-        worksheet.Cells[column,1].Value = $"{item.ItemType?.TypeName??"General"}";
-        worksheet.Cells[column,2].Value = $"{item.itemName ?? ""}";
-        worksheet.Cells[column,3].Value = $"{item.ItemTypeId.ToString() ?? ""}";
-        worksheet.Cells[column,4].Value = $"{item.ItemCondition?.ConditionName ?? ""}";
-        worksheet.Cells[column,5].Value = $"{item.itemWeight.ToString()??""}";
-        worksheet.Cells[column,6].Value = $"{item.itemPrice.ToString()?? "0"}";
-        worksheet.Cells[column,7].Value = $"{item.addedDate.ToString()?? ""}";
-        worksheet.Cells[column,8].Value = $"{item.warrantyEnd.ToString()??""}";
-        worksheet.Cells[column,9].Value = $"{item.lastInventoryDate.ToString()??""}";
-        worksheet.Cells[column,15].Value = $"{item.personInCharge?.Email?? ""}";
-        worksheet.Cells[column,16].Value = $"{item.Location?.RoomName?? ""}";
-        worksheet.Cells[column,17].Value = $"{item.itemDescription?? ""}";
+        worksheet.Cells[column, 1].Value = $"{item.ItemType?.TypeName ?? "General"}";
+        worksheet.Cells[column, 2].Value = $"{item.itemName ?? ""}";
+        worksheet.Cells[column, 3].Value = $"{item.ItemTypeId.ToString() ?? ""}";
+        worksheet.Cells[column, 4].Value = $"{item.ItemCondition?.ConditionName ?? ""}";
+        worksheet.Cells[column, 5].Value = $"{item.itemWeight.ToString() ?? ""}";
+        worksheet.Cells[column, 6].Value = $"{item.itemPrice.ToString() ?? "0"}";
+        worksheet.Cells[column, 7].Value = $"{item.addedDate.ToString() ?? ""}";
+        worksheet.Cells[column, 8].Value = $"{item.warrantyEnd.ToString() ?? ""}";
+        worksheet.Cells[column, 9].Value = $"{item.lastInventoryDate.ToString() ?? ""}";
+        worksheet.Cells[column, 15].Value = $"{item.personInCharge?.Email ?? ""}";
+        worksheet.Cells[column, 16].Value = $"{item.Location?.RoomName ?? ""}";
+        worksheet.Cells[column, 17].Value = $"{item.itemDescription ?? ""}";
         switch (item)
         {
             case AGD agd:
                 //AGD
-                worksheet.Cells[column,10].Value = $"{agd.ModelName}";
-                worksheet.Cells[column,11].Value = $"{agd.CPU}";
-                worksheet.Cells[column,12].Value = $"{agd.RAM}";
-                worksheet.Cells[column,13].Value = $"{agd.Storage}";
-                worksheet.Cells[column,14].Value = $"{agd.Graphics}";
+                worksheet.Cells[column, 10].Value = $"{agd.ModelName}";
+                worksheet.Cells[column, 11].Value = $"{agd.CPU}";
+                worksheet.Cells[column, 12].Value = $"{agd.RAM}";
+                worksheet.Cells[column, 13].Value = $"{agd.Storage}";
+                worksheet.Cells[column, 14].Value = $"{agd.Graphics}";
                 break;
             case Furniture furniture:
                 //Meble
-                worksheet.Cells[column,10].Value = $"{furniture.FurnitureType}";
+                worksheet.Cells[column, 10].Value = $"{furniture.FurnitureType}";
 
                 break;
         }
-        
+
     }
 
 }

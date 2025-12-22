@@ -5,6 +5,7 @@
 
 
 @inject HttpClient Http
+@inject NavigationManager nav;
 @inject IJSRuntime JS
 
 <PageTitle>Export Data</PageTitle>
@@ -35,25 +36,24 @@
     private Result? exportResult;
 
     private async Task DownloadFile(){
-        try{
-            isDownloading = true;
-            errorMessage = string.Empty;
-
-            var response = await Http.GetAsync("/api/import/download");
-            if(response.IsSuccessStatusCode){
-                var fileBytes = await response.Content.ReadAsByteArrayAsync();
-                var fileName = $"InventoryStatus.xlsx";
-
-                await JS.InvokeVoidAsync("downloadFile", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileBytes);
-            }else{
-                errorMessage = "Couldn't download the exported data";
-            }
-
-        }catch (Exception ex){
-            errorMessage = $"Error while downloading file: {ex.Message}";
-        }finally{
-            isDownloading = false;
-        }
+        try
+    {
+        isDownloading = true;
+        errorMessage = string.Empty;
+        
+        // Prosta nawigacja - przeglądarka automatycznie pobierze plik
+        nav.NavigateTo("/api/import/download", forceLoad: true);
+        
+        await Task.Delay(500); // Krótkie opóźnienie dla UX
+    }
+    catch (Exception ex)
+    {
+        errorMessage = $"Error: {ex.Message}";
+    }
+    finally
+    {
+        isDownloading = false;
+    }
     }
     public class Result{
         public int SuccessCount {get;set;}

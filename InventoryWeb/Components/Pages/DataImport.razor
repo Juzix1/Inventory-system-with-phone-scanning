@@ -5,6 +5,7 @@
 @attribute [Authorize(Roles = "Admin")]
 
 @inject HttpClient Http
+@inject NavigationManager nav
 @inject IJSRuntime JS
 
 <PageTitle>Import Data</PageTitle>
@@ -115,25 +116,24 @@
     private ImportResult? importResult;
 
     private async Task DownloadTemplate(){
-        try{
-            isDownloading = true;
-            errorMessage = string.Empty;
-
-            var response = await Http.GetAsync("/api/import/template");
-
-            if(response.IsSuccessStatusCode){
-                var fileBytes = await response.Content.ReadAsByteArrayAsync();
-                var fileName = "InventoryTemplate.xlsx";
-
-                await JS.InvokeVoidAsync("downloadFile", fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileBytes);
-            }else{
-                errorMessage = "Couldn't download the template";
-            }
-        }catch (Exception ex){
-            errorMessage = $"Error while downloading template: {ex.Message} ";
-        }finally{
-            isDownloading = false;
-        }
+        try
+    {
+        isDownloading = true;
+        errorMessage = string.Empty;
+        
+        // Prosta nawigacja - przeglądarka automatycznie pobierze plik
+        nav.NavigateTo("/api/import/template", forceLoad: true);
+        
+        await Task.Delay(500); // Krótkie opóźnienie dla UX
+    }
+    catch (Exception ex)
+    {
+        errorMessage = $"Error: {ex.Message}";
+    }
+    finally
+    {
+        isDownloading = false;
+    }
     }
 
     private void HandleFileSelected(InputFileChangeEventArgs e){

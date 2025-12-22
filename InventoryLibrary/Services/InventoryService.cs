@@ -60,8 +60,8 @@ namespace InventoryLibrary.Services
                 {
                     throw new ArgumentNullException(nameof(item));
                 }
-                item.addedDate = DateTime.UtcNow;
-                item.lastInventoryDate = DateTime.UtcNow;
+                item.addedDate = DateTime.Now;
+                item.lastInventoryDate = DateTime.Now;
                 var barcodeGen = new BarcodeGenerator();
                 var barcodeNumber = await barcodeGen.GenerateBarcodeNumber(_context);
                 item.Barcode = barcodeNumber;

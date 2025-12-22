@@ -5,7 +5,6 @@
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Microsoft.AspNetCore.Authorization
-
 @inject IAccountsService accountService;
 @inject NavigationManager nav;
 
@@ -21,53 +20,82 @@
             <div class="mb-3">
                 <label>Album Index</label>
                 <InputNumber @bind-Value="Model.Id" class="form-control" placeholder="Index number" />
-                <ValidationMessage For="() => Model.Id"/>
+                <ValidationMessage For="() => Model.Id" />
             </div>
             <div class="mb-3">
                 <label>Password</label>
-                <InputText @bind-Value="Model.Password" placeholder="Password" type="password" class="form-control"/>
+                <InputText @bind-Value="Model.Password" placeholder="Password" type="password" class="form-control" />
                 <ValidationMessage For="() => Model.Password" />
             </div>
-            <div class="mb-3 text-center">
-                <span class="text-danger">@errorMessage</span>
-            </div>
+            
             <div class="mb-3 d-grid gap-2">
                 <button type="submit" class="btn btn-primary">Login</button>
             </div>
         </EditForm>
+            @if (hasError)
+            {
+                <div class="mb-3 text-center">
+                    <Alert Color="AlertColor.Danger">@errorMessage</Alert>
+                </div>
+            }
     </div>
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
 </div>
 
 
 
 @code {
+    bool isLoading = false;
+    bool hasError = false;
     [CascadingParameter]
-    private Task<AuthenticationState> authenticationStateTask {get;set;}
-
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
     [CascadingParameter]
-    public HttpContext? HttpContext{get;set;}
+    public HttpContext? HttpContext { get; set; }
 
     [SupplyParameterFromForm]
-    public LoginViewModel Model {get;set;} = new();
+    public LoginViewModel Model { get; set; } = new();
 
     private string? errorMessage;
 
-    private async Task Authenticate(){
-        var account = await accountService.AuthenticateAsync(Model.Id,Model.Password);
-        if(account is null){
-            errorMessage = "Invalid Index or Password";
-            return;
+    private async Task Authenticate()
+    {
+        try
+        {
+            isLoading = true;
+            var account = await accountService.AuthenticateAsync(Model.Id, Model.Password);
+            if (account is null)
+            {
+                errorMessage = "Invalid Index or Password";
+                return;
+            }
+
+            var claims = new List<Claim>{
+new Claim(ClaimTypes.Name, account.Name),
+new Claim(ClaimTypes.Role, account.Role),
+};
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            await HttpContext.SignInAsync(principal);
+            nav.NavigateTo("/");
         }
-
-        var claims = new List<Claim>{
-            new Claim(ClaimTypes.Name, account.Name),
-            new Claim(ClaimTypes.Role, account.Role),
-        };
-
-        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-        await HttpContext.SignInAsync(principal);
-        nav.NavigateTo("/");
+        catch (Exception e)
+        {
+            hasError = true;
+            errorMessage = "There is no connection with Database";
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 
 }

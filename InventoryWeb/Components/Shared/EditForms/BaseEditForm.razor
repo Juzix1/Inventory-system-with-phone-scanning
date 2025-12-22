@@ -8,6 +8,8 @@
 @inject IConditionService conditionService
 @inject NavigationManager navigationManager
 @inject IImageService imageService
+@inject IAccountsService accountsService
+
 @inject IJSRuntime JS
 
 
@@ -45,7 +47,7 @@
 
     <div>
         <label>Price</label>
-        <InputNumber @bind-Value="Model.itemPrice" class="form-control" />
+        <CurrencyInput TValue="double" @bind-Value="Model.itemPrice" Placeholder="Enter amount" Locale="en-PL" />
     </div>
 
     <div>
@@ -55,9 +57,38 @@
     <div class="form-group image-upload">
         <label>Item Image (optional):</label>
         <InputFile id="@fileInputId" OnChange="HandleImageSend" accept="image/*" class="form-control" />
-        
-
     </div>
+    <div class="mt-3">
+        <label>Assign to Person</label>
+        <div class="position-relative">
+            <InputText Value="@personSearchQuery" ValueExpression="@(() => personSearchQuery)"
+                @oninput="HandlePersonSearch" class="form-control" placeholder="Enter index number or name" />
+
+            @if (showPersonSuggestions && personSuggestions.Any())
+            {
+                <div class="suggestions-dropdown">
+                    @foreach (var person in personSuggestions)
+                    {
+                        <div class="suggestion-item" @onclick="() => SelectPerson(person)">
+                            <strong>@person.IndexNumber</strong> - @person.FullName
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (selectedPerson != null)
+        {
+            <div class="selected-person mt-2">
+                <span class="badge bg-primary">
+                    @selectedPerson.IndexNumber - @selectedPerson.FullName
+                    <button type="button" class="btn-close btn-close-white ms-2" @onclick="ClearSelectedPerson"
+                        aria-label="CLear"></button>
+                </span>
+            </div>
+        }
+    </div>
+
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
@@ -75,6 +106,7 @@
                 Cancel
             </button>
         </div>
+
     </div>
 </EditForm>
 
@@ -96,21 +128,124 @@
     private string fileInputId = "";
     private string oldImagePath = "";
 
+    private string personSearchQuery = string.Empty;
+    private List<PersonDto> personSuggestions = new();
+    private bool showPersonSuggestions = false;
+    private PersonDto? selectedPerson = null;
+    private System.Threading.Timer? searchDebounceTimer;
+
+    private async Task HandlePersonSearch(ChangeEventArgs e)
+    {
+        personSearchQuery = e.Value?.ToString() ?? string.Empty;
+
+        // Debounce the search
+        searchDebounceTimer?.Dispose();
+
+        if (string.IsNullOrWhiteSpace(personSearchQuery))
+        {
+            showPersonSuggestions = false;
+            personSuggestions.Clear();
+            return;
+        }
+
+        searchDebounceTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+    {
+            await SearchPersons();
+            StateHasChanged();
+        });
+        }, null, 300, Timeout.Infinite);
+    }
+
+    private async Task SearchPersons()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(personSearchQuery))
+            {
+                personSuggestions.Clear();
+                showPersonSuggestions = false;
+                return;
+            }
+
+            var accounts = (await accountsService.GetAllAccountsAsync())
+            .Where(a => a.Id.ToString().Contains(personSearchQuery) ||
+            (a.Name?.Contains(personSearchQuery, StringComparison.OrdinalIgnoreCase) ?? false))
+            .Take(10)
+            .Select(a => new PersonDto
+            {
+                Id = a.Id,
+                IndexNumber = a.Id.ToString(),
+                FullName = a.Name
+            })
+            .ToList();
+
+            personSuggestions = accounts;
+            showPersonSuggestions = personSuggestions.Any();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error searching persons: {ex.Message}");
+            errorMessage = "Failed to search persons";
+        }
+    }
+
+    private void SelectPerson(PersonDto person)
+    {
+        selectedPerson = person;
+        personSearchQuery = $"{person.IndexNumber} - {person.FullName}";
+        showPersonSuggestions = false;
+        Model.PersonInChargeId = person.Id; // Add this property to your model
+    }
+
+    private void ClearSelectedPerson()
+    {
+        selectedPerson = null;
+        personSearchQuery = string.Empty;
+        Model.PersonInChargeId = null;
+    }
+
+    public void Dispose()
+    {
+        searchDebounceTimer?.Dispose();
+    }
+
+    // DTO class
+    public class PersonDto
+    {
+        public int Id { get; set; }
+        public string IndexNumber { get; set; } = string.Empty; // This will display the ID as string
+        public string FullName { get; set; } = string.Empty;
+    }
+    /////
+
+
     protected override async Task OnInitializedAsync()
     {
         if (Model == null)
         {
             throw new ArgumentNullException(nameof(Model), "Model cannot be null. Please provide a valid InventoryItem instance.");
         }
-        
+
         conditions = (await conditionService.GetAllItemConditions()).ToList();
         oldImagePath = Model.imagePath;
+
+
+        if (Model?.PersonInChargeId != null)
+        {
+            var person = await accountsService.GetAccountByIdAsync((int)Model.PersonInChargeId);
+            if (person != null)
+            {
+                personSearchQuery = $"{person.Id} - {person.Name}";
+            }
+        }
 
         // Check if this is an update or create
         if (!string.IsNullOrEmpty(Model.itemName) && Model.Id > 0)
         {
             IsUpdating = true;
-            
+
             Logger.LogInformation("BaseEditForm initialized for editing item: {ItemName} (ID: {ItemId})", Model.itemName, Model.Id);
         }
         else
@@ -135,17 +270,20 @@
         const long maxFileSize = 5 * 1024 * 1024;
         if (file.Size > maxFileSize)
         {
-
             return;
         }
         try
         {
-            
+
             using var stream = file.OpenReadStream(maxFileSize);
             var result = await imageService.SendImageAsync(stream, file.Name, Model.Id);
 
             if (result.Success)
             {
+                if (!IsUpdating)
+                {
+                    Model.imagePath = result.ImageId;
+                }
                 if (!oldImagePath.IsNullOrEmpty())
                 {
                     await imageService.DeleteImageAsync(oldImagePath);
