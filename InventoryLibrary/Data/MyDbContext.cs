@@ -7,8 +7,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 
-namespace InventoryLibrary.Data {
-    
+namespace InventoryLibrary.Data
+{
+
     public class MyDbContext : DbContext
     {
 
@@ -19,18 +20,24 @@ namespace InventoryLibrary.Data {
         public DbSet<AGD> AGD { get; set; }
         public DbSet<Furniture> Furnitures { get; set; }
         public DbSet<ItemType> ItemTypes { get; set; }
-        public DbSet<ItemCondition> itemConditions{ get; set; }
+        public DbSet<ItemCondition> itemConditions { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<Room> Rooms { get; set; }
-        public DbSet<Stocktake> Stocktakes {get;set;}
+        public DbSet<Stocktake> Stocktakes { get; set; }
 
-        public DbSet<Setting> Settings {get;set;}
-
+        public DbSet<Setting> Settings { get; set; }
+        public DbSet<HistoricalItem> HistoricalItems { get; set; }
+        private string imagesPath = "";
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
             modelBuilder.Entity<Account>()
                 .ToTable("Accounts")
+                .Property(a => a.Id)
+                .ValueGeneratedNever();
+
+            modelBuilder.Entity<Account>()
                 .HasMany(a => a.InventoryItems)
                 .WithOne(i => i.personInCharge)
                 .HasForeignKey(i => i.PersonInChargeId)
@@ -42,6 +49,9 @@ namespace InventoryLibrary.Data {
                 .WithMany()
                 .HasForeignKey(i => i.RoomId)
                 .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<HistoricalItem>()
+                .ToTable("HistoricalItems");
+                
             modelBuilder.Entity<Stocktake>()
                 .ToTable("Stocktakes")
                 .HasMany(a => a.ItemsToCheck)
@@ -77,8 +87,7 @@ namespace InventoryLibrary.Data {
             modelBuilder.Entity<ItemType>().HasData(
                     new ItemType { Id = 1, TypeName = "NoType" },
                     new ItemType { Id = 2, TypeName = "AGD" },
-                    new ItemType { Id = 3, TypeName = "Furniture" },
-                    new ItemType { Id = 4, TypeName = "Book" }
+                    new ItemType { Id = 3, TypeName = "Furniture" }
                 );
             modelBuilder.Entity<ItemCondition>().HasData(
                 new ItemCondition { Id = 1, ConditionName = "New" },
@@ -88,13 +97,21 @@ namespace InventoryLibrary.Data {
                 new ItemCondition { Id = 5, ConditionName = "Disposed" }
             );
             modelBuilder.Entity<Account>().HasData(
-                new Account { Id = 1, Name = "Admin", Email = "", PasswordHash = "admin", Role = "Admin", IsAdmin = true });
+                new Account { Id = 1, Name = "Admin", Email = "", PasswordHash = "", Role = "Admin", IsAdmin = true, resetPasswordOnNextLogin = true });
 
+            try
+            {
+                string projectRoot = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.Parent.FullName;
+                imagesPath = Path.Combine(projectRoot, "Images");
+            }
+            catch (Exception)
+            {
+                //ignore
+            }
             modelBuilder.Entity<Setting>().HasData(
-                new Setting { Id = 1, Key = "FileStoragePath", Value = "C:\\uploads",},
-                new Setting { Id = 2, Key = "MaxFileSize", Value = "10485760"},
-                new Setting { Id = 3, Key = "EnableNotifications", Value = "true"},
-                new Setting { Id = 4, Key = "CompanyName", Value = "My Company"}
+                new Setting { Id = 1, Key = "FileStoragePath", Value = $"{imagesPath}", },
+                new Setting { Id = 2, Key = "MaxFileSize", Value = "10485760" },
+                new Setting { Id = 4, Key = "CompanyName", Value = "My Company" }
             );
             modelBuilder.Entity<Setting>()
                 .HasIndex(s => s.Key)

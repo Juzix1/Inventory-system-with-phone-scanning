@@ -20,10 +20,12 @@ namespace InventoryLibrary.Services.data;
 public class FileService : IFileService
 {
     private readonly MyDbContext _context;
+    private readonly IInventoryService _inventoryService;
 
-    public FileService(MyDbContext context, ISettingsService settings)
+    public FileService(MyDbContext context, IInventoryService inventoryService)
     {
         _context = context;
+        _inventoryService = inventoryService;
     }
 
 
@@ -68,16 +70,12 @@ public class FileService : IFileService
                     if (string.IsNullOrWhiteSpace(itemTypeName))
                         continue;
 
-                    // Sprawdź czy ItemType istnieje
-                    if (!itemTypes.ContainsKey(itemTypeName.ToLower()))
+                    if (!itemTypes.TryGetValue(itemTypeName.ToLower(), out var itemType))
                     {
                         result.Errors.Add($"Row {row}: Unknown ItemType '{itemTypeName}'");
                         continue;
                     }
 
-                    var itemType = itemTypes[itemTypeName.ToLower()];
-
-                    // Utwórz odpowiedni typ obiektu
                     InventoryItem item = itemType.TypeName.ToLower() switch
                     {
                         "computer" or "electronics" or "agd" => CreateAGD(worksheet, row),
@@ -85,7 +83,6 @@ public class FileService : IFileService
                         _ => CreateInventoryItem(worksheet, row)
                     };
 
-                    // Mapuj wspólne pola
                     var mappingResult = MapCommonFields(
                         item, worksheet, row,
                         itemTypes, itemConditions, accounts, rooms);
@@ -96,13 +93,15 @@ public class FileService : IFileService
                         continue;
                     }
 
-                    itemsToAdd.Add(item);
+                    await _inventoryService.CreateItemAsync(item);
+                    result.SuccessCount++;
                 }
                 catch (Exception ex)
                 {
                     result.Errors.Add($"Row {row}: {ex.Message}");
                 }
             }
+
 
             // Zapisz wszystko naraz (transakcja)
             if (itemsToAdd.Any())
@@ -267,19 +266,6 @@ public class FileService : IFileService
         return 0;
     }
 
-    private DateTime? GetDateValue(ExcelWorksheet worksheet, int row, int col)
-    {
-        var value = worksheet.Cells[row, col].Value;
-        if (value == null) return null;
-
-        if (value is DateTime dt)
-            return dt;
-
-        if (DateTime.TryParse(value.ToString(), out DateTime result))
-            return result;
-
-        return null;
-    }
     public async Task<byte[]> ExportInventoryItemsAsync(List<InventoryItem> items)
     {
         ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
@@ -338,13 +324,13 @@ public class FileService : IFileService
         var items = new List<InventoryItem>();
 
         // Przykładowy ItemType i Condition
-        var computerType = new ItemType { Id = 1, TypeName = "Computer" };
-        var furnitureType = new ItemType { Id = 2, TypeName = "Furniture" };
-        var electronicsType = new ItemType { Id = 3, TypeName = "Electronics" };
+        var generalType = new ItemType { Id = 1, TypeName = "NoType" };
+        var furnitureType = new ItemType { Id = 3, TypeName = "Furniture" };
+        var electronicsType = new ItemType { Id = 2, TypeName = "AGD" };
 
         var goodCondition = new ItemCondition { Id = 1, ConditionName = "Good" };
         var excellentCondition = new ItemCondition { Id = 2, ConditionName = "New" };
-        var fairCondition = new ItemCondition { Id = 3, ConditionName = "Fair" };
+        var fairCondition = new ItemCondition { Id = 3, ConditionName = "Lost" };
 
         var person1 = new Account { Email = "john.doe@company.com" };
         var person2 = new Account { Email = "jane.smith@company.com" };
@@ -356,7 +342,7 @@ public class FileService : IFileService
         // 1. Laptop Dell
         items.Add(new AGD
         {
-            ItemType = computerType,
+            ItemType = electronicsType,
             itemName = "Dell Latitude 5520",
             ItemTypeId = 1,
             ItemCondition = excellentCondition,
@@ -370,15 +356,13 @@ public class FileService : IFileService
             RAM = "16GB DDR4",
             Storage = "512GB NVMe SSD",
             Graphics = "Intel Iris Xe",
-            personInCharge = person1,
-            Location = room1.Rooms.First(),
             itemDescription = "High-performance business laptop for development work"
         });
 
         // 2. Desktop HP
         items.Add(new AGD
         {
-            ItemType = computerType,
+            ItemType = electronicsType,
             itemName = "HP EliteDesk 800 G6",
             ItemTypeId = 1,
             ItemCondition = goodCondition,
@@ -392,8 +376,6 @@ public class FileService : IFileService
             RAM = "32GB DDR4",
             Storage = "1TB NVMe SSD",
             Graphics = "NVIDIA RTX 3060",
-            personInCharge = person2,
-            Location = room3.Rooms.First(),
             itemDescription = "Powerful workstation for graphics and video editing"
         });
 

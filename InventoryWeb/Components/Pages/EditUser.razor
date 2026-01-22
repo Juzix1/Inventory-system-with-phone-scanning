@@ -19,6 +19,14 @@ else
 <EditForm Model="@user" OnValidSubmit="Submit" FormName="UserEdit">
     <DataAnnotationsValidator/>
     <ValidationSummary />
+    @if(UserId == null){
+        <div class="mb-3">
+            <label>
+                Album Index:
+                <InputNumber @bind-Value="user.Id"/>
+            </label>
+    </div>
+        }
     <div class="mb-3">
             <label>
                 Username:
@@ -84,7 +92,8 @@ else
                     user.IsAdmin = false;
                     user.IsModerator = true;
                 }
-
+                user.PasswordHash = "";
+                user.resetPasswordOnNextLogin = true;
                 await AccountsService.CreateAccountAsync(user);
             }
             else

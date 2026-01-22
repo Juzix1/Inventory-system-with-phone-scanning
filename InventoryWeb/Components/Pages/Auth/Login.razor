@@ -7,9 +7,7 @@
 @using Microsoft.AspNetCore.Authorization
 @inject IAccountsService accountService;
 @inject NavigationManager nav;
-
 <PageTitle>Inventory Management</PageTitle>
-
 <div class="row">
     <div class="col-lg-4 offset-lg-4 pt-4 pb-4 border">
         <EditForm Model="@Model" OnValidSubmit="Authenticate" FormName="LoginForm">
@@ -32,7 +30,7 @@
                 <button type="submit" class="btn btn-primary">Login</button>
             </div>
         </EditForm>
-            @if (hasError)
+            @if (!string.IsNullOrEmpty(errorMessage))
             {
                 <div class="mb-3 text-center">
                     <Alert Color="AlertColor.Danger">@errorMessage</Alert>
@@ -65,32 +63,44 @@
 
     private string? errorMessage;
 
-    private async Task Authenticate()
+    private async Task Authenticate(EditContext context)
     {
         try
         {
             isLoading = true;
             var account = await accountService.AuthenticateAsync(Model.Id, Model.Password);
+            
             if (account is null)
             {
                 errorMessage = "Invalid Index or Password";
                 return;
             }
-
-            var claims = new List<Claim>{
-new Claim(ClaimTypes.Name, account.Name),
-new Claim(ClaimTypes.Role, account.Role),
-};
-
-            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var principal = new ClaimsPrincipal(identity);
-            await HttpContext.SignInAsync(principal);
-            nav.NavigateTo("/");
+            
+            if(account.resetPasswordOnNextLogin)
+            {
+                HttpContext.Response.Redirect($"/change-password/{account.Id}");
+                return;
+            }
+            else
+            {
+                var claims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, account.Name),
+                    new Claim(ClaimTypes.Role, account.Role),
+                    new Claim(ClaimTypes.NameIdentifier, account.Id.ToString())
+                };
+                
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+                
+                await HttpContext.SignInAsync(principal);
+                
+                HttpContext.Response.Redirect("/");
+            }
         }
         catch (Exception e)
         {
-            hasError = true;
-            errorMessage = "There is no connection with Database";
+            errorMessage = $"Error: {e.Message}";
         }
         finally
         {

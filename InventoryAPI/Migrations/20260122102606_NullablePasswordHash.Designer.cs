@@ -4,6 +4,7 @@ using InventoryLibrary.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InventoryAPI.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260122102606_NullablePasswordHash")]
+    partial class NullablePasswordHash
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -25,7 +28,10 @@ namespace InventoryAPI.Migrations
             modelBuilder.Entity("InventoryLibrary.Model.Accounts.Account", b =>
                 {
                     b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -68,54 +74,10 @@ namespace InventoryAPI.Migrations
                             IsAdmin = true,
                             IsModerator = false,
                             Name = "Admin",
-                            PasswordHash = "",
+                            PasswordHash = "admin",
                             Role = "Admin",
-                            resetPasswordOnNextLogin = true
+                            resetPasswordOnNextLogin = false
                         });
-                });
-
-            modelBuilder.Entity("InventoryLibrary.Model.Inventory.HistoricalItem", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Barcode")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ItemTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("OriginalItemId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("addedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("archivedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("itemDescription")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("itemName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("itemPrice")
-                        .HasColumnType("float");
-
-                    b.Property<double>("itemWeight")
-                        .HasColumnType("float");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ItemTypeId");
-
-                    b.ToTable("HistoricalItems", (string)null);
                 });
 
             modelBuilder.Entity("InventoryLibrary.Model.Inventory.InventoryItem", b =>
@@ -434,17 +396,6 @@ namespace InventoryAPI.Migrations
                     b.HasOne("InventoryLibrary.Model.StockTake.Stocktake", null)
                         .WithMany("AuthorizedAccounts")
                         .HasForeignKey("StocktakeId");
-                });
-
-            modelBuilder.Entity("InventoryLibrary.Model.Inventory.HistoricalItem", b =>
-                {
-                    b.HasOne("InventoryLibrary.Model.Inventory.ItemType", "ItemType")
-                        .WithMany()
-                        .HasForeignKey("ItemTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ItemType");
                 });
 
             modelBuilder.Entity("InventoryLibrary.Model.Inventory.InventoryItem", b =>

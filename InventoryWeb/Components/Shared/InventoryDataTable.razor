@@ -43,14 +43,24 @@
             <button class="btn btn-primary btn-sm" @onclick='() => navigationManager.NavigateTo($"/create/{context.Id}")'>
                 Edit <Icon Name="IconName.PencilFill" />
             </button>
-            <button class="btn btn-danger btn-sm" @onclick="() => {}">
+            <button class="btn btn-danger btn-sm" @onclick="() => { ItemIdToDelete = context.Id; showConfirmationBox = true; }">
                 <Icon Name="IconName.TrashFill"/>
             </button>
         </GridColumn>
     </GridColumns>
 
 </Grid>
+@if(showConfirmationBox){
+    <ConfirmationBox 
+        Title="Are you sure you want to delete this item?" 
+        AcceptButtonText="Yes" 
+        CancelButtonText="No" 
+        OnAccept="@OnConfirmAccept"
+        OnClose="@OnConfirmCancel">
+    </ConfirmationBox>
+}
 </div>
+
 @code {
     BlazorBootstrap.Grid<InventoryItem> grid = default;
 
@@ -59,6 +69,12 @@
 
     [Parameter]
     public EventCallback onBack {get;set;}
+
+    [Parameter]
+    public EventCallback<int> onDeleteItem {get;set;}
+    private int ItemIdToDelete;
+    private bool showConfirmationBox = false;
+
 
     private string GetRowClass(InventoryItem item){
         var dayleft = (item.lastInventoryDate.Date.AddYears(2) - item.lastInventoryDate.Date).TotalDays;
@@ -80,5 +96,16 @@
         }else{
             return "";
         }
+    }
+
+    private async Task OnConfirmAccept()
+    {
+        await onDeleteItem.InvokeAsync(ItemIdToDelete);
+        showConfirmationBox = false;
+    }
+
+    private void OnConfirmCancel()
+    {
+        showConfirmationBox = false;
     }
 }

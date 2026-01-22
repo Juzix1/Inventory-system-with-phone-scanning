@@ -41,7 +41,6 @@ public class BarcodeGenerator
             throw new ArgumentException("Directory part of output path cannot be null or empty.", nameof(outputPath));
 
         Directory.CreateDirectory(directory);
-        // Dodać generowanie kodu kreskowego z preferencjii użytkownika
         Barcode b = new Barcode();
         b.IncludeLabel = true;
         var img = b.Encode(

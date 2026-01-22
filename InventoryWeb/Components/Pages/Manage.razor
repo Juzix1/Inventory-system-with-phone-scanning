@@ -10,6 +10,7 @@
 @rendermode InteractiveServer
 @inject IInventoryService db
 @inject NavigationManager Nav
+@inject IImageService imageService
 
 <PageTitle>Manage Items</PageTitle>
 
@@ -68,8 +69,8 @@
         {
             @if (!sortedItems.IsNullOrEmpty())
             {
-                <div class="container-body">
-                    <InventoryDataTable ItemList="sortedItems" onBack="@(() => ResetToGroupView())" />
+                    <div class="container-body">
+                    <InventoryDataTable ItemList="sortedItems" onBack="@(() => ResetToGroupView())" onDeleteItem="@((int id) => DeleteItem(id))" />
                 </div>
             }
             else
@@ -81,7 +82,7 @@
         {
             @if (modelList != null && !modelList.IsNullOrEmpty())
             {
-                <InventoryDataTable ItemList="modelList" onBack="@(() => { modelList = null; })" />
+                <InventoryDataTable ItemList="modelList" onBack="@(() => { modelList = null; })" onDeleteItem="@((int id) => DeleteItem(id))" />
             }
             else if (!itemList.IsNullOrEmpty())
             {
@@ -118,6 +119,13 @@
 
     private bool disableSwitch = false;
 
+    private async Task DeleteItem(int itemId)
+    {
+        await imageService.DeleteImageAsync(items.FirstOrDefault(i => i.Id == itemId)?.imagePath);
+        await db.DeleteItemAsync(itemId);
+        await LoadDataAsync();
+        StateHasChanged();
+    }
 
     private async Task<AutoCompleteDataProviderResult<InventoryItem>>
     InventoryNameDataProvider(AutoCompleteDataProviderRequest<InventoryItem> request)

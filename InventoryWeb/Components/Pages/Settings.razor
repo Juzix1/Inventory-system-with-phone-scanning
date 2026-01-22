@@ -7,6 +7,8 @@
 @inject ISettingsService SettingsService
 @inject NavigationManager NavigationManager
 @rendermode InteractiveServer
+
+<PageTitle>Settings</PageTitle>
 <div class="container mt-4">
     <h3>Application Settings</h3>
 
@@ -32,13 +34,6 @@
                 <div class="mb-3">
                     <label class="form-label">Max File Size (MB)</label>
                     <InputNumber class="form-control" @bind-Value="settingsModel.MaxFileSizeMB" />
-                </div>
-
-                <div class="mb-3">
-                    <div class="form-check">
-                        <InputCheckbox class="form-check-input" @bind-Value="settingsModel.EnableNotifications" />
-                        <label class="form-check-label">Enable Notifications</label>
-                    </div>
                 </div>
 
                 <div class="mb-3">
@@ -97,9 +92,6 @@
             settingsModel.MaxFileSizeMB = settings.Find(s => s.Key == "MaxFileSize") != null
             ? int.Parse(settings.Find(s => s.Key == "MaxFileSize")!.Value) / (1024 * 1024)
             : 10;
-            settingsModel.EnableNotifications = settings.Find(s => s.Key == "EnableNotifications") != null
-            ? bool.Parse(settings.Find(s => s.Key == "EnableNotifications")!.Value)
-            : true;
             settingsModel.CompanyName = settings.Find(s => s.Key == "CompanyName")?.Value ?? "";
         }
         catch (Exception e)

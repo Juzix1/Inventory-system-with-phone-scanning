@@ -11,12 +11,14 @@ namespace InventoryLibrary.Services
     {
 
         private readonly MyDbContext _context;
+        private readonly IHistoricalDataService _historicalDataService;
         private readonly ILogger<InventoryService> _logger;
 
-        public InventoryService(MyDbContext context, ILogger<InventoryService> logger)
+        public InventoryService(MyDbContext context, IHistoricalDataService historic,ILogger<InventoryService> logger)
         {
             _context = context;
             _logger = logger;
+            _historicalDataService = historic;
         }
 
         public async Task<IEnumerable<InventoryItem>> GetAllItemsAsync()
@@ -103,7 +105,7 @@ namespace InventoryLibrary.Services
             {
                 throw new KeyNotFoundException($"Item with ID {id} not found.");
             }
-
+            await _historicalDataService.CreateHistoricalItemAsync(item);
             _context.InventoryItems.Remove(item);
             await _context.SaveChangesAsync();
             return item;

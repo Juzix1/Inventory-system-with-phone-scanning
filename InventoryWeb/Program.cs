@@ -29,8 +29,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         option.LogoutPath = "/logout";
         option.Cookie.MaxAge = TimeSpan.FromMinutes(30);
         option.AccessDeniedPath = "/access-denied";
-
-        
     });
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
@@ -43,29 +41,46 @@ builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IStocktakeService, StocktakeService>();
 builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IHistoricalDataService, HistoricalDataService>();
 
 //Account
 builder.Services.AddScoped<IAccountsService, AccountsService>();
+builder.Services.AddScoped<IPasswordService,PasswordService>();
 //Settings
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 
 
+
+
+builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddScoped(sp =>
 {
     var navigationManager = sp.GetRequiredService<NavigationManager>();
+    var httpContextAccessor = sp.GetRequiredService<IHttpContextAccessor>();
+
     var baseUri = navigationManager.BaseUri;
-    
-    // Zamień 0.0.0.0 na localhost
     if (baseUri.Contains("0.0.0.0"))
     {
         baseUri = baseUri.Replace("0.0.0.0", "localhost");
     }
-    
-    return new HttpClient
+
+    var client = new HttpClient
     {
         BaseAddress = new Uri(baseUri)
     };
+
+    var context = httpContextAccessor.HttpContext;
+    var cookie = context?.Request.Headers["Cookie"].ToString();
+
+    if (!string.IsNullOrEmpty(cookie))
+    {
+        client.DefaultRequestHeaders.Add("Cookie", cookie);
+    }
+
+    return client;
 });
+
 
 builder.Services.AddDbContextFactory<MyDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),

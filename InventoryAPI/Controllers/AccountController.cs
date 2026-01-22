@@ -16,20 +16,20 @@ namespace InventoryAPI.Controllers
 
         public AccountController(MyDbContext context, IAccountsService accountsService)
         {
-            _service = new AccountsService(context);
+            _service = new AccountsService(context, new PasswordService());
         }
 
-        [HttpPost("auth")]
-        public async Task<IActionResult> Authenticate([FromBody] LoginRequest request)
-        {
-            var auth = await _service.AuthenticateAsync(request.Email, request.Password);
-            if (auth == null)
-                return Unauthorized("Invalid credentials.");
+        // [HttpPost("auth")]
+        // public async Task<IActionResult> Authenticate([FromBody] LoginRequest request)
+        // {
+        //     var auth = await _service.AuthenticateAsync(request.Id, request.Password);
+        //     if (auth == null)
+        //         return Unauthorized("Invalid credentials.");
 
-            // TODO: Wygeneruj i zwróć JWT zamiast danych konta
-            var token = "tst"; //GenerateJwtToken(auth);
-            return Ok(new { Token = token });
-        }
+        //     // TODO: Wygeneruj i zwróć JWT zamiast danych konta
+        //     var token = "tst"; //GenerateJwtToken(auth);
+        //     return Ok(new { Token = token });
+        // }
 
         [HttpPost("create")]
         public async Task<IActionResult> CreateAccount([FromBody] Account account)

@@ -11,5 +11,7 @@ namespace InventoryLibrary.Services.Interfaces
         Task DeleteAccountAsync(int id);
         Task<Account> AuthenticateAsync(int index, string password);
         Task<bool> CanAccessScanner(int accountId);
+        Task SetUserPassword(int accountId, string newPassword);
+        Task resetPasswordOnNextLogin(int accountId, bool reset);
     }
 }

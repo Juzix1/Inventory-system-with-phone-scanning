@@ -48,6 +48,8 @@ else
                                     @onclick='() => NavigationManager.NavigateTo($"/edit-user/{user.Id}")'>Edit</button>
                                 <button disabled=@(user.Id == 1) type="button" class="btn btn-sm btn-danger"
                                     @onclick='() => { userIdToDelete = user.Id; showEditForm = true; }'>Delete</button>
+                                <button disabled=@(user.resetPasswordOnNextLogin) type="button" class="btn btn-sm btn-success"
+                                    @onclick='() => { userIdToReset = user.Id; showEditForm = true; }'>Reset password</button>
                             </td>
                         </tr>
                     }
@@ -62,9 +64,15 @@ else
     </div>
     @if (showEditForm)
     {
-
+        if(userIdToDelete != 0){
+            <ConfirmationBox OnClose="() => { showEditForm = false; }" OnAccept="ResetPassword"
+            Title="Are you sure you want to reset this user's password?" AcceptButtonText="Yes, Reset" CancelButtonText="Cancel" />
+        }else{
         <ConfirmationBox OnClose="() => { showEditForm = false; }" OnAccept="DeleteUser"
             Title="Are you sure you want to delete this user?" AcceptButtonText="Yes, Delete" CancelButtonText="Cancel" />
+            }
+
+        showEditForm = false;
     }
 }
 
@@ -74,7 +82,8 @@ else
     private bool hasError = true;
     private List<Account> users = new List<Account>();
     private bool showEditForm = false;
-    private int userIdToDelete;
+    private int? userIdToDelete = null;
+    private int? userIdToReset = null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -100,7 +109,17 @@ else
 
     private void DeleteUser()
     {
-        AccountsService.DeleteAccountAsync(userIdToDelete);
+        if(userIdToDelete == null) return;
+        AccountsService.DeleteAccountAsync(userIdToDelete.Value);
         users = users.Where(u => u.Id != userIdToDelete).ToList();
+        userIdToDelete = null;
+
+    }
+
+    private void ResetPassword()
+    {
+        if(userIdToReset == null) return;
+        AccountsService.resetPasswordOnNextLogin(userIdToReset.Value, true);
+        userIdToReset = null;
     }
 }

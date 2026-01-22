@@ -8,11 +8,13 @@ namespace InventoryLibrary.Services
     public class AccountsService : IAccountsService
     {
         private readonly MyDbContext _context;
+        private readonly IPasswordService _passwordService;
         
 
-        public AccountsService(MyDbContext context)
+        public AccountsService(MyDbContext context, IPasswordService passwordService)
         {
             _context = context;
+            _passwordService = passwordService;
         }
 
         public async Task<Account?> AuthenticateAsync(int index, string password)
@@ -22,7 +24,16 @@ namespace InventoryLibrary.Services
                 throw new ArgumentException("Email and password cannot be null or empty.");
             }
 
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == index && a.PasswordHash == password);
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == index);
+            if(account == null){
+                return null;
+            }
+            if(!_passwordService.VerifyPassword(account.PasswordHash, password)){
+                if(account.resetPasswordOnNextLogin && account.PasswordHash == ""){
+                    return account;
+                }
+                return null;
+            }
 
             return account;
         }
@@ -137,6 +148,31 @@ namespace InventoryLibrary.Services
             {
                 return false;
             }
+        }
+
+        public Task SetUserPassword(int accountId, string newPassword)
+        {
+            var account = _context.Accounts.Find(accountId);
+            if (account == null)
+            {
+                throw new KeyNotFoundException($"Account with ID {accountId} not found.");
+            }
+            account.PasswordHash = _passwordService.Hash(newPassword);
+            account.resetPasswordOnNextLogin = false;
+            _context.SaveChanges();
+            return Task.CompletedTask;
+        }
+
+        public Task resetPasswordOnNextLogin(int accountId, bool reset)
+        {
+             var account = _context.Accounts.Find(accountId);
+            if (account == null)
+            {
+                throw new KeyNotFoundException($"Account with ID {accountId} not found.");
+            }
+            account.resetPasswordOnNextLogin = true;
+            _context.SaveChanges();
+            return Task.CompletedTask;
         }
     }
 }

@@ -9,6 +9,7 @@ namespace InventoryLibrary.Services.Interfaces
         Task<InventoryItem> CreateItemAsync(InventoryItem item);
         Task<IEnumerable<InventoryItem>> GetItemsByName(string name);
         Task<InventoryItem> UpdateItemAsync(InventoryItem item);
+        Task<InventoryItem> DeleteItemAsync(int id);
     }
 
 }

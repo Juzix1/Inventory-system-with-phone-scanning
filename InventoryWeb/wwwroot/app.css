@@ -85,8 +85,8 @@ h1:focus {
     border-radius:5px;
     box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     background-color:#f9f9f9;
-    min-width: 40%;
-    max-width: 60%;
+    min-width: 50%;
+    max-width: 80%;
     width:fit-content;
     display:flex;
     justify-content: center;
