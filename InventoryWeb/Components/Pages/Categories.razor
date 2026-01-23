@@ -19,10 +19,10 @@
     }
 else
 {
-    <CategoryForm Type="CategoryFormMode.Types" Items="@typesNames"></CategoryForm>
+    <CategoryForm Type="CategoryFormMode.Types" Items="@typesNames" ></CategoryForm>
     <CategoryForm Type="CategoryFormMode.Conditions" Items="@conditions"></CategoryForm>
-    <CategoryForm Type="CategoryFormMode.Departments" Items="@departments"></CategoryForm>
-    @* <CategoryForm Type="CategoryFormMode.Locations" Items="@locations"></CategoryForm> *@
+    <CategoryForm Type="CategoryFormMode.Departments" Items="@departments" ShowAddButton=true></CategoryForm>
+    <CategoryForm Type="CategoryFormMode.Rooms" ShowAddButton=true></CategoryForm>
 }
 
 

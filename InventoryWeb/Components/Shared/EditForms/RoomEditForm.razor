@@ -1,0 +1,112 @@
+@page "/categories/Edit-Room/{Id:int}"
+
+@using InventoryLibrary.Model.Location
+@using InventoryLibrary.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject ILocationService locationService
+@inject NavigationManager Navigation
+
+@rendermode InteractiveServer
+
+<h3>@(room.Id == 0 ? "Create Room" : "Edit Room")</h3>
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EditForm Model="room" OnValidSubmit="SaveRoom">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-2">
+            <label class="form-label">Room Name</label>
+            <InputText class="form-control" @bind-Value="room.RoomName" />
+        </div>
+
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" type="submit">Save</button>
+            @if (room.Id != 0)
+            {
+                <button class="btn btn-danger" type="button" @onclick="DeleteRoom">Delete</button>
+            }
+            <button class="btn btn-secondary" type="button" @onclick="Cancel">Cancel</button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Room room = new Room();
+    private bool loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        await LoadData();
+        loading = false;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            if (Id > 0)
+            {
+                var r = await locationService.GetRoomByIdAsync(Id);
+                if (r is not null) room = r;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+        }
+    }
+
+    private async Task SaveRoom()
+    {
+        try
+        {
+            if (room.Id == 0)
+            {
+                await locationService.CreateRoomAsync(room);
+            }
+            else
+            {
+                await locationService.UpdateRoomAsync(room);
+            }
+            Navigation.NavigateTo("/categories", forceLoad: false);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+        }
+    }
+
+    private async Task DeleteRoom()
+    {
+        if (room.Id == 0) return;
+        try
+        {
+            await locationService.DeleteRoomAsync(room.Id);
+            Navigation.NavigateTo("/categories", forceLoad: false);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/categories", forceLoad: false);
+    }
+}

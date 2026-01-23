@@ -39,6 +39,9 @@
         <GridColumn TItem="InventoryItem" HeaderText="Last Inventory" PropertyName="LastInventory" SortKeySelector="i=>i.lastInventoryDate">
             <p class='@GetTextClass(context)'>@context.lastInventoryDate</p>
         </GridColumn>
+        <GridColumn TItem="InventoryItem" HeaderText="Location" PropertyName="Location" SortKeySelector="i => i.Location == null ? string.Empty : i.Location.RoomName">
+            <p class='@GetTextClass(context)'>@(context.Location?.RoomName ?? "")</p>
+        </GridColumn>
         <GridColumn TItem="InventoryItem" HeaderText="Actions">
             <button class="btn btn-primary btn-sm" @onclick='() => navigationManager.NavigateTo($"/create/{context.Id}")'>
                 Edit <Icon Name="IconName.PencilFill" />

@@ -11,6 +11,8 @@
 @inject IAccountsService accountsService
 
 @inject IJSRuntime JS
+@inject InventoryLibrary.Services.Interfaces.ILocationService locationService
+@inject InventoryLibrary.Services.Interfaces.ISettingsService SettingsService
 
 
 @using Microsoft.AspNetCore.Components.Forms
@@ -87,6 +89,16 @@
                 </span>
             </div>
         }
+        <div>
+        <label>Room</label>
+        <InputSelect @bind-Value="Model.RoomId" class="form-control">
+            <option value="">Select room</option>
+            @foreach (var r in rooms)
+            {
+                <option value="@r.Id">@r.RoomName</option>
+            }
+        </InputSelect>
+    </div>
     </div>
 
 
@@ -122,6 +134,8 @@
     public InventoryItem Model { get; set; } = new InventoryItem();
 
     private List<ItemCondition> conditions = new();
+    private List<InventoryLibrary.Model.Location.Room> rooms = new();
+    private int? chosenDepartmentId = null;
     private IBrowserFile? selectedFile;
     private string errorMessage = string.Empty;
     private bool isSubmitting;
@@ -230,6 +244,28 @@
 
         conditions = (await conditionService.GetAllItemConditions()).ToList();
         oldImagePath = Model.imagePath;
+
+        // Load chosen department ID from settings and rooms for that department
+        try
+        {
+            var settings = await SettingsService.GetSettings();
+            var chosen = settings.FirstOrDefault(s => s.Key == "ChosenDepartmentId")?.Value;
+            if (!string.IsNullOrWhiteSpace(chosen) && int.TryParse(chosen, out var did))
+            {
+                chosenDepartmentId = did;
+            }
+
+            var allRooms = (await locationService.GetAllRoomsAsync()).ToList();
+            if (chosenDepartmentId.HasValue && chosenDepartmentId.Value > 0)
+            {
+                rooms = allRooms.Where(r => r.DepartmentId.HasValue && r.DepartmentId.Value == chosenDepartmentId.Value).ToList();
+            }
+            else
+            {
+                rooms = allRooms;
+            }
+        }
+        catch { }
 
 
         if (Model?.PersonInChargeId != null)

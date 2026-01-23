@@ -11,6 +11,8 @@
 @inject NavigationManager navigationManager
 @inject IImageService imageService
 @inject IJSRuntime JS
+@inject InventoryLibrary.Services.Interfaces.ILocationService locationService
+@inject InventoryLibrary.Services.Interfaces.ISettingsService SettingsService
 
 <EditForm Model="@Model" OnValidSubmit="Submit" FormName="BaseEditForm">
     <DataAnnotationsValidator />
@@ -53,6 +55,7 @@
             }
         </InputSelect>
     </div>
+
     <div>
         <label>Weight</label>
         <InputNumber @bind-Value="Model.itemWeight" class="form-control" />
@@ -70,6 +73,17 @@
         <InputFile id="@fileInputId" OnChange="HandleImageSend" accept="image/*" class="form-control" />
         
     </div>
+    <div>
+        <label>Room</label>
+        <InputSelect @bind-Value="Model.RoomId" class="form-control">
+            <option value="">Select room</option>
+            @foreach (var r in rooms)
+            {
+                <option value="@r.Id">@r.RoomName</option>
+            }
+        </InputSelect>
+    </div>
+    @* add person assignment *@
     <div class="itemForm_buttons">
         <div class="mt-3">
             <button type="submit" class="btn btn-primary">Submit</button>
@@ -97,6 +111,7 @@
     private string oldImagePath = "";
 
     List<ItemCondition> conditions = new();
+    private List<InventoryLibrary.Model.Location.Room> rooms = new();
     protected override async Task OnInitializedAsync()
     {
         if (Model == null)
@@ -105,6 +120,25 @@
         }
         conditions = (await conditionService.GetAllItemConditions()).ToList();
         oldImagePath = Model.imagePath;
+
+        // load rooms filtered by chosen department setting
+        try
+        {
+            var settings = await SettingsService.GetSettings();
+            var chosen = settings.FirstOrDefault(s => s.Key == "ChosenDepartmentId")?.Value;
+            int? chosenId = null;
+            if (!string.IsNullOrWhiteSpace(chosen) && int.TryParse(chosen, out var did)) chosenId = did;
+            var allRooms = (await locationService.GetAllRoomsAsync()).ToList();
+            if (chosenId.HasValue && chosenId.Value > 0)
+            {
+                rooms = allRooms.Where(r => r.DepartmentId.HasValue && r.DepartmentId.Value == chosenId.Value).ToList();
+            }
+            else
+            {
+                rooms = allRooms;
+            }
+        }
+        catch { }
 
         if (Model.itemName.IsNullOrEmpty())
         {

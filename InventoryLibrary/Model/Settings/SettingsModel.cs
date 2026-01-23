@@ -7,4 +7,5 @@ namespace InventoryWeb.Models;
         public int MaxFileSizeMB { get; set; } = 10;
         public bool EnableNotifications { get; set; } = true;
         public string CompanyName { get; set; } = "";
+        public int? ChosenDepartmentId { get; set; }
     }

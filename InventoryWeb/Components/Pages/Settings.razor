@@ -1,11 +1,14 @@
 ﻿@page "/settings"
 @using InventoryLibrary.Services.Interfaces
 @using InventoryWeb.Models
+@using InventoryLibrary.Model.Location
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Authorization
 @attribute [Authorize(Roles = "Admin")]
 
 @inject ISettingsService SettingsService
 @inject NavigationManager NavigationManager
+@inject InventoryLibrary.Services.Interfaces.IDepartmentService departmentService
 @rendermode InteractiveServer
 
 <PageTitle>Settings</PageTitle>
@@ -39,6 +42,17 @@
                 <div class="mb-3">
                     <label class="form-label">Company Name</label>
                     <InputText class="form-control" @bind-Value="settingsModel.CompanyName" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Chosen Department</label>
+                    <InputSelect class="form-select" @bind-Value="settingsModel.ChosenDepartmentId">
+                        <option value="">(none)</option>
+                        @foreach (var d in departments)
+                        {
+                            <option value="@d.Id">@d.DepartmentName</option>
+                        }
+                    </InputSelect>
                 </div>
 
                 <button type="submit" class="btn btn-primary">Save Settings</button>
@@ -75,6 +89,7 @@
     private List<Setting>? settings;
     private SettingsModel settingsModel = new();
     private bool showMessage = false;
+    private List<InventoryLibrary.Model.Location.Department> departments = new();
 
 
     protected override async Task OnInitializedAsync()
@@ -93,6 +108,19 @@
             ? int.Parse(settings.Find(s => s.Key == "MaxFileSize")!.Value) / (1024 * 1024)
             : 10;
             settingsModel.CompanyName = settings.Find(s => s.Key == "CompanyName")?.Value ?? "";
+            // load departments for chosen selection via DI
+            try
+            {
+                var deps = await departmentService.GetAllDepartmentsAsync();
+                if (deps != null) departments = deps.ToList();
+            }
+            catch { }
+
+            if (settingsModel.ChosenDepartmentId == null && settings != null)
+            {
+                var chosenVal = settings.Find(s => s.Key == "ChosenDepartmentId")?.Value;
+                if (!string.IsNullOrWhiteSpace(chosenVal) && int.TryParse(chosenVal, out var cid)) settingsModel.ChosenDepartmentId = cid;
+            }
         }
         catch (Exception e)
         {

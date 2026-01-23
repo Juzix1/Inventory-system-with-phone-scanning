@@ -7,5 +7,6 @@ public enum CategoryFormMode
     Types,
     Conditions,
     Locations,
+    Rooms,
     Departments,
 }

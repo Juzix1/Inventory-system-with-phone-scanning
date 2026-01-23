@@ -65,6 +65,16 @@ public class SettingsService : ISettingsService
             _context.Settings.Add(new Setting { Key = "CompanyName", Value = model.CompanyName });
         }
 
+        var chosenDepSetting = settings.Find(s => s.Key == "ChosenDepartmentId");
+        if (chosenDepSetting != null)
+        {
+            chosenDepSetting.Value = model.ChosenDepartmentId?.ToString() ?? string.Empty;
+        }
+        else
+        {
+            _context.Settings.Add(new Setting { Key = "ChosenDepartmentId", Value = model.ChosenDepartmentId?.ToString() ?? string.Empty });
+        }
+
         await _context.SaveChangesAsync();
     }
 

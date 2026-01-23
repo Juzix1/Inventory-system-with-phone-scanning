@@ -1,10 +1,12 @@
 ﻿@using InventoryLibrary.Data
 @using InventoryLibrary.Services.Interfaces
+@using InventoryLibrary.Model.Location
 @using InventoryWeb.Models
 @using Microsoft.EntityFrameworkCore
 @rendermode InteractiveServer
 @inject ITypeService typeService;
 @inject IConditionService conditionService;
+@inject ILocationService locationService;
 @inject NavigationManager navigation;
 
 
@@ -15,8 +17,34 @@
         <b>@Title</b>
     </h5>
     <p class="card-text">
-        @if(Items == null || Items.Count == 0){
-            <i>No @Title.ToLower() added yet.</i>
+        @if (Type == CategoryFormMode.Rooms)
+        {
+            if (roomsList == null || roomsList.Count == 0)
+            {
+                <i>No rooms added yet.</i>
+            }
+            else
+            {
+                @foreach (var r in roomsList)
+                {
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>@r.RoomName (@(r.Department?.DepartmentName ?? "Unassigned"))</span>
+                        <div>
+                            <a class="text-decoration-none me-2" style="cursor: pointer;" @onclick="() => EditRoom(r.Id)">
+                                <Icon Name="IconName.PencilFill" Color="color"/>
+                            </a>
+                            <a class="text-decoration-none me-2" style="cursor: pointer;" @onclick="() => DeleteRoom(r.Id)">
+                                <Icon Name="IconName.TrashFill" Color="IconColor.Danger"/>
+                            </a>
+                        </div>
+                    </div>
+                }
+            }
+        }
+        else
+        {
+            @if(Items == null || Items.Count == 0){
+                <i>No @Title.ToLower() added yet.</i>
             }else{
                 @foreach (var item in Items){
                     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -35,10 +63,29 @@
                         </div>
                     </div>
                 }
+            }
         }
     </p>
-    <hr />
-    <button type="button" class="btn btn-primary btn-sm">+ Add New @buttonText</button>
+    
+    @if(ShowAddButton){
+    if (Type == CategoryFormMode.Rooms)
+    {
+        <hr />
+        <button type="button" class="btn btn-primary btn-sm" @onclick="() => showRoomForm = !showRoomForm">+ Add New Room</button>
+    }
+    else
+    {
+        <hr />
+        if (Type == CategoryFormMode.Departments)
+        {
+            <button type="button" class="btn btn-primary btn-sm" @onclick="NavigateToNewDepartment">+ Add New @buttonText</button>
+        }
+        else
+        {
+            <button type="button" class="btn btn-primary btn-sm">+ Add New @buttonText</button>
+        }
+    }
+    }
   </div>
 </div>
 
@@ -50,18 +97,22 @@
         case CategoryFormMode.Types:
             <TypeEditForm OnClose="@hideEditFormDialog" OnSubmit="@ChangeTitle" Name="@(Items[Id])"/>
             break;
-         case CategoryFormMode.Conditions:
+         @* case CategoryFormMode.Conditions:
             <ConditionEditForm></ConditionEditForm>
-            break;
-        @*
-        case CategoryFormMode.Locations:
-            <LocationEditForm></LocationEditForm>
-            break;
-            *@
+            break; *@
         case CategoryFormMode.Departments:
-            navigation.NavigateTo($"/Categories/Edit-Department/{Id}");
+            navigation.NavigateTo($"/categories/Edit-Department/{Id}");
             break;
     }
+}
+
+@if (showRoomForm && Type == CategoryFormMode.Rooms)
+{
+    <div class="mt-3">
+        <input class="form-control d-inline-block w-50 me-2" placeholder="Room name" @bind="newRoomName" />
+        <button class="btn btn-success btn-sm" @onclick="CreateRoom">Create</button>
+        <button class="btn btn-secondary btn-sm ms-2" @onclick="() => showRoomForm = false">Cancel</button>
+    </div>
 }
 
 @code {
@@ -69,6 +120,10 @@
 
 [Parameter]
 public CategoryFormMode Type {get;set;} = CategoryFormMode.Types;
+[Parameter]
+public Dictionary<int, string> Items {get;set;} = new Dictionary<int, string>();
+[Parameter]
+public bool ShowAddButton {get;set;} = false;
 private int Id;
 private string Title = "";
 private IconName icon;
@@ -76,11 +131,13 @@ bool showEditForm = false;
 
 private IconColor color = IconColor.None;
 
-[Parameter]
-public Dictionary<int, string> Items {get;set;} = new Dictionary<int, string>();
+
 
 
 private string buttonText = "";
+private List<Room> roomsList = new();
+private bool showRoomForm = false;
+private string newRoomName = string.Empty;
 
 override protected async Task OnInitializedAsync()
 {   
@@ -104,10 +161,17 @@ override protected async Task OnInitializedAsync()
             buttonText = "Location";
             break;
         case CategoryFormMode.Departments:
-            Title = "Location";
+            Title = "Departments";
             icon = IconName.BuildingFill;
             buttonText = "Department";
             color = IconColor.Info;
+            break;
+        case CategoryFormMode.Rooms:
+            Title = "Rooms";
+            icon = IconName.MapFill;
+            buttonText = "Room";
+            color = IconColor.Secondary;
+            roomsList = (await locationService.GetAllRoomsAsync()).ToList();
             break;
     }
 
@@ -142,6 +206,41 @@ private async Task ChangeTitle(string title){
     }
     await Task.Delay(10);
     navigation.Refresh();
+}
+
+private async Task CreateRoom()
+{
+    if (string.IsNullOrWhiteSpace(newRoomName)) return;
+    var room = new Room { RoomName = newRoomName };
+    await locationService.CreateRoomAsync(room);
+    newRoomName = string.Empty;
+    showRoomForm = false;
+    roomsList = (await locationService.GetAllRoomsAsync()).ToList();
+    StateHasChanged();
+}
+
+private async Task DeleteRoom(int id)
+{
+    try
+    {
+        await locationService.DeleteRoomAsync(id);
+        roomsList = (await locationService.GetAllRoomsAsync()).ToList();
+        StateHasChanged();
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine(ex.Message);
+    }
+}
+
+private void EditRoom(int id)
+{
+    navigation.NavigateTo($"/categories/Edit-Room/{id}");
+}
+
+private void NavigateToNewDepartment()
+{
+    navigation.NavigateTo("/categories/Edit-Department");
 }
 
 }
