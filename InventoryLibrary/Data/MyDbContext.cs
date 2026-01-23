@@ -113,6 +113,10 @@ namespace InventoryLibrary.Data
                 new Setting { Id = 2, Key = "MaxFileSize", Value = "10485760" },
                 new Setting { Id = 3, Key = "CompanyName", Value = "My Company" }
             );
+
+            modelBuilder.Entity<Department>().HasData(
+                new Department { Id = 1, DepartmentName = "", DepartmentLocation = "" }
+            );
             modelBuilder.Entity<Setting>()
                 .HasIndex(s => s.Key)
                 .IsUnique();

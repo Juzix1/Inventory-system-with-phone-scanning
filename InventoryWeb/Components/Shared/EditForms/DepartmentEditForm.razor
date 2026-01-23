@@ -1,0 +1,213 @@
+﻿@page "/categories/Edit-Department/{Id:int}"
+
+@using InventoryLibrary.Model.Location
+@using InventoryLibrary.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject ILocationService locationService
+@inject NavigationManager Navigation
+
+@rendermode InteractiveServer
+
+<h3>@(department.Id == 0 ? "Create Department" : "Edit Department")</h3>
+
+@if (loading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EditForm Model="department" OnValidSubmit="SaveDepartment">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="mb-2">
+            <label class="form-label">Name</label>
+            <InputText class="form-control" @bind-Value="department.DepartmentName" />
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Location</label>
+            <InputText class="form-control" @bind-Value="department.DepartmentLocation" />
+        </div>
+
+        <button class="btn btn-primary" type="submit">Save Department</button>
+        <button class="btn btn-secondary ms-2" type="button" @onclick="Cancel">Cancel</button>
+    </EditForm>
+
+    <hr />
+
+    <h5>Assigned Rooms</h5>
+    @if (assignedRooms?.Any() == true)
+    {
+        <ul class="list-group mb-3">
+            @foreach (var r in assignedRooms)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    @r.RoomName
+                    <button class="btn btn-sm btn-outline-danger" @onclick="() => UnassignRoom(r)">Remove</button>
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <p><em>No rooms assigned.</em></p>
+    }
+
+    <h5>Create Room (assigns to this department)</h5>
+    <EditForm Model="newRoom" OnValidSubmit="CreateRoom">
+        <div class="input-group mb-3">
+            <InputText class="form-control" placeholder="Room name" @bind-Value="newRoom.RoomName" />
+            <button class="btn btn-success" type="submit" disabled="@(department.Id==0)">Create & Assign</button>
+        </div>
+        @if (department.Id == 0)
+        {
+            <div class="text-muted">Save the department first to create rooms for it.</div>
+        }
+    </EditForm>
+
+    <h5>Assign Existing Unassigned Room</h5>
+    @if (availableRooms?.Any() == true)
+    {
+        <div class="d-flex gap-2 align-items-center">
+            <select class="form-select w-50" @bind="selectedAvailableRoomId">
+                <option value="0">-- Select a room --</option>
+                @foreach (var r in availableRooms)
+                {
+                    <option value="@r.Id">@r.RoomName</option>
+                }
+            </select>
+            <button class="btn btn-primary" @onclick="AssignSelectedRoom" disabled="@(selectedAvailableRoomId==0 || department.Id==0)">Assign</button>
+        </div>
+    }
+    else
+    {
+        <p><em>No unassigned rooms available.</em></p>
+    }
+}
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Department department = new Department();
+    private List<Room> assignedRooms = new();
+    private List<Room> availableRooms = new();
+    private Room newRoom = new Room();
+    private int selectedAvailableRoomId;
+    private bool loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = true;
+        await LoadData();
+        loading = false;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            if (Id > 0)
+            {
+                var dep = await locationService.GetDepartmentByIdAsync(Id);
+                if (dep is not null)
+                {
+                    department = dep;
+                }
+            }
+
+            var rooms = (await locationService.GetAllRoomsAsync())?.ToList() ?? new List<Room>();
+            assignedRooms = rooms.Where(r => r.DepartmentId.HasValue && r.DepartmentId.Value == department.Id).ToList();
+            availableRooms = (await locationService.GetUnassignedRoomsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+        }
+    }
+
+    private async Task SaveDepartment()
+    {
+        try
+        {
+            if (department.Id == 0)
+            {
+                var created = await locationService.CreateDepartmentAsync(department);
+                if (created is not null)
+                {
+                    department = created;
+                    Navigation.NavigateTo($"/categories/Edit-Department/{department.Id}", forceLoad: false);
+                }
+            }
+            else
+            {
+                await locationService.UpdateDepartmentAsync(department);
+            }
+
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+        }
+    }
+
+    private async Task CreateRoom()
+    {
+        if (department.Id == 0) return;
+        try
+        {
+            newRoom.DepartmentId = department.Id;
+            await locationService.CreateRoomAsync(newRoom);
+            newRoom = new Room();
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+        }
+    }
+
+    private async Task AssignSelectedRoom()
+    {
+        if (selectedAvailableRoomId == 0 || department.Id == 0) return;
+        try
+        {
+            var room = await locationService.GetRoomByIdAsync(selectedAvailableRoomId);
+            if (room is null) return;
+            room.DepartmentId = department.Id;
+            await locationService.UpdateRoomAsync(room);
+            selectedAvailableRoomId = 0;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+        }
+    }
+
+    private async Task UnassignRoom(Room r)
+    {
+        try
+        {
+            r.DepartmentId = null;
+            await locationService.UpdateRoomAsync(r);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/", forceLoad: false);
+    }
+}

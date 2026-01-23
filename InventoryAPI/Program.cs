@@ -21,6 +21,7 @@ builder.Services.AddScoped<IAccountsService, AccountsService>();
 builder.Services.AddScoped<ITypeService, TypeService>();
 builder.Services.AddScoped<IConditionService, ConditionService>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddScoped<ILocationService, InventoryLibrary.Services.Location.LocationService>();
 
 
 

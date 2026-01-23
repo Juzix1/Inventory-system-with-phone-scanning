@@ -50,15 +50,17 @@
         case CategoryFormMode.Types:
             <TypeEditForm OnClose="@hideEditFormDialog" OnSubmit="@ChangeTitle" Name="@(Items[Id])"/>
             break;
-        @* case CategoryFormMode.Conditions:
+         case CategoryFormMode.Conditions:
             <ConditionEditForm></ConditionEditForm>
             break;
+        @*
         case CategoryFormMode.Locations:
             <LocationEditForm></LocationEditForm>
             break;
+            *@
         case CategoryFormMode.Departments:
-            <DepartmentEditForm></DepartmentEditForm>
-            break; *@
+            navigation.NavigateTo($"/Categories/Edit-Department/{Id}");
+            break;
     }
 }
 
@@ -102,7 +104,7 @@ override protected async Task OnInitializedAsync()
             buttonText = "Location";
             break;
         case CategoryFormMode.Departments:
-            Title = "Departments";
+            Title = "Location";
             icon = IconName.BuildingFill;
             buttonText = "Department";
             color = IconColor.Info;

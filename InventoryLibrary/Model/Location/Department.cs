@@ -9,9 +9,7 @@ public class Department
     public string DepartmentName { get; set; } = "";
     public string DepartmentLocation { get; set; }
 
-
     [JsonIgnore]
     public ICollection<Room> Rooms { get; set; } = new List<Room>();
     
-
 }

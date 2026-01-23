@@ -38,6 +38,7 @@ builder.Services.AddScoped<IInventoryService,InventoryService>();
 builder.Services.AddScoped<ITypeService,TypeService>();
 builder.Services.AddScoped<IConditionService,ConditionService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
+builder.Services.AddScoped<ILocationService, LocationService>();
 builder.Services.AddScoped<IStocktakeService, StocktakeService>();
 builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IFileService, FileService>();
