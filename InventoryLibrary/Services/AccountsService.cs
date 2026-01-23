@@ -9,7 +9,7 @@ namespace InventoryLibrary.Services
     {
         private readonly MyDbContext _context;
         private readonly IPasswordService _passwordService;
-        
+
 
         public AccountsService(MyDbContext context, IPasswordService passwordService)
         {
@@ -25,11 +25,14 @@ namespace InventoryLibrary.Services
             }
 
             var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == index);
-            if(account == null){
+            if (account == null)
+            {
                 return null;
             }
-            if(!_passwordService.VerifyPassword(account.PasswordHash, password)){
-                if(account.resetPasswordOnNextLogin && account.PasswordHash == ""){
+            if (!_passwordService.VerifyPassword(account.PasswordHash, password))
+            {
+                if (account.resetPasswordOnNextLogin && account.PasswordHash == "")
+                {
                     return account;
                 }
                 return null;
@@ -63,7 +66,8 @@ namespace InventoryLibrary.Services
             if (account == null)
             {
                 throw new KeyNotFoundException($"Account with ID {id} not found.");
-            }else if(account.Id == 1)
+            }
+            else if (account.Id == 1)
             {
                 throw new InvalidOperationException("Cannot delete the admin account.");
             }
@@ -105,14 +109,15 @@ namespace InventoryLibrary.Services
             {
                 throw new KeyNotFoundException($"Account with ID {account.Id} not found.");
             }
-            
-            if(existingAccount.Email != account.Email){
+
+            if (existingAccount.Email != account.Email)
+            {
                 if (!await IsEmailUniqueAsync(account.Email))
                 {
                     throw new ArgumentException("Email must be unique and valid.");
                 }
             }
-            if(existingAccount.Role != account.Role && existingAccount.Id == 1)
+            if (existingAccount.Role != account.Role && existingAccount.Id == 1)
             {
                 throw new InvalidOperationException("Cannot change the role of the first admin account.");
             }
@@ -157,15 +162,18 @@ namespace InventoryLibrary.Services
             {
                 throw new KeyNotFoundException($"Account with ID {accountId} not found.");
             }
-            account.PasswordHash = _passwordService.Hash(newPassword);
-            account.resetPasswordOnNextLogin = false;
-            _context.SaveChanges();
+            else if (account.resetPasswordOnNextLogin == true)
+            {
+                account.PasswordHash = _passwordService.Hash(newPassword);
+                account.resetPasswordOnNextLogin = false;
+                _context.SaveChanges();
+            }
             return Task.CompletedTask;
         }
 
         public Task resetPasswordOnNextLogin(int accountId, bool reset)
         {
-             var account = _context.Accounts.Find(accountId);
+            var account = _context.Accounts.Find(accountId);
             if (account == null)
             {
                 throw new KeyNotFoundException($"Account with ID {accountId} not found.");

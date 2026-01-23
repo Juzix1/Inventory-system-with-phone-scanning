@@ -111,7 +111,7 @@ namespace InventoryLibrary.Data
             modelBuilder.Entity<Setting>().HasData(
                 new Setting { Id = 1, Key = "FileStoragePath", Value = $"{imagesPath}", },
                 new Setting { Id = 2, Key = "MaxFileSize", Value = "10485760" },
-                new Setting { Id = 4, Key = "CompanyName", Value = "My Company" }
+                new Setting { Id = 3, Key = "CompanyName", Value = "My Company" }
             );
             modelBuilder.Entity<Setting>()
                 .HasIndex(s => s.Key)
