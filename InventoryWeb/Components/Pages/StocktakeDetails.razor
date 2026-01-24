@@ -1,0 +1,598 @@
+﻿@page "/stocktake/{Id:int}"
+@using InventoryLibrary.Model.Inventory
+@using InventoryLibrary.Model.StockTake
+@using InventoryLibrary.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize]
+
+@inject IStocktakeService StocktakeService
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@rendermode InteractiveServer
+
+<PageTitle>Szczegóły Inwentaryzacji</PageTitle>
+
+<div class="container-fluid py-4">
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+            <p class="mt-3">Ładowanie inwentaryzacji...</p>
+        </div>
+    }
+    else if (stocktake == null)
+    {
+        <div class="alert alert-danger">
+            <h4><i class="bi bi-exclamation-triangle"></i> Nie znaleziono inwentaryzacji</h4>
+            <p>Inwentaryzacja o ID @Id nie istnieje lub została usunięta.</p>
+            <button class="btn btn-primary" @onclick="GoBack">Powrót do listy</button>
+        </div>
+    }
+    else
+    {
+        <!-- Nagłówek -->
+        <div class="d-flex justify-content-between align-items-start mb-4">
+            <div>
+                <button class="btn btn-outline-secondary mb-2" @onclick="GoBack">
+                    <i class="bi bi-arrow-left"></i> Powrót
+                </button>
+                <h2>@stocktake.Name</h2>
+                <p class="text-muted mb-2">@stocktake.Description</p>
+                <span class="badge @GetStatusBadgeClass(stocktake.Status) fs-6">
+                    @GetStatusText(stocktake.Status)
+                </span>
+            </div>
+            <div class="text-end">
+                @if (stocktake.Status == StockTakeStatus.InProgress && isAuthorized)
+                {
+                    <button class="btn btn-success btn-lg" @onclick="ShowBulkCheckModal">
+                        <i class="bi bi-check2-all"></i> Zaznacz wiele
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- Statystyki -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                <i class="bi bi-clipboard-data fs-3 text-primary"></i>
+                            </div>
+                            <div class="ms-3">
+                                <p class="text-muted mb-0 small">Wszystkie przedmioty</p>
+                                <h3 class="mb-0">@stocktake.AllItems</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success bg-opacity-10 rounded-3 p-3">
+                                <i class="bi bi-check-circle fs-3 text-success"></i>
+                            </div>
+                            <div class="ms-3">
+                                <p class="text-muted mb-0 small">Sprawdzone</p>
+                                <h3 class="mb-0">@stocktake.CheckedItemIdList.Count</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                <i class="bi bi-hourglass-split fs-3 text-warning"></i>
+                            </div>
+                            <div class="ms-3">
+                                <p class="text-muted mb-0 small">Do sprawdzenia</p>
+                                <h3 class="mb-0">@uncheckedItems.Count</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-info bg-opacity-10 rounded-3 p-3">
+                                <i class="bi bi-percent fs-3 text-info"></i>
+                            </div>
+                            <div class="ms-3">
+                                <p class="text-muted mb-0 small">Postęp</p>
+                                <h3 class="mb-0">@GetProgress()%</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pasek postępu -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <h5>Ogólny postęp inwentaryzacji</h5>
+                    <span class="text-muted">@stocktake.CheckedItemIdList.Count / @stocktake.AllItems</span>
+                </div>
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar @GetProgressBarClass(GetProgress())" 
+                         role="progressbar" 
+                         style="width: @GetProgress()%">
+                        @GetProgress()%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informacje o czasie -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="mb-3"><i class="bi bi-calendar-range"></i> Terminy</h5>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Data utworzenia</small>
+                                <strong>@stocktake.CreatedDate.ToString("dd.MM.yyyy HH:mm")</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Data rozpoczęcia</small>
+                                <strong>@stocktake.StartDate.ToString("dd.MM.yyyy HH:mm")</strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block">Data zakończenia</small>
+                                <strong>@stocktake.EndDate.ToString("dd.MM.yyyy HH:mm")</strong>
+                            </div>
+                            <div class="col-6">
+                                @if (stocktake.Status == StockTakeStatus.InProgress)
+                                {
+                                    var timeLeft = stocktake.EndDate - DateTime.Now;
+                                    <small class="text-muted d-block">Czas pozostały</small>
+                                    <strong class="@GetTimeLeftClass(timeLeft)">
+                                        @GetTimeLeftText(timeLeft)
+                                    </strong>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="mb-3"><i class="bi bi-people"></i> Osoby upoważnione</h5>
+                        @if (stocktake.AuthorizedAccounts?.Any() == true)
+                        {
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var account in stocktake.AuthorizedAccounts)
+                                {
+                                    <div class="badge bg-secondary bg-opacity-10 text-dark px-3 py-2">
+                                        <i class="bi bi-person-circle"></i> @account.Name
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-0">Brak przypisanych osób</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtry i wyszukiwanie -->
+        <div class="card border-0 shadow-sm mb-3">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small">Wyszukaj</label>
+                        <input type="text" class="form-control" @bind="searchTerm" 
+                               @bind:event="oninput" @bind:after="FilterItems"
+                               placeholder="Nazwa przedmiotu..." />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Status</label>
+                        <select class="form-select" @bind="filterStatus" @bind:after="FilterItems">
+                            <option value="all">Wszystkie</option>
+                            <option value="checked">Sprawdzone</option>
+                            <option value="unchecked">Niesprawdzone</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">Sortuj</label>
+                        <select class="form-select" @bind="sortBy" @bind:after="FilterItems">
+                            <option value="name">Nazwa</option>
+                            <option value="location">Lokalizacja</option>
+                            <option value="type">Typ</option>
+                            <option value="date">Data ostatniej inw.</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary w-100" @onclick="ResetFilters">
+                            <i class="bi bi-arrow-counterclockwise"></i> Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista przedmiotów -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-check"></i> 
+                        Przedmioty do sprawdzenia (@filteredItems.Count)
+                    </h5>
+                    @if (stocktake.Status == StockTakeStatus.InProgress && isAuthorized)
+                    {
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" 
+                                   @bind="showOnlyUnchecked" @bind:after="FilterItems" />
+                            <label class="form-check-label">Tylko niesprawdzone</label>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                @if (stocktake.Status == StockTakeStatus.InProgress && isAuthorized)
+                                {
+                                    <th style="width: 50px;">
+                                        <input type="checkbox" class="form-check-input" 
+                                               @bind="selectAll" @bind:after="ToggleSelectAll" />
+                                    </th>
+                                }
+                                <th>Nazwa</th>
+                                <th>Typ</th>
+                                <th>Lokalizacja</th>
+                                <th>Ostatnia inw.</th>
+                                <th>Stan</th>
+                                <th class="text-center">Status</th>
+                                @if (stocktake.Status == StockTakeStatus.InProgress && isAuthorized)
+                                {
+                                    <th class="text-center">Akcje</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in filteredItems)
+                            {
+                                var isChecked = stocktake.CheckedItemIdList.Contains(item.Id);
+                                <tr class="@(isChecked ? "table-success" : "")">
+                                    @if (stocktake.Status == StockTakeStatus.InProgress && isAuthorized)
+                                    {
+                                        <td>
+                                            <input type="checkbox" class="form-check-input"
+                                                   checked="@selectedItems.Contains(item.Id)"
+                                                   @onchange="e => ToggleItemSelection(item.Id, (bool)e.Value)" />
+                                        </td>
+                                    }
+                                    <td>
+                                        <strong>@item.itemName</strong>
+                                        @if (!string.IsNullOrEmpty(item.imagePath))
+                                        {
+                                            <br /><small class="text-muted">
+                                                <i class="bi bi-image"></i> Ma zdjęcie
+                                            </small>
+                                        }
+                                    </td>
+                                    <td>@item.ItemType?.TypeName</td>
+                                    <td>
+                                        @if (item.Location != null)
+                                        {
+                                            <i class="bi bi-geo-alt"></i> @item.Location.RoomName
+                                        }
+                                        else if (item.personInCharge != null)
+                                        {
+                                            <i class="bi bi-person"></i> @item.personInCharge.Name
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Brak</span>
+                                        }
+                                    </td>
+                                    <td>@item.lastInventoryDate.ToString("dd.MM.yyyy")</td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            @item.ItemCondition?.ConditionName
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (isChecked)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> Sprawdzono
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="bi bi-hourglass-split"></i> Oczekuje
+                                            </span>
+                                        }
+                                    </td>
+                                    @if (stocktake.Status == StockTakeStatus.InProgress && isAuthorized)
+                                    {
+                                        <td class="text-center">
+                                            @if (!isChecked)
+                                            {
+                                                <button class="btn btn-sm btn-success" 
+                                                        @onclick="() => CheckItem(item.Id)">
+                                                    <i class="bi bi-check"></i> Zaznacz
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-outline-secondary" 
+                                                        @onclick="() => UncheckItem(item.Id)">
+                                                    <i class="bi bi-x"></i> Cofnij
+                                                </button>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (!filteredItems.Any())
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox fs-1 text-muted"></i>
+                        <p class="text-muted mt-3">Brak przedmiotów spełniających kryteria</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Panel akcji masowych -->
+        @if (selectedItems.Any() && stocktake.Status == StockTakeStatus.InProgress && isAuthorized)
+        {
+            <div class="position-fixed bottom-0 start-50 translate-middle-x mb-4" style="z-index: 1050;">
+                <div class="card border-0 shadow-lg">
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <span class="badge bg-primary fs-6">Wybrano: @selectedItems.Count</span>
+                        <button class="btn btn-success" @onclick="CheckSelectedItems">
+                            <i class="bi bi-check-all"></i> Zaznacz wybrane
+                        </button>
+                        <button class="btn btn-outline-secondary" @onclick="ClearSelection">
+                            <i class="bi bi-x"></i> Anuluj
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Stocktake? stocktake;
+    private List<InventoryItem> uncheckedItems = new();
+    private List<InventoryItem> filteredItems = new();
+    private List<int> selectedItems = new();
+    
+    private bool isLoading = true;
+    private bool isAuthorized = false;
+    private int currentUserId;
+
+    private string searchTerm = "";
+    private string filterStatus = "all";
+    private string sortBy = "name";
+    private bool showOnlyUnchecked = false;
+    private bool selectAll = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        isLoading = true;
+        try
+        {
+            stocktake = await StocktakeService.GetStocktakeById(Id);
+            
+            // Sprawdź uprawnienia użytkownika
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                var userIdClaim = user.FindFirst("UserId");
+                if (userIdClaim != null && int.TryParse(userIdClaim.Value, out currentUserId))
+                {
+                    isAuthorized = await StocktakeService.IsUserAuthorized(Id, currentUserId) ||
+                                   user.IsInRole("Admin");
+                }
+            }
+
+            uncheckedItems = await StocktakeService.GetUncheckedItems(Id);
+            FilterItems();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading stocktake: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void FilterItems()
+    {
+        if (stocktake == null) return;
+
+        var items = stocktake.ItemsToCheck.AsEnumerable();
+
+        // Filtr po wyszukiwaniu
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            items = items.Where(i => i.itemName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Filtr po statusie
+        if (filterStatus == "checked")
+        {
+            items = items.Where(i => stocktake.CheckedItemIdList.Contains(i.Id));
+        }
+        else if (filterStatus == "unchecked" || showOnlyUnchecked)
+        {
+            items = items.Where(i => !stocktake.CheckedItemIdList.Contains(i.Id));
+        }
+
+        // Sortowanie
+        items = sortBy switch
+        {
+            "location" => items.OrderBy(i => i.Location?.RoomName ?? "ZZZ"),
+            "type" => items.OrderBy(i => i.ItemType?.TypeName ?? "ZZZ"),
+            "date" => items.OrderBy(i => i.lastInventoryDate),
+            _ => items.OrderBy(i => i.itemName)
+        };
+
+        filteredItems = items.ToList();
+    }
+
+    private void ResetFilters()
+    {
+        searchTerm = "";
+        filterStatus = "all";
+        sortBy = "name";
+        showOnlyUnchecked = false;
+        FilterItems();
+    }
+
+    private async Task CheckItem(int itemId)
+    {
+        try
+        {
+            await StocktakeService.MarkItemAsChecked(Id, itemId);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking item: {ex.Message}");
+        }
+    }
+
+    private async Task UncheckItem(int itemId)
+    {
+        try
+        {
+            await StocktakeService.UnmarkItemAsChecked(Id, itemId);
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error unchecking item: {ex.Message}");
+        }
+    }
+
+    private async Task CheckSelectedItems()
+    {
+        try
+        {
+            foreach (var itemId in selectedItems.ToList())
+            {
+                await StocktakeService.MarkItemAsChecked(Id, itemId);
+            }
+            selectedItems.Clear();
+            selectAll = false;
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error checking selected items: {ex.Message}");
+        }
+    }
+
+    private void ToggleItemSelection(int itemId, bool selected)
+    {
+        if (selected)
+            selectedItems.Add(itemId);
+        else
+            selectedItems.Remove(itemId);
+    }
+
+    private void ToggleSelectAll()
+    {
+        selectedItems.Clear();
+        if (selectAll)
+        {
+            selectedItems.AddRange(filteredItems
+                .Where(i => !stocktake.CheckedItemIdList.Contains(i.Id))
+                .Select(i => i.Id));
+        }
+    }
+
+    private void ClearSelection()
+    {
+        selectedItems.Clear();
+        selectAll = false;
+    }
+
+    private void ShowBulkCheckModal()
+    {
+        // Implementacja modalnego okna do masowego zaznaczania
+    }
+
+    private int GetProgress()
+    {
+        if (stocktake == null || stocktake.AllItems == 0) return 0;
+        return (int)((double)stocktake.CheckedItemIdList.Count / stocktake.AllItems * 100);
+    }
+
+    private string GetProgressBarClass(int progress) => 
+        progress >= 75 ? "bg-success" : progress >= 50 ? "bg-info" : progress >= 25 ? "bg-warning" : "bg-danger";
+
+    private string GetStatusBadgeClass(StockTakeStatus status) => status switch
+    {
+        StockTakeStatus.Planned => "bg-info",
+        StockTakeStatus.InProgress => "bg-warning text-dark",
+        StockTakeStatus.Completed => "bg-success",
+        StockTakeStatus.Cancelled => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private string GetStatusText(StockTakeStatus status) => status switch
+    {
+        StockTakeStatus.Planned => "Zaplanowane",
+        StockTakeStatus.InProgress => "W trakcie",
+        StockTakeStatus.Completed => "Ukończone",
+        StockTakeStatus.Cancelled => "Anulowane",
+        _ => "Nieznany"
+    };
+
+    private string GetTimeLeftClass(TimeSpan timeLeft) => 
+        timeLeft.TotalDays > 2 ? "text-success" : timeLeft.TotalHours > 0 ? "text-warning" : "text-danger";
+
+    private string GetTimeLeftText(TimeSpan timeLeft)
+    {
+        if (timeLeft.TotalDays > 1) return $"{(int)timeLeft.TotalDays} dni";
+        if (timeLeft.TotalHours > 0) return $"{(int)timeLeft.TotalHours} godzin";
+        if (timeLeft.TotalMinutes > 0) return $"{(int)timeLeft.TotalMinutes} minut";
+        return "Przekroczono!";
+    }
+
+    private void GoBack() => NavigationManager.NavigateTo("/stocktake-management");
+}

@@ -4,15 +4,11 @@ using InventoryLibrary.Model.Location;
 using InventoryLibrary.Model.StockTake;
 using InventoryWeb.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
 
 namespace InventoryLibrary.Data
 {
-
     public class MyDbContext : DbContext
     {
-
         public MyDbContext(DbContextOptions<MyDbContext> options) : base(options) { }
 
         public DbSet<Account> Accounts { get; set; }
@@ -24,14 +20,14 @@ namespace InventoryLibrary.Data
         public DbSet<Department> Departments { get; set; }
         public DbSet<Room> Rooms { get; set; }
         public DbSet<Stocktake> Stocktakes { get; set; }
-
         public DbSet<Setting> Settings { get; set; }
         public DbSet<HistoricalItem> HistoricalItems { get; set; }
+
         private string imagesPath = "";
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-
+            // Account configuration
             modelBuilder.Entity<Account>()
                 .ToTable("Accounts")
                 .Property(a => a.Id)
@@ -43,21 +39,59 @@ namespace InventoryLibrary.Data
                 .HasForeignKey(i => i.PersonInChargeId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            // InventoryItem configuration
             modelBuilder.Entity<InventoryItem>()
                 .ToTable("InventoryItems")
                 .HasOne(i => i.Location)
                 .WithMany()
                 .HasForeignKey(i => i.RoomId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // HistoricalItem configuration
             modelBuilder.Entity<HistoricalItem>()
                 .ToTable("HistoricalItems");
-                
-            modelBuilder.Entity<Stocktake>()
-                .ToTable("Stocktakes")
-                .HasMany(a => a.ItemsToCheck)
-                .WithOne(i => i.Stocktake)
-                .HasForeignKey(i => i.StocktakeId)
-                .OnDelete(DeleteBehavior.SetNull);
+
+            // Stocktake configuration
+            modelBuilder.Entity<Stocktake>(entity =>
+            {
+                entity.ToTable("Stocktakes");
+
+                // Relacja one-to-many z InventoryItem
+                entity.HasMany(s => s.ItemsToCheck)
+                    .WithOne(i => i.Stocktake)
+                    .HasForeignKey(i => i.StocktakeId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                // Relacja many-to-many z Account (AuthorizedAccounts)
+                entity.HasMany(s => s.AuthorizedAccounts)
+                    .WithMany()
+                    .UsingEntity<Dictionary<string, object>>(
+                        "StocktakeAuthorizedAccounts",
+                        j => j.HasOne<Account>()
+                            .WithMany()
+                            .HasForeignKey("AccountId")
+                            .OnDelete(DeleteBehavior.Cascade),
+                        j => j.HasOne<Stocktake>()
+                            .WithMany()
+                            .HasForeignKey("StocktakeId")
+                            .OnDelete(DeleteBehavior.Cascade)
+                    );
+
+                // Konwersja listy CheckedItemIdList do formatu JSON
+                entity.Property(s => s.CheckedItemIdList)
+                    .HasConversion(
+                        v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
+                        v => System.Text.Json.JsonSerializer.Deserialize<List<int>>(v, (System.Text.Json.JsonSerializerOptions)null) ?? new List<int>()
+                    )
+                    .HasColumnType("nvarchar(max)");
+
+                // Indeksy dla lepszej wydajności
+                entity.HasIndex(s => s.Status);
+                entity.HasIndex(s => s.StartDate);
+                entity.HasIndex(s => s.EndDate);
+            });
+
+            
             modelBuilder.Entity<AGD>().ToTable("AGD");
             modelBuilder.Entity<Furniture>().ToTable("Furniture");
 
@@ -82,13 +116,19 @@ namespace InventoryLibrary.Data
             modelBuilder.Entity<Department>()
                 .ToTable("Departments");
 
+            modelBuilder.Entity<Setting>()
+                .HasIndex(s => s.Key)
+                .IsUnique();
+
             base.OnModelCreating(modelBuilder);
 
+            
             modelBuilder.Entity<ItemType>().HasData(
-                    new ItemType { Id = 1, TypeName = "NoType" },
-                    new ItemType { Id = 2, TypeName = "AGD" },
-                    new ItemType { Id = 3, TypeName = "Furniture" }
-                );
+                new ItemType { Id = 1, TypeName = "NoType" },
+                new ItemType { Id = 2, TypeName = "AGD" },
+                new ItemType { Id = 3, TypeName = "Furniture" }
+            );
+
             modelBuilder.Entity<ItemCondition>().HasData(
                 new ItemCondition { Id = 1, ConditionName = "New" },
                 new ItemCondition { Id = 2, ConditionName = "Good" },
@@ -96,20 +136,33 @@ namespace InventoryLibrary.Data
                 new ItemCondition { Id = 4, ConditionName = "Lost" },
                 new ItemCondition { Id = 5, ConditionName = "Disposed" }
             );
+
             modelBuilder.Entity<Account>().HasData(
-                new Account { Id = 1, Name = "Admin", Email = "", PasswordHash = "", Role = "Admin", IsAdmin = true, resetPasswordOnNextLogin = true });
+                new Account 
+                { 
+                    Id = 1, 
+                    Name = "Admin", 
+                    Email = "", 
+                    PasswordHash = "", 
+                    Role = "Admin", 
+                    IsAdmin = true, 
+                    resetPasswordOnNextLogin = true 
+                }
+            );
 
             try
             {
-                string projectRoot = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.Parent.FullName;
+                string projectRoot = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)
+                    .Parent.Parent.Parent.Parent.FullName;
                 imagesPath = Path.Combine(projectRoot, "Images");
             }
             catch (Exception)
             {
-                //ignore
+                // Ignore
             }
+
             modelBuilder.Entity<Setting>().HasData(
-                new Setting { Id = 1, Key = "FileStoragePath", Value = $"{imagesPath}", },
+                new Setting { Id = 1, Key = "FileStoragePath", Value = $"{imagesPath}" },
                 new Setting { Id = 2, Key = "MaxFileSize", Value = "10485760" },
                 new Setting { Id = 3, Key = "CompanyName", Value = "My Company" },
                 new Setting { Id = 4, Key = "ChosenDepartmentId", Value = "" }
@@ -118,9 +171,6 @@ namespace InventoryLibrary.Data
             modelBuilder.Entity<Department>().HasData(
                 new Department { Id = 1, DepartmentName = "", DepartmentLocation = "" }
             );
-            modelBuilder.Entity<Setting>()
-                .HasIndex(s => s.Key)
-                .IsUnique();
         }
     }
 }
