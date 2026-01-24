@@ -7,7 +7,6 @@ public class HistoricalItem
     public int Id { get; set; }
     public int OriginalItemId { get; set; }
     public string itemName { get; set; } = string.Empty;
-    public string Barcode { get; set; } = string.Empty;
     public string? itemDescription { get; set; } = string.Empty;
     public int ItemTypeId { get; set; }
     public ItemType? ItemType { get; set; }

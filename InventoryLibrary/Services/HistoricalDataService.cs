@@ -26,11 +26,11 @@ public class HistoricalDataService : IHistoricalDataService
             {
                 OriginalItemId = item.Id,
                 itemName =  item.itemName,
-                Barcode = item.Barcode,
                 itemDescription = item.itemDescription,
                 ItemTypeId = item.ItemTypeId,
                 itemWeight = item.itemWeight,
                 itemPrice = item.itemPrice,
+
                 addedDate = item.addedDate,
                 archivedDate = DateTime.Now,
             };
@@ -90,7 +90,6 @@ public class HistoricalDataService : IHistoricalDataService
             }
 
             existingHistoricalItem.itemName = item.itemName;
-            existingHistoricalItem.Barcode = item.Barcode;
             existingHistoricalItem.itemDescription = item.itemDescription;
             existingHistoricalItem.ItemTypeId = item.ItemTypeId;
             existingHistoricalItem.itemWeight = item.itemWeight;

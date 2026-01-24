@@ -11,7 +11,6 @@ namespace InventoryLibrary.Model.Inventory {
         public int Id { get; set; }
 
         public string itemName { get; set; }
-        public string Barcode { get; set; }
         public string? imagePath { get; set; } = "";
 
         public string? itemDescription { get; set; }

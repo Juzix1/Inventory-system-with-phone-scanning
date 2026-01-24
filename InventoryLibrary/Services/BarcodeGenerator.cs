@@ -3,38 +3,26 @@ using InventoryLibrary.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Numerics;
 using System.Reflection.Emit;
+using SkiaSharp;
 
 public class BarcodeGenerator
 {
     string fileName = "";
 
-    public async Task<string> GenerateBarcodeNumber(MyDbContext _context)
+    public string GenerateBarcodeNumber(int id, int itemTypeId)
     {
-
-        try
-        {
-            var item = await _context.InventoryItems
-            .OrderByDescending(i => i.Id)
-            .FirstOrDefaultAsync();
-
-            if (item == null){
-                throw new InvalidOperationException("No inventory items found to generate a barcode number.");
-            }else{
-                int number = int.Parse(item.Barcode) + 1;
-                return number.ToString("D8");
-            }
-
-        }catch(Exception ex)
-        {
-            Console.WriteLine($"Error generating barcode number: {ex.Message}");
-            return "";
-        }
+        // return $"INV-{id:D6}-{itemTypeId}-{locationIdentifier}";
+        return id.ToString("D6") + itemTypeId.ToString("D6");
     }
+    
 
     public void GenerateBarcode(string barcodeText, string outputPath)
     {
         if (string.IsNullOrWhiteSpace(outputPath))
             throw new ArgumentException("Output path cannot be null or empty.", nameof(outputPath));
+
+        if (string.IsNullOrWhiteSpace(barcodeText))
+            throw new ArgumentException("Barcode text cannot be null or empty.", nameof(barcodeText));
 
         var directory = Path.GetDirectoryName(outputPath);
         if (string.IsNullOrWhiteSpace(directory))
@@ -43,11 +31,16 @@ public class BarcodeGenerator
         Directory.CreateDirectory(directory);
         Barcode b = new Barcode();
         b.IncludeLabel = true;
+        b.AlternateLabel = "Juzbans";
+        var skFore = SKColor.Parse("#000000");
+        var skBack = SKColor.Parse("#FFFFFF");
+        var fore = new SKColorF(skFore.Red / 255f, skFore.Green / 255f, skFore.Blue / 255f, skFore.Alpha / 255f);
+        var back = new SKColorF(skBack.Red / 255f, skBack.Green / 255f, skBack.Blue / 255f, skBack.Alpha / 255f);
         var img = b.Encode(
             BarcodeStandard.Type.Code128B,
             barcodeText,
-            SkiaSharp.SKColor.Parse("#000000"),
-            SkiaSharp.SKColor.Parse("#FFFFFF"),
+            fore,
+            back,
             400,
             200
         );

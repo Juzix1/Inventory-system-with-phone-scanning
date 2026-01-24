@@ -34,8 +34,10 @@ namespace InventoryAPI.Controllers
                 return NotFound("Item not found.");
             }
             var barcodeHandler = new BarcodeGenerator();
-            var outputPath = Path.Combine("Images", $"{item.Barcode}.jpg");
-            barcodeHandler.GenerateBarcode(item.Barcode, outputPath);
+            // Ensure we have a barcode value to encode. If missing, generate one and persist it.
+
+            var outputPath = Path.Combine("Images", $"{item.Id}.jpg");
+            barcodeHandler.GenerateBarcode(barcodeHandler.GenerateBarcodeNumber(item.Id,item.ItemTypeId), outputPath);
 
             if (System.IO.File.Exists(outputPath))
             {
@@ -49,72 +51,72 @@ namespace InventoryAPI.Controllers
             }
         }
 
-        [HttpPost("add")]
-        public async Task<IActionResult> AddInventoryItem()
-        {
-            var barcodeGen = new BarcodeGenerator();
-            var barcodeNumber = await barcodeGen.GenerateBarcodeNumber(_context);
+        // [HttpPost("add")]
+        // public async Task<IActionResult> AddInventoryItem()
+        // {
+        //     var barcodeGen = new BarcodeGenerator();
+        //     var barcodeNumber = await barcodeGen.GenerateBarcodeNumber(_context);
 
-            // var agd = new AGD
-            // {
-            //     itemName = "Laptop MSI f123",
-            //     Barcode = barcodeNumber,
-            //     imagePath = "image1.png",
-            //     itemCondition = "Nowy",
-            //     ItemTypeId = 1,
-            //     quantity = 1,
-            //     itemWeight = 2.5,
-            //     itemPrice = 4500,
-            //     addedDate = DateTime.Now,
-            //     warrantyEnd = DateTime.Now.AddYears(2),
-            //     lastInventoryDate = DateTime.Now,
-            //     itemLocation = "Pokój 103",
-            //     ModelName = "MSI AERO 2",
-            //     CPU = "AMD Ryzen 5 5600g",
-            //     RAM = "8GB",
-            //     Storage = "216GB SSD",
-            //     Graphics = "AMD Vega 9"
-            // };
-            var type = await _context.ItemTypes.FindAsync(1);
-            Department department = new Department
-            {
-                DepartmentName = "PANS",
-                DepartmentLocation = "32sd-323s",
-            };
-            Room room = new Room
-            {
-                RoomName = "Magazyn",
-                Department = department
-            };
-            _context.Departments.Add(department);
-            _context.Rooms.Add(room);
-            var item = new InventoryItem
-            {
-                itemName = "Laptop",
-                Barcode = barcodeNumber,
-                ItemType = type,
-                addedDate = DateTime.Now,
-                lastInventoryDate = DateTime.Now,
-                Location = room
-            };
+        //     // var agd = new AGD
+        //     // {
+        //     //     itemName = "Laptop MSI f123",
+        //     //     Barcode = barcodeNumber,
+        //     //     imagePath = "image1.png",
+        //     //     itemCondition = "Nowy",
+        //     //     ItemTypeId = 1,
+        //     //     quantity = 1,
+        //     //     itemWeight = 2.5,
+        //     //     itemPrice = 4500,
+        //     //     addedDate = DateTime.Now,
+        //     //     warrantyEnd = DateTime.Now.AddYears(2),
+        //     //     lastInventoryDate = DateTime.Now,
+        //     //     itemLocation = "Pokój 103",
+        //     //     ModelName = "MSI AERO 2",
+        //     //     CPU = "AMD Ryzen 5 5600g",
+        //     //     RAM = "8GB",
+        //     //     Storage = "216GB SSD",
+        //     //     Graphics = "AMD Vega 9"
+        //     // };
+        //     var type = await _context.ItemTypes.FindAsync(1);
+        //     Department department = new Department
+        //     {
+        //         DepartmentName = "PANS",
+        //         DepartmentLocation = "32sd-323s",
+        //     };
+        //     Room room = new Room
+        //     {
+        //         RoomName = "Magazyn",
+        //         Department = department
+        //     };
+        //     _context.Departments.Add(department);
+        //     _context.Rooms.Add(room);
+        //     var item = new InventoryItem
+        //     {
+        //         itemName = "Laptop",
+        //         Barcode = barcodeNumber,
+        //         ItemType = type,
+        //         addedDate = DateTime.Now,
+        //         lastInventoryDate = DateTime.Now,
+        //         Location = room
+        //     };
 
-            var furniture = new Furniture
-            {
-                FurnitureType = "Biurko",
-                itemName = "Biurko IKEA",
-                imagePath = "image2.png",
-                Barcode = barcodeNumber,
-                itemWeight = 20.0,
-                itemPrice = 300,
-                addedDate = DateTime.Now,
-                warrantyEnd = DateTime.Now.AddYears(1),
-                lastInventoryDate = DateTime.Now,
-            };
+        //     var furniture = new Furniture
+        //     {
+        //         FurnitureType = "Biurko",
+        //         itemName = "Biurko IKEA",
+        //         imagePath = "image2.png",
+        //         Barcode = barcodeNumber,
+        //         itemWeight = 20.0,
+        //         itemPrice = 300,
+        //         addedDate = DateTime.Now,
+        //         warrantyEnd = DateTime.Now.AddYears(1),
+        //         lastInventoryDate = DateTime.Now,
+        //     };
 
-            _context.InventoryItems.Add(item);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        //     _context.InventoryItems.Add(item);
+        //     await _context.SaveChangesAsync();
+        //     return Ok();
+        // }
 
         [HttpGet("all")]
         public async Task<ActionResult<IEnumerable<InventoryItem>>> GetAllInventoryItems()

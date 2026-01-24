@@ -64,9 +64,6 @@ namespace InventoryLibrary.Services
                 }
                 item.addedDate = DateTime.Now;
                 item.lastInventoryDate = DateTime.Now;
-                var barcodeGen = new BarcodeGenerator();
-                var barcodeNumber = await barcodeGen.GenerateBarcodeNumber(_context);
-                item.Barcode = barcodeNumber;
                 _context.InventoryItems.Add(item);
                 
                 await _context.SaveChangesAsync();
@@ -130,6 +127,8 @@ namespace InventoryLibrary.Services
                     existingItem.PersonInChargeId = null;
                     existingItem.personInCharge = null;
                 }
+
+                
 
                 // Update properties safely on the tracked entity
                 _context.Entry(existingItem).CurrentValues.SetValues(item);
