@@ -120,6 +120,16 @@ namespace InventoryLibrary.Services
                 {
                     throw new KeyNotFoundException($"Item with ID {item.Id} not found.");
                 }
+                if(existingItem.personInCharge?.Id != null || existingItem.PersonInChargeId != null)
+                {
+                    existingItem.Location = null;
+                    existingItem.RoomId = null;
+                }
+                else
+                {
+                    existingItem.PersonInChargeId = null;
+                    existingItem.personInCharge = null;
+                }
 
                 // Update properties safely on the tracked entity
                 _context.Entry(existingItem).CurrentValues.SetValues(item);
@@ -138,7 +148,16 @@ namespace InventoryLibrary.Services
             try
             {
                 var existingItem = await _context.InventoryItems.FindAsync(item.Id) ?? throw new KeyNotFoundException($"Item with ID {item.Id} not found.");
-                existingItem.lastInventoryDate = DateTime.Now;
+                if (existingItem.personInCharge?.Id != null || existingItem.PersonInChargeId != null)
+                {
+                    existingItem.Location = null;
+                    existingItem.RoomId = null;
+                }
+                else
+                {
+                    existingItem.PersonInChargeId = null;
+                    existingItem.personInCharge = null;
+                }
                 await _context.SaveChangesAsync();
             }
             catch (Exception ex)

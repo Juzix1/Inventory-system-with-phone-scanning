@@ -117,23 +117,24 @@
 
     private async Task DownloadTemplate(){
         try
-    {
-        isDownloading = true;
-        errorMessage = string.Empty;
-        
-        // Prosta nawigacja - przeglądarka automatycznie pobierze plik
-        nav.NavigateTo("/api/import/template", forceLoad: true);
-        
-        await Task.Delay(500); // Krótkie opóźnienie dla UX
-    }
-    catch (Exception ex)
-    {
-        errorMessage = $"Error: {ex.Message}";
-    }
-    finally
-    {
-        isDownloading = false;
-    }
+        {
+            isDownloading = true;
+            errorMessage = string.Empty;
+
+            // Otwórz szablon w nowej karcie zamiast wymuszać pełną nawigację
+            // - to zapobiega przerwaniu obwodu Blazor Server i TaskCanceledException
+            await JS.InvokeVoidAsync("open", "/api/import/template", "_blank");
+
+            await Task.Delay(500); // Krótkie opóźnienie dla UX
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isDownloading = false;
+        }
     }
 
     private void HandleFileSelected(InputFileChangeEventArgs e){

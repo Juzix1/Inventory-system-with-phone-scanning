@@ -210,7 +210,7 @@
         selectedPerson = person;
         personSearchQuery = $"{person.IndexNumber} - {person.FullName}";
         showPersonSuggestions = false;
-        Model.PersonInChargeId = person.Id; // Add this property to your model
+        Model.PersonInChargeId = person.Id;
     }
 
     private void ClearSelectedPerson()
@@ -274,6 +274,13 @@
             if (person != null)
             {
                 personSearchQuery = $"{person.Id} - {person.Name}";
+                selectedPerson = new PersonDto
+                {
+                    Id = person.Id,
+                    IndexNumber = person.Id.ToString(),
+                    FullName = person.Name
+                };
+                showPersonSuggestions = false;
             }
         }
 
