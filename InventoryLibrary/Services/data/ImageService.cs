@@ -22,42 +22,37 @@ public class ImageService : IImageService
         _context = context;
     }
 
-    public async Task<ImageUploadResult> SendImageAsync(Stream imageStream, string fileName, int inventoryItemId)
+    public async Task<ImageUploadResult> SendImageAsync(Stream imageStream, string fileName, int? inventoryItemId = null)
     {
         try
         {
             var storagePath = await _settingsService.GetImageStoragePath();
-            
+
             if (string.IsNullOrEmpty(storagePath))
             {
                 throw new InvalidOperationException("Image storage path is not configured in settings");
             }
-            
+
             if (!Directory.Exists(storagePath))
             {
                 Directory.CreateDirectory(storagePath);
             }
-            
+
             var fileExtension = Path.GetExtension(fileName);
-            var uniqueFileName = $"{inventoryItemId}_{Guid.NewGuid()}{fileExtension}";
+            var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
             var fullPath = Path.Combine(storagePath, uniqueFileName);
-            
+
             using (var fileStream = new FileStream(fullPath, FileMode.Create))
             {
                 await imageStream.CopyToAsync(fileStream);
             }
-            
-            var inventoryItem = await _context.InventoryItems.FindAsync(inventoryItemId);
-            if (inventoryItem != null)
-            {
-                inventoryItem.imagePath = $"{uniqueFileName}";
-                await _context.SaveChangesAsync();
-            }
-            
+
+            // Do NOT update DB here — caller will set Model.imagePath and persist on submit.
+
             return new ImageUploadResult
             {
                 Success = true,
-                ImageUrl = $"{uniqueFileName}",
+                ImageUrl = uniqueFileName,
                 ImagePath = fullPath,
                 ImageId = uniqueFileName,
                 Message = "Image uploaded successfully"
@@ -78,18 +73,15 @@ public class ImageService : IImageService
         try
         {
             var storagePath = await _settingsService.GetImageStoragePath();
-            var path = Path.Combine(storagePath,imagePath);
-            Console.WriteLine(path);
+            var path = Path.Combine(storagePath, imagePath);
             if (File.Exists(path))
             {
                 File.Delete(path);
             }
-            
-            await _context.SaveChangesAsync();
-            
+
             return true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return false;
         }

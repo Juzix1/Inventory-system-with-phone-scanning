@@ -13,9 +13,10 @@
 @inject IJSRuntime JS
 @inject InventoryLibrary.Services.Interfaces.ILocationService locationService
 @inject InventoryLibrary.Services.Interfaces.ISettingsService SettingsService
-
-
 @using Microsoft.AspNetCore.Components.Forms
+
+<PageTitle>Edit Inventory Item</PageTitle>
+
 <EditForm Model="Model" OnValidSubmit="Submit" OnInvalidSubmit="HandleInvalidSubmit" FormName="BaseEditForm">
     <DataAnnotationsValidator />
     <ValidationSummary />
@@ -114,7 +115,7 @@
             </button>
         </div>
         <div class="mt-3">
-            <button type="button" class="btn btn-secondary" @onclick="OnCancel.InvokeAsync" disabled="@isSubmitting">
+            <button type="button" class="btn btn-secondary" @onclick="CancelClicked" disabled="@isSubmitting">
                 Cancel
             </button>
         </div>
@@ -141,6 +142,8 @@
     private bool isSubmitting;
     private string fileInputId = "";
     private string oldImagePath = "";
+    private string? pendingUploadedImage = null;
+    private string? pendingOldImageToDelete = null;
 
     private string personSearchQuery = string.Empty;
     private List<PersonDto> personSuggestions = new();
@@ -317,21 +320,21 @@
         }
         try
         {
-
             using var stream = file.OpenReadStream(maxFileSize);
-            var result = await imageService.SendImageAsync(stream, file.Name, Model.Id);
+            var result = await imageService.SendImageAsync(stream, file.Name);
 
             if (result.Success)
             {
-                if (!IsUpdating)
+                // Keep uploaded image locally until user confirms save.
+                pendingUploadedImage = result.ImageId;
+
+                // If there was an existing image and it's different, schedule it for deletion after successful save
+                if (!string.IsNullOrEmpty(Model.imagePath) && Model.imagePath != pendingUploadedImage)
                 {
-                    Model.imagePath = result.ImageId;
-                }
-                if (!oldImagePath.IsNullOrEmpty())
-                {
-                    await imageService.DeleteImageAsync(oldImagePath);
+                    pendingOldImageToDelete = Model.imagePath;
                 }
 
+                Model.imagePath = result.ImageId;
             }
         }
         catch (Exception ex)
@@ -360,6 +363,16 @@
             }
 
 
+            
+            // After successful save, delete previously replaced image (if any)
+            if (!string.IsNullOrEmpty(pendingOldImageToDelete))
+            {
+                await imageService.DeleteImageAsync(pendingOldImageToDelete);
+                pendingOldImageToDelete = null;
+            }
+
+            // clear pending uploaded marker
+            pendingUploadedImage = null;
 
             navigationManager.NavigateTo("/manage");
         }
@@ -379,6 +392,28 @@
         errorMessage = "Form validation failed. Please check required fields.";
         Logger.LogWarning("Form invalid on submit. Validation messages count: {Count}",
         editContext.GetValidationMessages().Count());
+    }
+
+    private async Task CancelClicked()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(pendingUploadedImage) && pendingUploadedImage != oldImagePath)
+            {
+                await imageService.DeleteImageAsync(pendingUploadedImage);
+            }
+            else if (!string.IsNullOrEmpty(Model.imagePath) && Model.imagePath != oldImagePath && pendingUploadedImage == null)
+            {
+                await imageService.DeleteImageAsync(Model.imagePath);
+            }
+        }
+        catch { }
+        
+        Model.imagePath = oldImagePath;
+        pendingUploadedImage = null;
+        pendingOldImageToDelete = null;
+
+        await OnCancel.InvokeAsync();
     }
 
 }

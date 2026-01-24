@@ -14,6 +14,7 @@
 @inject ILocationService locationService
 @inject ISettingsService SettingsService
 @inject IAccountsService accountsService
+<PageTitle>Edit Inventory Item</PageTitle>
 
 <EditForm Model="@Model" OnValidSubmit="Submit" FormName="BaseEditForm">
     <DataAnnotationsValidator />
@@ -121,7 +122,7 @@
             <button type="submit" class="btn btn-primary">Submit</button>
         </div>
         <div class="mt-3">
-            <button type="button" class="btn btn-secondary" @onclick="OnCancel.InvokeAsync">Cancel</button>
+            <button type="button" class="btn btn-secondary" @onclick="CancelClicked">Cancel</button>
         </div>
     </div>
 
@@ -141,6 +142,8 @@
     public AGD Model { get; set; } = new AGD();
 
     private string oldImagePath = "";
+    private string? pendingUploadedImage = null;
+    private string? pendingOldImageToDelete = null;
 
     List<ItemCondition> conditions = new();
     private List<InventoryLibrary.Model.Location.Room> rooms = new();
@@ -224,6 +227,14 @@
                 item = await inventoryService.CreateItemAsync(Model);
             }
 
+            // After successful save, delete previously replaced image (if any)
+            if (!string.IsNullOrEmpty(pendingOldImageToDelete))
+            {
+                await imageService.DeleteImageAsync(pendingOldImageToDelete);
+                pendingOldImageToDelete = null;
+            }
+
+            pendingUploadedImage = null;
 
             navigationManager.NavigateTo("/manage");
         }
@@ -235,6 +246,24 @@
         {
             isSubmitting = false;
         }
+    }
+
+    private async Task CancelClicked()
+    {
+        try
+        {
+            if (!string.IsNullOrEmpty(pendingUploadedImage) && pendingUploadedImage != oldImagePath)
+            {
+                await imageService.DeleteImageAsync(pendingUploadedImage);
+            }
+        }
+        catch { }
+
+        Model.imagePath = oldImagePath;
+        pendingUploadedImage = null;
+        pendingOldImageToDelete = null;
+
+        await OnCancel.InvokeAsync();
     }
 
     private async Task HandleImageSend(InputFileChangeEventArgs e)
@@ -254,15 +283,19 @@
         {
 
             using var stream = file.OpenReadStream(maxFileSize);
-            var result = await imageService.SendImageAsync(stream, file.Name, Model.Id);
+            var result = await imageService.SendImageAsync(stream, file.Name);
 
             if (result.Success)
             {
-                if (!oldImagePath.IsNullOrEmpty())
+                // track uploaded file until user confirms save
+                pendingUploadedImage = result.ImageId;
+
+                if (!string.IsNullOrEmpty(Model.imagePath) && Model.imagePath != pendingUploadedImage)
                 {
-                    await imageService.DeleteImageAsync(oldImagePath);
+                    pendingOldImageToDelete = Model.imagePath;
                 }
 
+                Model.imagePath = result.ImageId;
             }
         }
         catch (Exception ex)
