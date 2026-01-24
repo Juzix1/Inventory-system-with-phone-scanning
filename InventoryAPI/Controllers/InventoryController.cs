@@ -15,12 +15,14 @@ namespace InventoryAPI.Controllers
         private readonly MyDbContext _context;
         private readonly IInventoryService _inventoryService;
         private readonly IConditionService _conditionService;
+        private readonly ISettingsService _settingsService;
 
-        public InventoryController(MyDbContext context, IInventoryService inventoryService, IConditionService conditionService)
+        public InventoryController(MyDbContext context, IInventoryService inventoryService, IConditionService conditionService, ISettingsService settingsService)
         {
             _context = context;
             _inventoryService = inventoryService;
             _conditionService = conditionService;
+            _settingsService = settingsService;
         }
 
         [HttpGet("{id}/barcode")]
@@ -37,7 +39,9 @@ namespace InventoryAPI.Controllers
             // Ensure we have a barcode value to encode. If missing, generate one and persist it.
 
             var outputPath = Path.Combine("Images", $"{item.Id}.jpg");
-            barcodeHandler.GenerateBarcode(barcodeHandler.GenerateBarcodeNumber(item.Id,item.ItemTypeId), outputPath);
+            var barcodeText = barcodeHandler.GenerateBarcodeNumber(item.Id, item.ItemTypeId);
+            var companyName = await _settingsService.GetSettingValue<string>("CompanyName") ?? string.Empty;
+            barcodeHandler.GenerateBarcode(barcodeText, companyName, outputPath);
 
             if (System.IO.File.Exists(outputPath))
             {

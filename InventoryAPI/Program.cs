@@ -1,6 +1,7 @@
 using InventoryLibrary.Data;
 using InventoryLibrary.Services;
 using InventoryLibrary.Services.Interfaces;
+using InventoryWeb.Services;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
@@ -21,6 +22,8 @@ builder.Services.AddScoped<IAccountsService, AccountsService>();
 builder.Services.AddScoped<ITypeService, TypeService>();
 builder.Services.AddScoped<IConditionService, ConditionService>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
+builder.Services.AddScoped<ISettingsService, SettingsService>();
+
 builder.Services.AddScoped<ILocationService, InventoryLibrary.Services.Location.LocationService>();
 
 

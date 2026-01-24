@@ -83,4 +83,25 @@ public class SettingsService : ISettingsService
         var setting = await _context.Settings.FirstOrDefaultAsync(s => s.Key == "FileStoragePath");
         return setting != null ? setting.Value : string.Empty; 
     }
+
+    public async Task<T?> GetSettingValue<T>(string key)
+    {
+        var setting = await _context.Settings.FirstOrDefaultAsync(s => s.Key == key);
+        if (setting != null)
+        {
+            if (typeof(T) == typeof(string))
+            {
+                return (T?)(object)setting.Value;
+            }
+            try
+            {
+                return JsonSerializer.Deserialize<T>(setting.Value);
+            }
+            catch (JsonException)
+            {
+                return default;
+            }
+        }
+        return default;
+    }
 }

@@ -16,7 +16,7 @@ public class BarcodeGenerator
     }
     
 
-    public void GenerateBarcode(string barcodeText, string outputPath)
+    public void GenerateBarcode(string barcodeText, string LabelText,string outputPath)
     {
         if (string.IsNullOrWhiteSpace(outputPath))
             throw new ArgumentException("Output path cannot be null or empty.", nameof(outputPath));
@@ -31,7 +31,8 @@ public class BarcodeGenerator
         Directory.CreateDirectory(directory);
         Barcode b = new Barcode();
         b.IncludeLabel = true;
-        b.AlternateLabel = "Juzbans";
+        if(!string.IsNullOrWhiteSpace(LabelText))
+            b.AlternateLabel = LabelText;
         var skFore = SKColor.Parse("#000000");
         var skBack = SKColor.Parse("#FFFFFF");
         var fore = new SKColorF(skFore.Red / 255f, skFore.Green / 255f, skFore.Blue / 255f, skFore.Alpha / 255f);
