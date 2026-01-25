@@ -12,13 +12,15 @@
     Responsive="true"
     AllowSorting="true"
     Unit="Unit.Px"
-    RowClass="GetRowClass">
+    RowClass="GetRowClass"
+    Height="1000"
+    >
 
     <GridColumns>
         <GridColumn TItem="InventoryItem" HeaderText="Id" PropertyName="Id">
             @context.Id
         </GridColumn>
-        <GridColumn TItem="InventoryItem" HeaderText="Name" PropertyName="Name" SortKeySelector="i => i.itemName">
+        <GridColumn TItem="InventoryItem" HeaderText="Name" PropertyName="Name" SortString="itemName" SortKeySelector="i => i.itemName">
             @context.itemName
         </GridColumn>
         <GridColumn TItem="InventoryItem" HeaderText="Type" PropertyName="Type" SortKeySelector="i => i.ItemType.TypeName">

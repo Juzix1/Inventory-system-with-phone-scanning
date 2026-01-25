@@ -50,6 +50,9 @@ builder.Services.AddScoped<IPasswordService,PasswordService>();
 //Settings
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 
+//Analytics
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+
 
 
 

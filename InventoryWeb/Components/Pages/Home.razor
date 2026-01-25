@@ -1,14 +1,14 @@
 ﻿@page "/"
-@using InventoryLibrary.Model.Inventory
 @using InventoryLibrary.Services
 @using InventoryLibrary.Services.Interfaces
-@using Microsoft.IdentityModel.Tokens
 @using Microsoft.AspNetCore.Authorization
+@using BlazorBootstrap
 @attribute [Authorize(Roles = "Admin")]
+@inject IAnalyticsService analyticsService
+@inject ISettingsService settingsService
+@rendermode InteractiveServer
 
-@inject IInventoryService inventory;
-
-<PageTitle>Home</PageTitle>
+<PageTitle>Dashboard - Analytics</PageTitle>
 
 @if (isLoading)
 {
@@ -18,40 +18,261 @@
         </div>
     </div>
 }
-else if(!hasError)
+else if (hasError)
 {
-    <div class="container-head">
-        <div class="container-head-content">
-            <SmallBoxStat Title="Total Items" value="@(items.Count().ToString())" Icon=IconName.Box2Fill />
-            <SmallBoxStat Title="Broken Items" value="@(items.Where(i => i.ItemCondition.Id == 3).Count().ToString())"
-                Icon=IconName.XCircleFill />
-            <SmallBoxStat Title="Expired Items"
-                value="@(items.Where(i => i.lastInventoryDate < DateTime.Now).Count().ToString())" Icon=IconName.Clock />
-            <SmallBoxStat Title="Financial Status" value="@(items.Sum(c => c.itemPrice).ToString() + " PLN")"
-                Icon=IconName.Amazon />
+    <div class="alert alert-danger">
+        <h3>No connection with Database</h3>
+    </div>
+}
+else
+{
+    <div class="container-fluid">
+        <!-- Key Metrics Row -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <SmallBoxStat Title="Total Items" value="@stats.TotalItems.ToString()" Icon=IconName.Box2Fill />
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <SmallBoxStat Title="Broken Items" value="@stats.BrokenItems.ToString()" Icon=IconName.XCircleFill />
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <SmallBoxStat Title="Items on Loan" value="@stats.ItemsOnLoan.ToString()" Icon=IconName.PersonCheck />
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <SmallBoxStat Title="Total Users" value="@stats.TotalUsers.ToString()" Icon=IconName.People />
+            </div>
+        </div>
+
+
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <SmallBoxStat Title="Total Value" value="@($"{stats.TotalValue:N2} PLN")" Icon=IconName.CurrencyDollar />
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <SmallBoxStat Title="Department Value" value="@($"{stats.DepartmentValue:N2} PLN")"
+                    Icon=IconName.Building />
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <SmallBoxStat Title="Items w/o Review" value="@stats.ItemsWithoutReview.ToString()"
+                    Icon=IconName.ExclamationTriangle />
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <SmallBoxStat Title="Avg Item Age" value="@($"{stats.AverageItemAge:N1} months")" Icon=IconName.Calendar />
+            </div>
         </div>
     </div>
-}else{
-    <h3>No connection with Database</h3>
+
+    <!-- Chart Row - Dwa wykresy obok siebie -->
+    <div class="row mb-4">
+        <LineChartStat Title="Operating System Usage" ChartData="@chartData" ChartOptions="@lineChartOptions" />
+
+        <LineChartStat Title="Revenue vs Damage" ChartData="@revenueChartData" ChartOptions="@revenueChartOptions" />
+    </div>
+
+    <!-- All Departments Summary -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">All Departments Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <h6>Total Value (All Departments)</h6>
+                            <h3 class="text-primary">@($"{stats.AllDepartmentsValue:N2} PLN")</h3>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Revenue Analysis</h6>
+                            <p class="mb-0">Total Revenue: <strong>@($"{revenueAnalysis?.TotalRevenue:N2} PLN")</strong>
+                            </p>
+                            <p class="mb-0">Total Damage: <strong class="text-danger">@($"{revenueAnalysis?.TotalDamage:N2}                                PLN")</strong></p>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Purchases & Disposals</h6>
+                            <p class="mb-0">Total Purchases: <strong>@purchasesData?.TotalPurchases</strong></p>
+                            <p class="mb-0">Total Disposals: <strong>@purchasesData?.TotalDisposals</strong></p>
+                        </div>
+                        <div class="col-md-3">
+                            <h6>Damage Analysis</h6>
+                            <p class="mb-0">Total Damaged: <strong
+                                    class="text-warning">@damageAnalysis?.TotalDamaged</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 }
-
-
 
 @code {
     private bool isLoading = true;
     private bool hasError = false;
-    private IEnumerable<InventoryItem> items;
+    private bool chartInitialized = false; // ✅ Dodaj tę flagę
+    private int? chosenDepartmentId;
+
+    private DashboardStatistics stats = new();
+    private RevenueAnalysis? revenueAnalysis;
+    private DamageAnalysis? damageAnalysis;
+    private PurchasesVsDisposalsData? purchasesData;
+
+    // Charts
+    private LineChart lineChart = default!;
+    private LineChart revenueChart = default!;
+    private LineChartOptions lineChartOptions = default!;
+    private LineChartOptions revenueChartOptions = default!;
+    private ChartData chartData = default!;
+    private ChartData revenueChartData = default!;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadDataASync();
+        // Załaduj dane z bazy
+        await LoadDataAsync();
+
+        // Skonfiguruj wykresy (synchronicznie)
+        SetupChartData();
+        SetupRevenueChart();
     }
 
-    private async Task LoadDataASync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Inicjalizuj wykresy tylko raz, gdy dane są gotowe
+        if (!chartInitialized && !isLoading && !hasError && chartData != null)
+        {
+            try
+            {
+                // Inicjalizuj oba wykresy
+                await lineChart.InitializeAsync(chartData, lineChartOptions);
+                await revenueChart.InitializeAsync(revenueChartData, revenueChartOptions);
+
+                chartInitialized = true;
+            }
+            catch (Exception ex)
+            {
+            }
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private void SetupRevenueChart()
+    {
+        if (revenueAnalysis == null) return;
+
+        var colors = ColorUtility.CategoricalTwelveColors;
+        var datasets = new List<IChartDataset>();
+
+        var dataset1 = new LineChartDataset
+        {
+            Label = "Revenue",
+            Data = revenueAnalysis.RevenueData.Select(d => (double?)d).ToList(),
+            BackgroundColor = colors[0],
+            BorderColor = colors[0],
+            BorderWidth = 2,
+            HoverBorderWidth = 4,
+        };
+        datasets.Add(dataset1);
+
+        var dataset2 = new LineChartDataset
+        {
+            Label = "Damage",
+            Data = revenueAnalysis.DamageData.Select(d => (double?)d).ToList(),
+            BackgroundColor = colors[3],
+            BorderColor = colors[3],
+            BorderWidth = 2,
+            HoverBorderWidth = 4,
+        };
+        datasets.Add(dataset2);
+
+        revenueChartData = new ChartData { Labels = revenueAnalysis.Labels, Datasets = datasets };
+
+        revenueChartOptions = new LineChartOptions
+        {
+            Responsive = true,
+            Interaction = new Interaction { Mode = InteractionMode.Index }
+        };
+
+        revenueChartOptions.Scales.X!.Title = new ChartAxesTitle { Text = "Month", Display = true };
+        revenueChartOptions.Scales.Y!.Title = new ChartAxesTitle { Text = "Amount (PLN)", Display = true };
+
+        revenueChartOptions.Plugins.Title!.Text = "Revenue vs Damage Analysis";
+        revenueChartOptions.Plugins.Title.Display = true;
+    }
+
+    private void SetupChartData()
+    {
+        var colors = ColorUtility.CategoricalTwelveColors;
+
+        var labels = new List<string> { "January", "February", "March", "April", "May", "June", "July", "August", "September",
+"October", "November", "December" };
+        var datasets = new List<IChartDataset>();
+
+        var dataset1 = new LineChartDataset
+        {
+            Label = "Windows",
+            Data = new List<double?> { 7265791, 5899643, 6317759, 6315641, 5338211, 8496306, 7568556, 8538933, 8274297, 8657298,
+7548388, 7764845 },
+            BackgroundColor = colors[0],
+            BorderColor = colors[0],
+            BorderWidth = 2,
+            HoverBorderWidth = 4,
+        };
+        datasets.Add(dataset1);
+
+        var dataset2 = new LineChartDataset
+        {
+            Label = "macOS",
+            Data = new List<double?> { 1809499, 1816642, 2122410, 1809499, 1850793, 1846743, 1954797, 2391313, 1983430, 2469918,
+2633303, 2821149 },
+            BackgroundColor = colors[1],
+            BorderColor = colors[1],
+            BorderWidth = 2,
+            HoverBorderWidth = 4,
+        };
+        datasets.Add(dataset2);
+
+        var dataset3 = new LineChartDataset
+        {
+            Label = "Other",
+            Data = new List<double?> { 1081241, 1100363, 1118136, 1073255, 1120315, 1395736, 1488788, 1489466, 1489947, 1414739,
+1735811, 1820171 },
+            BackgroundColor = colors[2],
+            BorderColor = colors[2],
+            BorderWidth = 2,
+            HoverBorderWidth = 4,
+        };
+        datasets.Add(dataset3);
+
+        chartData = new ChartData { Labels = labels, Datasets = datasets };
+
+        lineChartOptions = new LineChartOptions
+        {
+            Responsive = true,
+            Interaction = new Interaction { Mode = InteractionMode.Index }
+        };
+
+        lineChartOptions.Scales.X!.Title = new ChartAxesTitle { Text = "2019", Display = true };
+        lineChartOptions.Scales.Y!.Title = new ChartAxesTitle { Text = "Visitors", Display = true };
+
+        lineChartOptions.Plugins.Title!.Text = "Operating system";
+        lineChartOptions.Plugins.Title.Display = true;
+    }
+
+    private async Task LoadDataAsync()
     {
         try
         {
-            items = await inventory.GetAllItemsAsync();
+            var deptIdStr = await settingsService.GetSettingValue<string>("ChosenDepartmentId");
+            if (!string.IsNullOrEmpty(deptIdStr) && int.TryParse(deptIdStr, out int deptId))
+            {
+                chosenDepartmentId = deptId;
+            }
+
+            stats = await analyticsService.GetDashboardStatistics(chosenDepartmentId);
+            revenueAnalysis = await analyticsService.GetRevenueAnalysis(chosenDepartmentId);
+            damageAnalysis = await analyticsService.GetDamageByMonthData(chosenDepartmentId);
+            purchasesData = await analyticsService.GetPurchasesVsDisposalsData(chosenDepartmentId);
+
             hasError = false;
         }
         catch (Exception e)
@@ -62,9 +283,6 @@ else if(!hasError)
         finally
         {
             isLoading = false;
-            await InvokeAsync(StateHasChanged);
         }
     }
-
-
 }

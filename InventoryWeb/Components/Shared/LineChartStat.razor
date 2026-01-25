@@ -1,0 +1,42 @@
+﻿@* ChartWrapper.razor *@
+@using BlazorBootstrap
+
+<div class="col-lg-6 mb-3">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">@Title</h5>
+        </div>
+        <div class="card-body" style="min-height: 400px;">
+            <LineChart @ref="chart" Height="300" Width="700"/>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Chart";
+    
+    [Parameter]
+    public ChartData? ChartData { get; set; }
+    
+    [Parameter]
+    public LineChartOptions? ChartOptions { get; set; }
+    
+    private LineChart chart = default!;
+    private bool initialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!initialized && ChartData != null && ChartOptions != null)
+        {
+            try
+            {
+                await chart.InitializeAsync(ChartData, ChartOptions);
+                initialized = true;
+            }
+            catch (Exception ex)
+            {
+            }
+        }
+    }
+}
