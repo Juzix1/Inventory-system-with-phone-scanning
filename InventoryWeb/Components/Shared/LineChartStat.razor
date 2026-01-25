@@ -1,13 +1,13 @@
-﻿@* ChartWrapper.razor *@
+﻿@* LineChartStat.razor *@
 @using BlazorBootstrap
 
-<div class="col-lg-6 mb-3">
+<div class="col-lg-auto mb-3">
     <div class="card">
         <div class="card-header">
             <h5 class="mb-0">@Title</h5>
         </div>
         <div class="card-body" style="min-height: 400px;">
-            <LineChart @ref="chart" Height="300" Width="700"/>
+            <LineChart @ref="chart" Height="300" Width="890" />
         </div>
     </div>
 </div>
@@ -27,6 +27,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        // Inicjalizuj wykres tylko raz, gdy dane są dostępne
         if (!initialized && ChartData != null && ChartOptions != null)
         {
             try
@@ -36,6 +37,7 @@
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Chart initialization error in {Title}: {ex.Message}");
             }
         }
     }

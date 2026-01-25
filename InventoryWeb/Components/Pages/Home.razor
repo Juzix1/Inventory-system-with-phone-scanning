@@ -26,7 +26,7 @@ else if (hasError)
 }
 else
 {
-    <div class="container-fluid">
+    <div class="container-fluid pt-3">
         <!-- Key Metrics Row -->
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-3">
@@ -42,8 +42,9 @@ else
                 <SmallBoxStat Title="Total Users" value="@stats.TotalUsers.ToString()" Icon=IconName.People />
             </div>
         </div>
+    </div>
 
-
+    <div class="container-fluid">
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-3">
                 <SmallBoxStat Title="Total Value" value="@($"{stats.TotalValue:N2} PLN")" Icon=IconName.CurrencyDollar />
@@ -62,15 +63,17 @@ else
         </div>
     </div>
 
-    <!-- Chart Row - Dwa wykresy obok siebie -->
-    <div class="row mb-4">
-        <LineChartStat Title="Operating System Usage" ChartData="@chartData" ChartOptions="@lineChartOptions" />
+    <div class="container-fluid ">
+        <div class="d-flex justify-content-around">
 
-        <LineChartStat Title="Revenue vs Damage" ChartData="@revenueChartData" ChartOptions="@revenueChartOptions" />
+            <LineChartStat Title="Items Created Per Month" ChartData="@chartData" ChartOptions="@lineChartOptions" />
+            <LineChartStat Title="Revenue vs Damage" ChartData="@revenueChartData" ChartOptions="@revenueChartOptions" />
+            @* zamiana revenue vs damage na okręgowy wykres *@
+        </div>
     </div>
-
+    
     <!-- All Departments Summary -->
-    <div class="row mb-4">
+    <div class="row mb-4 px-2">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
@@ -84,8 +87,7 @@ else
                         </div>
                         <div class="col-md-3">
                             <h6>Revenue Analysis</h6>
-                            <p class="mb-0">Total Revenue: <strong>@($"{revenueAnalysis?.TotalRevenue:N2} PLN")</strong>
-                            </p>
+                            <p class="mb-0">Total Revenue: <strong>@($"{revenueAnalysis?.TotalRevenue:N2} PLN")</strong></p>
                             <p class="mb-0">Total Damage: <strong class="text-danger">@($"{revenueAnalysis?.TotalDamage:N2}                                PLN")</strong></p>
                         </div>
                         <div class="col-md-3">
@@ -108,7 +110,7 @@ else
 @code {
     private bool isLoading = true;
     private bool hasError = false;
-    private bool chartInitialized = false; // ✅ Dodaj tę flagę
+    private bool chartInitialized = false;
     private int? chosenDepartmentId;
 
     private DashboardStatistics stats = new();
@@ -119,10 +121,10 @@ else
     // Charts
     private LineChart lineChart = default!;
     private LineChart revenueChart = default!;
-    private LineChartOptions lineChartOptions = default!;
-    private LineChartOptions revenueChartOptions = default!;
-    private ChartData chartData = default!;
-    private ChartData revenueChartData = default!;
+    private LineChartOptions? lineChartOptions = default!;
+    private LineChartOptions? revenueChartOptions = default!;
+    private ChartData? chartData = default!;
+    private ChartData? revenueChartData = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -141,14 +143,18 @@ else
         {
             try
             {
+                Console.WriteLine("=== Initializing charts ===");
+
                 // Inicjalizuj oba wykresy
                 await lineChart.InitializeAsync(chartData, lineChartOptions);
                 await revenueChart.InitializeAsync(revenueChartData, revenueChartOptions);
 
                 chartInitialized = true;
+                Console.WriteLine("=== Charts initialized successfully! ===");
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"=== Chart initialization FAILED: {ex.Message} ===");
             }
         }
 
@@ -201,49 +207,25 @@ else
 
     private void SetupChartData()
     {
+        if (purchasesData == null) return;
+
         var colors = ColorUtility.CategoricalTwelveColors;
 
-        var labels = new List<string> { "January", "February", "March", "April", "May", "June", "July", "August", "September",
-"October", "November", "December" };
         var datasets = new List<IChartDataset>();
 
         var dataset1 = new LineChartDataset
         {
-            Label = "Windows",
-            Data = new List<double?> { 7265791, 5899643, 6317759, 6315641, 5338211, 8496306, 7568556, 8538933, 8274297, 8657298,
-7548388, 7764845 },
+            Label = "Items Created",
+            Data = purchasesData.Purchases.Select(p => (double?)p).ToList(),
             BackgroundColor = colors[0],
             BorderColor = colors[0],
             BorderWidth = 2,
             HoverBorderWidth = 4,
+            Fill = true
         };
         datasets.Add(dataset1);
 
-        var dataset2 = new LineChartDataset
-        {
-            Label = "macOS",
-            Data = new List<double?> { 1809499, 1816642, 2122410, 1809499, 1850793, 1846743, 1954797, 2391313, 1983430, 2469918,
-2633303, 2821149 },
-            BackgroundColor = colors[1],
-            BorderColor = colors[1],
-            BorderWidth = 2,
-            HoverBorderWidth = 4,
-        };
-        datasets.Add(dataset2);
-
-        var dataset3 = new LineChartDataset
-        {
-            Label = "Other",
-            Data = new List<double?> { 1081241, 1100363, 1118136, 1073255, 1120315, 1395736, 1488788, 1489466, 1489947, 1414739,
-1735811, 1820171 },
-            BackgroundColor = colors[2],
-            BorderColor = colors[2],
-            BorderWidth = 2,
-            HoverBorderWidth = 4,
-        };
-        datasets.Add(dataset3);
-
-        chartData = new ChartData { Labels = labels, Datasets = datasets };
+        chartData = new ChartData { Labels = purchasesData.Labels, Datasets = datasets };
 
         lineChartOptions = new LineChartOptions
         {
@@ -251,10 +233,10 @@ else
             Interaction = new Interaction { Mode = InteractionMode.Index }
         };
 
-        lineChartOptions.Scales.X!.Title = new ChartAxesTitle { Text = "2019", Display = true };
-        lineChartOptions.Scales.Y!.Title = new ChartAxesTitle { Text = "Visitors", Display = true };
+        lineChartOptions.Scales.X!.Title = new ChartAxesTitle { Text = "Month", Display = true };
+        lineChartOptions.Scales.Y!.Title = new ChartAxesTitle { Text = "Number of Items", Display = true };
 
-        lineChartOptions.Plugins.Title!.Text = "Operating system";
+        lineChartOptions.Plugins.Title!.Text = "Items Created Per Month";
         lineChartOptions.Plugins.Title.Display = true;
     }
 
