@@ -1,70 +1,120 @@
 ﻿@using InventoryLibrary.Model.Inventory
 @inject NavigationManager navigationManager
-<div class="itemform px-2">
-<div class="py-2">
-    <button @onclick="onBack" class="btn btn-primary btn-l">@("<") Back</button>
+<button @onclick="onBack" class="btn btn-outline-primary">
+            <Icon Name="IconName.ArrowLeft" />
+            Back
+        </button>
+<div class="inventory-table-container">
+    
+
+
+    <div class="table-wrapper">
+        <Grid @ref="grid"
+              TItem="InventoryItem"
+              Class="table table-hover custom-table"
+              Data="ItemList"
+              FixedHeader="true"
+              Responsive="true"
+              AllowSorting="true"
+              Unit="Unit.Px"
+              RowClass="GetRowClass"
+              Height="800">
+
+            <GridColumns>
+                <GridColumn TItem="InventoryItem" HeaderText="ID" PropertyName="Id" HeaderTextCssClass="header-id">
+                    <div class="cell-id">@context.Id</div>
+                </GridColumn>
+
+                <GridColumn TItem="InventoryItem" HeaderText="Name" PropertyName="Name" SortString="itemName" SortKeySelector="i => i.itemName">
+                    <div class="cell-name">
+                        <Icon Name="IconName.BoxSeamFill" Size="IconSize.x4" class="text-primary" />
+                        <span class="fw-semibold">@context.itemName</span>
+                    </div>
+                </GridColumn>
+
+                <GridColumn TItem="InventoryItem" HeaderText="Type" PropertyName="Type" SortKeySelector="i => i.ItemType.TypeName">
+                    <span class="badge bg-info text-dark">@context.ItemType.TypeName</span>
+                </GridColumn>
+
+                <GridColumn TItem="InventoryItem" HeaderText="Condition" PropertyName="Condition" SortKeySelector="i => i.ItemCondition.Id">
+                    <span class="@GetConditionBadgeClass(context)">
+                        @context.ItemCondition.ConditionName
+                    </span>
+                </GridColumn>
+
+                <GridColumn TItem="InventoryItem" HeaderText="Value" PropertyName="Price" SortKeySelector="i => i.itemPrice">
+                    <div class="cell-price">
+                        <span class="fw-semibold">@context.itemPrice.ToString("C")</span>
+                    </div>
+                </GridColumn>
+
+                <GridColumn TItem="InventoryItem" HeaderText="Added Date" PropertyName="AddedDate">
+                    <div class="cell-date">
+                        <Icon Name="IconName.CalendarPlus" Size="IconSize.x4" />
+                        @context.addedDate.ToString("dd/MM/yyyy")
+                    </div>
+                </GridColumn>
+
+                <GridColumn TItem="InventoryItem" HeaderText="Warranty End" PropertyName="WarrantyEnd" SortKeySelector="i=>i.warrantyEnd">
+                    <div class="cell-date">
+                        <Icon Name="IconName.ShieldCheck" Size="IconSize.x4" />
+                        @context.warrantyEnd.ToString("dd/MM/yyyy")
+                    </div>
+                </GridColumn>
+
+                <GridColumn TItem="InventoryItem" HeaderText="Last Inventory" PropertyName="LastInventory" SortKeySelector="i=>i.lastInventoryDate">
+                    <div class='@($"cell-inventory {GetTextClass(context)}")'>
+                        <Icon Name="IconName.ClipboardCheck" Size="IconSize.x4" />
+                        @context.lastInventoryDate.ToString("dd/MM/yyyy")
+                    </div>
+                </GridColumn>
+
+                <GridColumn TItem="InventoryItem" HeaderText="Location" PropertyName="Location" SortKeySelector="i => i.Location == null ? string.Empty : i.Location.RoomName">
+                    <div class='@GetTextClass(context)'>
+                        @if (!string.IsNullOrEmpty(context.Location?.RoomName))
+                        {
+                            <span class="location-badge">
+                                <Icon Name="IconName.GeoAltFill" Size="IconSize.x4" />
+                                @context.Location.RoomName
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="text-muted fst-italic">Unassigned</span>
+                        }
+                    </div>
+                </GridColumn>
+
+                <GridColumn TItem="InventoryItem" HeaderText="Actions" HeaderTextCssClass="header-actions">
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-primary" 
+                                @onclick='() => navigationManager.NavigateTo($"/create/{context.Id}")'
+                                title="Edit item">
+                            <Icon Name="IconName.PencilFill" />
+                        </button>
+                        <button class="btn btn-sm btn-danger" 
+                                @onclick="() => { ItemIdToDelete = context.Id; showConfirmationBox = true; }"
+                                title="Delete item">
+                            <Icon Name="IconName.TrashFill"/>
+                        </button>
+                    </div>
+                </GridColumn>
+            </GridColumns>
+
+        </Grid>
+    </div>
 </div>
-<Grid @ref="grid"
-    TItem="InventoryItem"
-    Class="table table-hover table-bordered"
-    Data="ItemList"
-    FixedHeader="true"
-    Responsive="true"
-    AllowSorting="true"
-    Unit="Unit.Px"
-    RowClass="GetRowClass"
-    Height="1000"
-    >
 
-    <GridColumns>
-        <GridColumn TItem="InventoryItem" HeaderText="Id" PropertyName="Id">
-            @context.Id
-        </GridColumn>
-        <GridColumn TItem="InventoryItem" HeaderText="Name" PropertyName="Name" SortString="itemName" SortKeySelector="i => i.itemName">
-            @context.itemName
-        </GridColumn>
-        <GridColumn TItem="InventoryItem" HeaderText="Type" PropertyName="Type" SortKeySelector="i => i.ItemType.TypeName">
-            @context.ItemType.TypeName
-        </GridColumn>
-        <GridColumn TItem="InventoryItem" HeaderText="Condition" PropertyName="Condition" SortKeySelector="i => i.ItemCondition.Id">
-            @context.ItemCondition.ConditionName
-        </GridColumn>
-        <GridColumn TItem="InventoryItem" HeaderText="Price" PropertyName="Price" SortKeySelector="i => i.itemPrice">
-            @context.itemPrice
-        </GridColumn>
-        <GridColumn TItem="InventoryItem" HeaderText="Added Date" PropertyName="AddedDate">
-            @context.addedDate
-        </GridColumn>
-        <GridColumn TItem="InventoryItem" HeaderText="Warranty's End" PropertyName="WarrantyEnd" SortKeySelector="i=>i.warrantyEnd">
-            @context.warrantyEnd
-        </GridColumn>
-        <GridColumn TItem="InventoryItem" HeaderText="Last Inventory" PropertyName="LastInventory" SortKeySelector="i=>i.lastInventoryDate">
-            <p class='@GetTextClass(context)'>@context.lastInventoryDate</p>
-        </GridColumn>
-        <GridColumn TItem="InventoryItem" HeaderText="Location" PropertyName="Location" SortKeySelector="i => i.Location == null ? string.Empty : i.Location.RoomName">
-            <p class='@GetTextClass(context)'>@(context.Location?.RoomName ?? "")</p>
-        </GridColumn>
-        <GridColumn TItem="InventoryItem" HeaderText="Actions">
-            <button class="btn btn-primary btn-sm" @onclick='() => navigationManager.NavigateTo($"/create/{context.Id}")'>
-                Edit <Icon Name="IconName.PencilFill" />
-            </button>
-            <button class="btn btn-danger btn-sm" @onclick="() => { ItemIdToDelete = context.Id; showConfirmationBox = true; }">
-                <Icon Name="IconName.TrashFill"/>
-            </button>
-        </GridColumn>
-    </GridColumns>
-
-</Grid>
-@if(showConfirmationBox){
+@if(showConfirmationBox)
+{
     <ConfirmationBox 
         Title="Are you sure you want to delete this item?" 
-        AcceptButtonText="Yes" 
-        CancelButtonText="No" 
+        AcceptButtonText="Yes, Delete" 
+        CancelButtonText="Cancel" 
         OnAccept="@OnConfirmAccept"
         OnClose="@OnConfirmCancel">
     </ConfirmationBox>
 }
-</div>
 
 @code {
     BlazorBootstrap.Grid<InventoryItem> grid = default;
@@ -77,30 +127,54 @@
 
     [Parameter]
     public EventCallback<int> onDeleteItem {get;set;}
+    
     private int ItemIdToDelete;
     private bool showConfirmationBox = false;
 
-
-    private string GetRowClass(InventoryItem item){
-        var dayleft = (item.lastInventoryDate.Date.AddYears(2) - item.lastInventoryDate.Date).TotalDays;
-        if(dayleft < 30){
-            return "table-danger";
-        }else if(dayleft>30 && dayleft< 365){
-            return "table-warning";
-        }else{
+    private string GetRowClass(InventoryItem item)
+    {
+        var dayleft = (item.lastInventoryDate.Date.AddYears(2) - DateTime.Now.Date).TotalDays;
+        if(dayleft < 30)
+        {
+            return "table-row-danger";
+        }
+        else if(dayleft > 30 && dayleft < 180)
+        {
+            return "table-row-warning";
+        }
+        else
+        {
             return "";
         }
     }
 
-    private string GetTextClass(InventoryItem item){
-        var dayleft = (item.lastInventoryDate.Date.AddYears(2) - item.lastInventoryDate.Date).TotalDays;
-        if(dayleft < 30){
+    private string GetTextClass(InventoryItem item)
+    {
+        var dayleft = (item.lastInventoryDate.Date.AddYears(2) - DateTime.Now.Date).TotalDays;
+        if(dayleft < 30)
+        {
             return "text-danger fw-bold";
-        }else if(dayleft>30 && dayleft< 180){
+        }
+        else if(dayleft > 30 && dayleft < 180)
+        {
             return "text-warning fw-bold";
-        }else{
+        }
+        else
+        {
             return "";
         }
+    }
+
+    private string GetConditionBadgeClass(InventoryItem item)
+    {
+        var condition = item.ItemCondition?.ConditionName?.ToLower() ?? "";
+        return condition switch
+        {
+            "new" => "badge bg-success",
+            "good" => "badge bg-primary",
+            "damaged" or "Lost" => "badge bg-danger",
+            _ => "badge bg-secondary"
+        };
     }
 
     private async Task OnConfirmAccept()

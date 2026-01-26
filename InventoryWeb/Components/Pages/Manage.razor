@@ -15,100 +15,216 @@
 <PageTitle>Manage Items</PageTitle>
 
 
-<div class="container-head">
-    <div class="row">
-        <div class="col-md-5 col-sm-12">
-            <AutoComplete @bind-Value="ItemName" TItem="InventoryItem" DataProvider="InventoryNameDataProvider"
-                PropertyName="itemName" Placeholder="Search for inventory items..."
-                OnChanged="(InventoryItem item) => OnAutoCompleteChanged(item)" />
-        </div>
-        <div class="col-md-4 col-sm-12">
-            <select class="form-select" @onchange="OnSortChanged">
-                <option value="">Sort by..</option>
-                <option value="name-asc">Name (A-Z)</option>
-                <option value="name-desc">Name (Z-A)</option>
-                <option value="date-newest">Newest Items</option>
-                <option value="date-oldest">Oldest Items</option>
-                <option value="price-low">Price (Low to High)</option>
-                <option value="price-high">Price (High to Low)</option>
-                <option value="category">Category</option>
-                <option value="location">Location</option>
-                <option value="inventory-date">Last Inventory Date</option>
-                <option value="warranty">Warranty End Date</option>
-                <option value="condition">condition</option>
-            </select>
-        </div>
-        <div class="col-md-2 col-sm-12">
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="showAllSwitch" @bind="showAllItems"
-                    @bind:after="OnViewModeChanged" disabled="@(disableSwitch)">
-                <label class="form-check-label" for="showAllSwitch">
-                    Show All Items
-                </label>
-            </div>
-        </div>
-        <div class="col-md-2 col-sm-12">
-            <button class="btn btn-secondary w-100" @onclick="ResetFilters">Reset</button>
-        </div>
-        <div class="col-md-2 col-sm-12">
-            <button class="btn btn-primary w-100" @onclick='() => { Nav.NavigateTo("/create"); }'>Create new Item</button>
-        </div>
+
+<div class="manage-container">
+    <!-- Header Section -->
+    <div class="page-header mb-4">
+        <h2 class="page-title">
+            <Icon Name="IconName.BoxSeamFill" Size="IconSize.x3" />
+            Manage Inventory
+        </h2>
     </div>
-</div>
-<div class="container-body">
-    @if (isLoading)
-    {
-        @for (var i = 0; i < 5; i++)
-        {
-            <BoxStat item="@null" />
-        }
-    }
-    else
-    {
-        @if (showAllItems || !string.IsNullOrEmpty(currentSort))
-        {
-            @if (!sortedItems.IsNullOrEmpty())
-            {
-                    <div class="container-body">
-                    <InventoryDataTable ItemList="sortedItems" onBack="@(() => ResetToGroupView())" onDeleteItem="@((int id) => DeleteItem(id))" />
+
+    <!-- Filters Card -->
+    <div class="filters-card">
+
+
+        <div class="filters-body">
+            <div class="row g-3">
+                <!-- Search -->
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <label class="form-label">
+                        <Icon Name="IconName.Search" Size="IconSize.x4" />
+                        Search Items
+                    </label>
+                    <AutoComplete @bind-Value="ItemName" 
+                                  TItem="InventoryItem" 
+                                  DataProvider="InventoryNameDataProvider"
+                                  PropertyName="itemName" 
+                                  Placeholder="Type to search inventory items..."
+                                  OnChanged="(InventoryItem item) => OnAutoCompleteChanged(item)" />
                 </div>
-            }
-            else
-            {
-                <h3>No items found</h3>
-            }
+
+                <!-- Sort -->
+                <div class="col-lg-4 col-md-6 col-sm-12">
+                    <label class="form-label">
+                        <Icon Name="IconName.SortDown" Size="IconSize.x4" />
+                        Sort By
+                    </label>
+                    <select class="form-select" @onchange="OnSortChanged">
+                        <option value="">Default sorting</option>
+                        <optgroup label="Name">
+                            <option value="name-asc">Name (A-Z)</option>
+                            <option value="name-desc">Name (Z-A)</option>
+                        </optgroup>
+                        <optgroup label="Date">
+                            <option value="date-newest">Newest Items</option>
+                            <option value="date-oldest">Oldest Items</option>
+                            <option value="inventory-date">Last Inventory Date</option>
+                            <option value="warranty">Warranty End Date</option>
+                        </optgroup>
+                        <optgroup label="Price">
+                            <option value="price-low">Price (Low to High)</option>
+                            <option value="price-high">Price (High to Low)</option>
+                        </optgroup>
+                        <optgroup label="Other">
+                            <option value="category">Category</option>
+                            <option value="location">Location</option>
+                            <option value="condition">Condition</option>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- View Mode Toggle -->
+                <div class="col-lg-2 col-md-6 col-sm-12">
+                    <label class="form-label">View Mode</label>
+                    <div class="view-mode-toggle">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" 
+                                   type="checkbox" 
+                                   id="showAllSwitch" 
+                                   @bind="showAllItems"
+                                   @bind:after="OnViewModeChanged" 
+                                   disabled="@(disableSwitch)">
+                            <label class="form-check-label" for="showAllSwitch">
+                                Show All Items
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Create New Button -->
+                <div class="col-lg-2 col-md-6 col-sm-12">
+                    <label class="form-label d-none d-lg-block">&nbsp;</label>
+                    <button class="btn btn-primary w-100" @onclick='() => { Nav.NavigateTo("/create"); }'>
+                        <Icon Name="IconName.PlusCircleFill" />
+                        Create New
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="ResetFilters">
+                <Icon Name="IconName.ArrowClockwise" />
+                Reset All
+            </button>
+        </div>
+
+        <!-- Active Filters Display -->
+        @if (!string.IsNullOrEmpty(currentSort) || !string.IsNullOrEmpty(ItemName) || showAllItems)
+        {
+            <div class="active-filters">
+                <span class="active-filters-label">Active filters:</span>
+                @if (!string.IsNullOrEmpty(currentSort))
+                {
+                    <span class="filter-badge">
+                        Sort: @GetSortDisplayName(currentSort)
+                        <button class="filter-badge-close" @onclick="() => ClearSort()">×</button>
+                    </span>
+                }
+                @if (!string.IsNullOrEmpty(ItemName))
+                {
+                    <span class="filter-badge">
+                        Search: @ItemName
+                        <button class="filter-badge-close" @onclick="() => ClearSearch()">×</button>
+                    </span>
+                }
+                @if (showAllItems)
+                {
+                    <span class="filter-badge">
+                        View: All Items
+                    </span>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Content Area -->
+    <div class="content-area">
+        @if (isLoading)
+        {
+            <div class="loading-container">
+                @for (var i = 0; i < 5; i++)
+                {
+                    <BoxStat item="@null" />
+                }
+            </div>
         }
         else
         {
-            @if (modelList != null && !modelList.IsNullOrEmpty())
+            @if (showAllItems || !string.IsNullOrEmpty(currentSort))
             {
-                <InventoryDataTable ItemList="modelList" onBack="@(() => { modelList = null; })" onDeleteItem="@((int id) => DeleteItem(id))" />
-            }
-            else if (!itemList.IsNullOrEmpty())
-            {
-                <div class="container-body">
-                    @foreach (var item in itemList)
-                    {
-                        <BoxStat item="item" showDetails="showDetails" />
-                    }
-                </div>
+                @if (!sortedItems.IsNullOrEmpty())
+                {
+                    <div class="results-header">
+                        <h5 class="results-count">
+                            <Icon Name="IconName.ListUl" />
+                            Showing @sortedItems.Count() items
+                        </h5>
+                    </div>
+                    <InventoryDataTable ItemList="sortedItems" 
+                                        onBack="@(() => ResetToGroupView())" 
+                                        onDeleteItem="@((int id) => DeleteItem(id))" />
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <Icon Name="IconName.InboxFill" Size="IconSize.x5" />
+                        <h3>No items found</h3>
+                        <p>Try adjusting your filters or search terms</p>
+                    </div>
+                }
             }
             else
             {
-                if(hasError){
-                    <h3>No Connection with Database</h3>
-                }else{
-                    <h3>No items in Database</h3>
+                @if (modelList != null && !modelList.IsNullOrEmpty())
+                {
+                    <div class="results-header">
+                        <h5 class="results-count">
+                            <Icon Name="IconName.ListUl" />
+                            Showing @modelList.Count() items
+                        </h5>
+                    </div>
+                    <InventoryDataTable ItemList="modelList" 
+                                        onBack="@(() => { modelList = null; })" 
+                                        onDeleteItem="@((int id) => DeleteItem(id))" />
+                }
+                else if (!itemList.IsNullOrEmpty())
+                {
+                    <div class="grouped-items-container">
+                        @foreach (var item in itemList)
+                        {
+                            <BoxStat item="item" showDetails="showDetails" />
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        @if(hasError)
+                        {
+                            <Icon Name="IconName.ExclamationTriangleFill" Size="IconSize.x5" class="text-danger" />
+                            <h3>No Connection with Database</h3>
+                            <p>Please check your connection and try again</p>
+                        }
+                        else
+                        {
+                            <Icon Name="IconName.InboxFill" Size="IconSize.x5" />
+                            <h3>No items in Database</h3>
+                            <p>Start by creating your first inventory item</p>
+                            <button class="btn btn-primary mt-3" @onclick='() => { Nav.NavigateTo("/create"); }'>
+                                <Icon Name="IconName.PlusCircleFill" />
+                                Create First Item
+                            </button>
+                        }
+                    </div>
                 }
             }
         }
-    }
+    </div>
 </div>
-@code {
 
+@code {
     private bool isLoading = true;
     private bool hasError = false;
-
     private bool showAllItems = false;
     private string? ItemName;
     private string currentSort = "";
@@ -116,8 +232,41 @@
     private IEnumerable<InventoryItem?> modelList = null;
     private IEnumerable<InventoryItem?> items = new List<InventoryItem?>();
     private IEnumerable<InventoryItem?> sortedItems = new List<InventoryItem?>();
-
     private bool disableSwitch = false;
+
+    private string GetSortDisplayName(string sortValue)
+    {
+        return sortValue switch
+        {
+            "name-asc" => "Name (A-Z)",
+            "name-desc" => "Name (Z-A)",
+            "date-newest" => "Newest Items",
+            "date-oldest" => "Oldest Items",
+            "price-low" => "Price (Low to High)",
+            "price-high" => "Price (High to Low)",
+            "category" => "Category",
+            "location" => "Location",
+            "inventory-date" => "Last Inventory Date",
+            "warranty" => "Warranty End Date",
+            "condition" => "Condition",
+            _ => sortValue
+        };
+    }
+
+    private void ClearSort()
+    {
+        currentSort = "";
+        disableSwitch = false;
+        ApplySorting();
+        StateHasChanged();
+    }
+
+    private void ClearSearch()
+    {
+        ItemName = null;
+        modelList = null;
+        StateHasChanged();
+    }
 
     private async Task DeleteItem(int itemId)
     {
@@ -141,9 +290,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-
         await LoadDataAsync();
     }
+
     private async Task LoadDataAsync()
     {
         try
@@ -196,7 +345,6 @@
         {
             sortedItems = items;
             disableSwitch = false;
-
         }
         StateHasChanged();
     }
@@ -216,19 +364,15 @@
             "date-oldest" => items.OrderBy(i => i.addedDate),
             "price-low" => items.OrderBy(i => i.itemPrice),
             "price-high" => items.OrderByDescending(i => i.itemPrice),
-            "category" => items.OrderBy(i => i.ItemType?.TypeName ?? "Uncategorized")
-            .ThenBy(i => i.itemName),
-            "location" => items.OrderBy(i => i.Location?.RoomName ?? "Unassigned")
-            .ThenBy(i => i.itemName),
-            "inventory-date" => items.OrderBy(i => i.lastInventoryDate)
-            .ThenBy(i => i.itemName),
-            "warranty" => items.OrderBy(i => i.warrantyEnd)
-            .ThenBy(i => i.itemName),
-            "condition" => items.OrderBy(i => i.ItemCondition?.ConditionName ?? "Unknown")
-            .ThenBy(i => i.itemName),
+            "category" => items.OrderBy(i => i.ItemType?.TypeName ?? "Uncategorized").ThenBy(i => i.itemName),
+            "location" => items.OrderBy(i => i.Location?.RoomName ?? "Unassigned").ThenBy(i => i.itemName),
+            "inventory-date" => items.OrderBy(i => i.lastInventoryDate).ThenBy(i => i.itemName),
+            "warranty" => items.OrderBy(i => i.warrantyEnd).ThenBy(i => i.itemName),
+            "condition" => items.OrderBy(i => i.ItemCondition?.ConditionName ?? "Unknown").ThenBy(i => i.itemName),
             _ => items
         };
     }
+
     private void OnViewModeChanged()
     {
         if (showAllItems)
@@ -266,6 +410,7 @@
         showAllItems = false;
         sortedItems = items;
         modelList = null;
+        disableSwitch = false;
         UpdateGroupedItemList();
         StateHasChanged();
     }
@@ -285,6 +430,4 @@
         }
         await showDetails(item.itemName);
     }
-
-
 }

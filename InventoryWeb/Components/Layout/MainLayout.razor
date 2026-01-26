@@ -13,7 +13,7 @@
         <AuthorizeView Context="auth">
             <Authorized>
 
-                <div class="top-row px-4 container_bg">
+                <div class="top-row py-3 d-flex justify-content-end text-white" style="background-color: #314862;">
                     <div>Hello, <strong> @auth.User.Identity?.Name</strong> |<a href="/logout">Logout <Icon Name="IconName.BoxArrowRight"/></a></div>
                 </div>
             </Authorized>

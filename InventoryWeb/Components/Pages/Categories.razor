@@ -10,19 +10,40 @@
 <PageTitle>Categories</PageTitle>
 
 @if (isLoading)
-    {
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
-    }
+    </div>
+}
 else
 {
-    <CategoryForm Type="CategoryFormMode.Types" Items="@typesNames" ></CategoryForm>
-    <CategoryForm Type="CategoryFormMode.Conditions" Items="@conditions"></CategoryForm>
-    <CategoryForm Type="CategoryFormMode.Departments" Items="@departments" ShowAddButton=true></CategoryForm>
-    <CategoryForm Type="CategoryFormMode.Rooms" ShowAddButton=true></CategoryForm>
+    <div class="itemForm ">
+        <h3>
+            <Icon Name="IconName.FileEarmarkFill" Size="IconSize.x3" />
+            Manage Categories
+        </h3>
+        <div class="d-flex flex-row justify-content-center">
+
+            <div class="d-flex flex-column p-3">
+                <div class="pb-3">
+
+                    <CategoryForm Type="CategoryFormMode.Types" Items="@typesNames"></CategoryForm>
+                </div>
+                <div class="pb-3">
+                    <CategoryForm Type="CategoryFormMode.Conditions" Items="@conditions"></CategoryForm>
+                </div>
+                <div class="pb-3">
+                    <CategoryForm Type="CategoryFormMode.Departments" Items="@departments" ShowAddButton=true>
+                    </CategoryForm>
+                </div>
+            </div>
+            <div class="p-3">
+                <CategoryForm Type="CategoryFormMode.Rooms" ShowAddButton=true></CategoryForm>
+            </div>
+        </div>
+    </div>
 }
 
 

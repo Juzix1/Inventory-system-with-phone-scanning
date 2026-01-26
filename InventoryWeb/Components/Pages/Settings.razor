@@ -12,76 +12,98 @@
 @rendermode InteractiveServer
 
 <PageTitle>Settings</PageTitle>
-<div class="container mt-4">
-    <h3>Application Settings</h3>
+<div class="d-flex justify-content-center">
+    <div class="py-4 d-flex flex-column">
 
-    @if (isLoading)
-    {
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+        @if (isLoading)
+        {
+
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
             </div>
-        </div>
-    }
-    else if(!hasError)
-    {
-            <EditForm Model="settingsModel" OnValidSubmit="SaveSettings">
-                <DataAnnotationsValidator />
-                <ValidationSummary />
+        }
+        else if (!hasError)
+        {
+            <Card Style="width:50rem; margin-bottom:2rem">
+                <CardHeader>
+                    <h3>Application Settings</h3>
+                </CardHeader>
+                <CardBody>
 
-                <div class="mb-3">
-                    <label class="form-label">File Storage Path</label>
-                    <InputText class="form-control" @bind-Value="settingsModel.FileStoragePath" />
-                </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Max File Size (MB)</label>
-                    <InputNumber class="form-control" @bind-Value="settingsModel.MaxFileSizeMB" />
-                </div>
+                    <EditForm Model="settingsModel" OnValidSubmit="SaveSettings">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
 
-                <div class="mb-3">
-                    <label class="form-label">Company Name</label>
-                    <InputText class="form-control" @bind-Value="settingsModel.CompanyName" />
-                </div>
+                        <div class="mb-3">
+                            <label class="form-label">File Storage Path</label>
+                            <InputText class="form-control" @bind-Value="settingsModel.FileStoragePath" />
+                        </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Chosen Department</label>
-                    <InputSelect class="form-select" @bind-Value="settingsModel.ChosenDepartmentId">
-                        <option value="">(none)</option>
-                        @foreach (var d in departments)
+                        <div class="mb-3">
+                            <label class="form-label">Max File Size (MB)</label>
+                            <InputNumber class="form-control" @bind-Value="settingsModel.MaxFileSizeMB" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Company Name</label>
+                            <InputText class="form-control" @bind-Value="settingsModel.CompanyName" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Chosen Department</label>
+                            <InputSelect class="form-select" @bind-Value="settingsModel.ChosenDepartmentId">
+                                <option value="">(none)</option>
+                                @foreach (var d in departments)
+                                {
+                                    <option value="@d.Id">@d.DepartmentName</option>
+                                }
+                            </InputSelect>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                        <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
+
+                        @if (showMessage)
                         {
-                            <option value="@d.Id">@d.DepartmentName</option>
+                            <div class="alert alert-success mt-3">Settings saved successfully!</div>
                         }
-                    </InputSelect>
-                </div>
+                    </EditForm>
+                </CardBody>
+            </Card>
+            <Card Style="width:50rem">
+                <CardHeader>
+                    <h4>All Settings</h4>
+                </CardHeader>
+            </Card>
+            <CardBody>
+                <table class="table" >
+                    <tbody>
+                        @foreach (var setting in settings)
+                        {
+                            <tr>
+                                <td>@setting.Key</td>
+                                <td>@setting.Value</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </CardBody>
 
-                <button type="submit" class="btn btn-primary">Save Settings</button>
-                <button type="button" class="btn btn-secondary" @onclick="Cancel">Cancel</button>
 
-                @if (showMessage)
-                {
-                    <div class="alert alert-success mt-3">Settings saved successfully!</div>
-                }
-            </EditForm>
-
-            <hr class="my-4" />
-
-            <h4>All Settings</h4>
-            <table class="table">
-                <tbody>
-                    @foreach (var setting in settings)
-                    {
-                        <tr>
-                            <td>@setting.Key</td>
-                            <td>@setting.Value</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        }else{
+        }
+        else
+        {
             <h3>No connection with Database</h3>
         }
+
+
+    </div>
 </div>
+
+
 
 @code {
     private bool isLoading = true;
@@ -119,7 +141,8 @@
             if (settingsModel.ChosenDepartmentId == null && settings != null)
             {
                 var chosenVal = settings.Find(s => s.Key == "ChosenDepartmentId")?.Value;
-                if (!string.IsNullOrWhiteSpace(chosenVal) && int.TryParse(chosenVal, out var cid)) settingsModel.ChosenDepartmentId = cid;
+                if (!string.IsNullOrWhiteSpace(chosenVal) && int.TryParse(chosenVal, out var cid)) settingsModel.ChosenDepartmentId =
+                cid;
             }
         }
         catch (Exception e)

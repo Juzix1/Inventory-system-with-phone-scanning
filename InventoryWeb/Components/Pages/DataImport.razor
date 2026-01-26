@@ -10,10 +10,11 @@
 
 <PageTitle>Import Data</PageTitle>
 <div class="container mt-4">
-    <h3>Import Data from Excel</h3>
-
-    <div class="card mt-4">
-        <div class="card-body">
+    <Card>
+        <CardHeader>
+            <h3>Import Data from Excel</h3>
+        </CardHeader>
+        <CardBody>
             <h5 class="card-title">Step 1: Download Template</h5>
             <p class="card-text">Download Excel template with example data and format</p>
             <button class="btn btn-primary" @onclick="DownloadTemplate" disabled="@isDownloading">
@@ -24,14 +25,14 @@
                 <i class="bi bi-download me-2"></i>
                 Download Excel template
             </button>
-        </div>
-    </div>
+        </CardBody>
+    </Card>
 
     <div class="card mt-4">
         <div class="card-body">
             <h5 class="card-title">Step 2: Send filled file</h5>
             <p class="card-text">Choose excel file (.xlsx) with data to import</p>
-            
+
             <div class="mb-3">
                 <InputFile OnChange="HandleFileSelected" class="form-control" accept=".xlsx,.xls" />
             </div>
@@ -47,8 +48,8 @@
             <button class="btn btn-success" @onclick="UploadFile" disabled="@(selectedFile == null || isUploading)">
                 @if (isUploading)
                 {
-                    <span class="spinner-border spinner-border-sm me-2">Importing...</span>
-                
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+
                 }
                 else
                 {
@@ -64,7 +65,7 @@
         <div class="card mt-4">
             <div class="card-body">
                 <h5 class="card-title">Raport result</h5>
-                
+
                 @if (importResult.IsSuccess)
                 {
                     <div class="alert alert-success">
@@ -115,7 +116,8 @@
     private string errorMessage = string.Empty;
     private ImportResult? importResult;
 
-    private async Task DownloadTemplate(){
+    private async Task DownloadTemplate()
+    {
         try
         {
             isDownloading = true;
@@ -137,22 +139,26 @@
         }
     }
 
-    private void HandleFileSelected(InputFileChangeEventArgs e){
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
         selectedFile = e.File;
         errorMessage = string.Empty;
         importResult = null;
     }
 
-    private async Task UploadFile(){
+    private async Task UploadFile()
+    {
         if (selectedFile == null) return;
 
-        try{
+        try
+        {
             isUploading = true;
             errorMessage = string.Empty;
             importResult = null;
 
             var maxFileSize = 10 * 1024 * 1024;
-            if (selectedFile.Size > maxFileSize){
+            if (selectedFile.Size > maxFileSize)
+            {
                 errorMessage = "File is too big. Maximum size is 10MB.";
                 return;
             }
@@ -164,34 +170,44 @@
 
             var response = await Http.PostAsync("/api/import/upload", content);
 
-            if (response.IsSuccessStatusCode){
+            if (response.IsSuccessStatusCode)
+            {
                 importResult = await response.Content.ReadFromJsonAsync<ImportResult>();
-            }else{
+            }
+            else
+            {
                 var errorContent = await response.Content.ReadAsStringAsync();
                 errorMessage = $"Server Error: {errorContent}";
             }
-        }catch (Exception ex){
+        }
+        catch (Exception ex)
+        {
             errorMessage = $"Error while importing: {ex.Message}";
-        }finally{
+        }
+        finally
+        {
             isUploading = false;
         }
     }
 
-    private string FormatFileSize(long bytes){
-        string[] sizes = {"B","KB","MB","GB"};
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
         double len = bytes;
         int order = 0;
-        while (len>= 1024 && order < sizes.Length - 1){
-            order ++;
-            len = len/1024;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
         }
         return $"{len:0.##} {sizes[order]}";
     }
 
-    public class ImportResult{
-        public int SuccessCount {get;set;}
-        public List<string> Errors{get;set;} = new();
+    public class ImportResult
+    {
+        public int SuccessCount { get; set; }
+        public List<string> Errors { get; set; } = new();
         public bool IsSuccess => Errors.Count == 0;
-        public string? Message {get;set;}
+        public string? Message { get; set; }
     }
 }

@@ -43,7 +43,7 @@ public class AnalyticsService : IAnalyticsService
             {
                 TotalItems = items.Count,
                 BrokenItems = items.Count(i => i.ItemCondition?.Id == 3),
-                ItemsOnLoan = items.Count(i => i.PersonInChargeId != null),
+                ItemsOnLoan = allItems.Count(i => i.PersonInChargeId != null),
                 TotalUsers = accounts,
                 TotalValue = (decimal)items.Sum(i => i.itemPrice),
                 DepartmentValue = (decimal)items.Sum(i => i.itemPrice),
@@ -59,7 +59,7 @@ public class AnalyticsService : IAnalyticsService
         }
     }
 
-    // Nowy: Przedmioty utworzone miesięcznie (ostatnie 12 miesięcy)
+    // POPRAWIONE: Przedmioty utworzone miesięcznie - sprawdza addedDate
     public async Task<MonthlyItemsCreatedData> GetMonthlyItemsCreated(int? departmentId = null)
     {
         try
@@ -71,11 +71,14 @@ public class AnalyticsService : IAnalyticsService
             for (int i = 11; i >= 0; i--)
             {
                 var month = DateTime.Now.AddMonths(-i);
+                var monthStart = new DateTime(month.Year, month.Month, 1);
+                var monthEnd = monthStart.AddMonths(1).AddSeconds(-1);
+                
                 labels.Add(month.ToString("MMM yyyy"));
 
                 var monthItems = items.Count(x => 
-                    x.addedDate.Year == month.Year && 
-                    x.addedDate.Month == month.Month);
+                    x.addedDate >= monthStart && 
+                    x.addedDate <= monthEnd);
                 
                 data.Add(monthItems);
             }
@@ -95,7 +98,6 @@ public class AnalyticsService : IAnalyticsService
         }
     }
 
-    // Nowy: Rozkład przedmiotów według kategorii (dla PieChart)
     public async Task<ItemsByCategoryData> GetItemsByCategory(int? departmentId = null)
     {
         try
@@ -110,14 +112,13 @@ public class AnalyticsService : IAnalyticsService
                     CategoryName = g.Key,
                     ItemCount = g.Count(),
                     TotalValue = (decimal)g.Sum(i => i.itemPrice),
-                    Percentage = 0 // Zostanie obliczone poniżej
+                    Percentage = 0
                 })
                 .OrderByDescending(c => c.ItemCount)
                 .ToList();
 
             var totalItems = categoryGroups.Sum(c => c.ItemCount);
             
-            // Oblicz procentowy udział
             foreach (var category in categoryGroups)
             {
                 category.Percentage = totalItems > 0 
@@ -140,7 +141,7 @@ public class AnalyticsService : IAnalyticsService
         }
     }
 
-    // Nowy: Przedmioty bez inwentaryzacji (przekraczające określony próg)
+    // POPRAWIONE: Przedmioty bez inwentaryzacji - sprawdza lastInventoryDate
     public async Task<ItemsWithoutInventoryData> GetItemsWithoutInventory(int? departmentId = null)
     {
         try
@@ -194,84 +195,73 @@ public class AnalyticsService : IAnalyticsService
         }
     }
 
-    // Poprawiona: Utrata przedmiotów miesięcznie (usunięte/zutylizowane przedmioty)
-public async Task<MonthlyItemLossData> GetMonthlyItemLoss(int? departmentId = null)
-{
-    try
+    // POPRAWIONE: Utrata przedmiotów miesięcznie - sprawdza archivedDate
+    public async Task<MonthlyItemLossData> GetMonthlyItemLoss(int? departmentId = null)
     {
-        // Pobierz wszystkie historyczne przedmioty (usunięte/zutylizowane)
-        var historicalItems = await _context.HistoricalItems
-            .Include(h => h.ItemType)
-            .ToListAsync();
-
-        // Jeśli filtrujemy po departamencie, musimy to uwzględnić
-        // (zakładam że HistoricalItem nie ma bezpośredniej relacji do Department,
-        // więc możemy pominąć filtrowanie lub dodać pole DepartmentId do HistoricalItem)
-        
-        var labels = new List<string>();
-        var lostData = new List<int>();
-        var valueData = new List<decimal>();
-
-        // Zliczaj przedmioty usunięte w każdym miesiącu
-        for (int i = 11; i >= 0; i--)
+        try
         {
-            var month = DateTime.Now.AddMonths(-i);
-            var monthStart = new DateTime(month.Year, month.Month, 1);
-            var monthEnd = monthStart.AddMonths(1).AddDays(-1);
-            
-            labels.Add(month.ToString("MMM yyyy"));
+            var historicalItems = await _context.HistoricalItems
+                .Include(h => h.ItemType)
+                .ToListAsync();
 
-            // Przedmioty zarchiwizowane w tym miesiącu
-            var monthLostItems = historicalItems
-                .Where(x => x.archivedDate >= monthStart && x.archivedDate <= monthEnd)
+            var labels = new List<string>();
+            var lostData = new List<int>();
+            var valueData = new List<decimal>();
+
+            for (int i = 11; i >= 0; i--)
+            {
+                var month = DateTime.Now.AddMonths(-i);
+                var monthStart = new DateTime(month.Year, month.Month, 1);
+                var monthEnd = monthStart.AddMonths(1).AddSeconds(-1);
+                
+                labels.Add(month.ToString("MMM yyyy"));
+
+                var monthLostItems = historicalItems
+                    .Where(x => x.archivedDate >= monthStart && x.archivedDate <= monthEnd)
+                    .ToList();
+
+                lostData.Add(monthLostItems.Count);
+                valueData.Add((decimal)monthLostItems.Sum(x => x.itemPrice));
+            }
+
+            var topLostCategories = historicalItems
+                .Where(h => h.ItemType != null)
+                .GroupBy(h => h.ItemType!.TypeName)
+                .Select(g => new CategoryLossInfo
+                {
+                    CategoryName = g.Key,
+                    ItemsLost = g.Count(),
+                    TotalValueLost = (decimal)g.Sum(i => i.itemPrice)
+                })
+                .OrderByDescending(c => c.ItemsLost)
+                .Take(5)
                 .ToList();
 
-            lostData.Add(monthLostItems.Count);
-            valueData.Add((decimal)monthLostItems.Sum(x => x.itemPrice));
-        }
+            var avgLossValue = historicalItems.Any() 
+                ? (decimal)historicalItems.Average(h => h.itemPrice) 
+                : 0;
 
-        // Top kategorie z największą stratą (przez cały czas)
-        var topLostCategories = historicalItems
-            .Where(h => h.ItemType != null)
-            .GroupBy(h => h.ItemType!.TypeName)
-            .Select(g => new CategoryLossInfo
+            var avgMonthlyLoss = lostData.Any() ? lostData.Average() : 0;
+
+            return new MonthlyItemLossData
             {
-                CategoryName = g.Key,
-                ItemsLost = g.Count(),
-                TotalValueLost = (decimal)g.Sum(i => i.itemPrice)
-            })
-            .OrderByDescending(c => c.ItemsLost)
-            .Take(5)
-            .ToList();
-
-        // Dodatkowa analiza - średnia wartość utraconego przedmiotu
-        var avgLossValue = historicalItems.Any() 
-            ? (decimal)historicalItems.Average(h => h.itemPrice) 
-            : 0;
-
-        // Miesięczna średnia utraty
-        var avgMonthlyLoss = lostData.Any() ? lostData.Average() : 0;
-
-        return new MonthlyItemLossData
+                Labels = labels,
+                ItemsLost = lostData,
+                ValueLost = valueData,
+                TotalLost = historicalItems.Count,
+                TotalValueLost = (decimal)historicalItems.Sum(h => h.itemPrice),
+                TopLostCategories = topLostCategories,
+                AverageLossValue = avgLossValue,
+                AverageMonthlyLoss = avgMonthlyLoss
+            };
+        }
+        catch (Exception ex)
         {
-            Labels = labels,
-            ItemsLost = lostData,
-            ValueLost = valueData,
-            TotalLost = historicalItems.Count, // Wszystkie usunięte przedmioty
-            TotalValueLost = (decimal)historicalItems.Sum(h => h.itemPrice),
-            TopLostCategories = topLostCategories,
-            AverageLossValue = avgLossValue,
-            AverageMonthlyLoss = avgMonthlyLoss
-        };
+            _logger?.LogError(ex, "Error getting monthly item loss");
+            throw;
+        }
     }
-    catch (Exception ex)
-    {
-        _logger?.LogError(ex, "Error getting monthly item loss");
-        throw;
-    }
-}
 
-    // Nowy: Stan przedmiotów (zdrowe, uszkodzone, zagubione, etc.)
     public async Task<ItemConditionDistributionData> GetItemConditionDistribution(int? departmentId = null)
     {
         try
@@ -306,7 +296,6 @@ public async Task<MonthlyItemLossData> GetMonthlyItemLoss(int? departmentId = nu
         }
     }
 
-    // Nowy: Wartość przedmiotów według kategorii (dla analizy budżetu)
     public async Task<CategoryValueData> GetCategoryValueAnalysis(int? departmentId = null)
     {
         try
@@ -341,7 +330,7 @@ public async Task<MonthlyItemLossData> GetMonthlyItemLoss(int? departmentId = nu
         }
     }
 
-    // Nowy: Trend wartości aktywów w czasie
+    // POPRAWIONE: Trend wartości aktywów - kumuluje wartość według addedDate
     public async Task<AssetValueTrendData> GetAssetValueTrend(int? departmentId = null)
     {
         try
@@ -353,10 +342,13 @@ public async Task<MonthlyItemLossData> GetMonthlyItemLoss(int? departmentId = nu
             for (int i = 11; i >= 0; i--)
             {
                 var month = DateTime.Now.AddMonths(-i);
+                var monthEnd = new DateTime(month.Year, month.Month, DateTime.DaysInMonth(month.Year, month.Month), 23, 59, 59);
+                
                 labels.Add(month.ToString("MMM yyyy"));
                 
+                // Sumuj wartość wszystkich przedmiotów dodanych DO KOŃCA tego miesiąca
                 var valueUpToMonth = items
-                    .Where(x => x.addedDate <= month)
+                    .Where(x => x.addedDate <= monthEnd)
                     .Sum(x => x.itemPrice);
                 
                 values.Add((decimal)valueUpToMonth);
@@ -388,6 +380,7 @@ public async Task<MonthlyItemLossData> GetMonthlyItemLoss(int? departmentId = nu
                 .ThenInclude(r => r.Department)
             .Include(i => i.ItemType)
             .Include(i => i.ItemCondition)
+            .Include(i => i.personInCharge)
             .AsQueryable();
 
         if (departmentId.HasValue && departmentId.Value > 0)
@@ -464,8 +457,8 @@ public class MonthlyItemLossData
     public int TotalLost { get; set; }
     public decimal TotalValueLost { get; set; }
     public List<CategoryLossInfo> TopLostCategories { get; set; } = new();
-    public decimal AverageLossValue { get; set; } // NOWE
-    public double AverageMonthlyLoss { get; set; } // NOWE
+    public decimal AverageLossValue { get; set; }
+    public double AverageMonthlyLoss { get; set; }
 }
 
 public class CategoryLossInfo

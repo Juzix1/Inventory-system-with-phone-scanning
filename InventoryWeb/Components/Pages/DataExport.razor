@@ -10,24 +10,26 @@
 
 <PageTitle>Export Data</PageTitle>
 <div class="container mt-4">
-    <h3>Excport data to Excel</h3>
 
-    <div class="card mt-4">
-        <div class="card-body">
+
+
+    <Card>
+        <CardHeader>
+            <h3>Export data to Excel</h3>
+        </CardHeader>
+        <CardBody>
             <h5 class="card-title">Download</h5>
             <button class="btn btn-primary" @onclick="DownloadFile" disabled="@isDownloading">
-                @if (isDownloading){
+                @if (isDownloading)
+                {
                     <span class="spinner-border spinner-border-sm me-2"></span>
                 }
                 <i class="bi bi-download me-2"></i>
                 Download Excel file
             </button>
-        </div>
-    </div>
+        </CardBody>
+    </Card>
 
-    @if (exportResult != null){
-
-    }
 </div>
 
 @code {
@@ -35,30 +37,31 @@
     private string errorMessage = string.Empty;
     private Result? exportResult;
 
-    private async Task DownloadFile(){
+    private async Task DownloadFile()
+    {
         try
+        {
+            isDownloading = true;
+            errorMessage = string.Empty;
+
+            nav.NavigateTo("/api/import/download", forceLoad: true);
+
+            await Task.Delay(500);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isDownloading = false;
+        }
+    }
+    public class Result
     {
-        isDownloading = true;
-        errorMessage = string.Empty;
-        
-        // Prosta nawigacja - przeglądarka automatycznie pobierze plik
-        nav.NavigateTo("/api/import/download", forceLoad: true);
-        
-        await Task.Delay(500);
-    }
-    catch (Exception ex)
-    {
-        errorMessage = $"Error: {ex.Message}";
-    }
-    finally
-    {
-        isDownloading = false;
-    }
-    }
-    public class Result{
-        public int SuccessCount {get;set;}
-        public List<string> Errors{get;set;} = new();
+        public int SuccessCount { get; set; }
+        public List<string> Errors { get; set; } = new();
         public bool IsSuccess => Errors.Count == 0;
-        public string? Message {get;set;}
+        public string? Message { get; set; }
     }
 }

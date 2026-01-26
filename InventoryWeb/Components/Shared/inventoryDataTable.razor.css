@@ -1,0 +1,10 @@
+.inventory-table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Table Header */
+.table-header {
+    display: flex;
+}

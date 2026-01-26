@@ -1,7 +1,21 @@
+:root {
+    --sidebar-width: 260px;
+    --primary-gradient-start: #1e40af;
+    --primary-gradient-end: #7c3aed;
+    --topbar-bg: #ffffff;
+    --topbar-border: #e5e7eb;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
 .page {
     position: relative;
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
+    background-color: #f9fafb;
 }
 
 main {
@@ -9,39 +23,73 @@ main {
 }
 
 .sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    background: linear-gradient(180deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.08);
 }
 
+
 .top-row {
-    background-color: #f7f7f7;
-    border-bottom: 1px solid #d6d5d5;
+    background-color: var(--topbar-bg);
+    border-bottom: 1px solid var(--topbar-border);
     justify-content: flex-end;
     height: 3.5rem;
     display: flex;
     align-items: center;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 999;
 }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        white-space: nowrap;
-        margin-left: 1.5rem;
-        text-decoration: none;
-    }
+.top-row > div {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
 
-    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
-        text-decoration: underline;
-    }
+.top-row strong {
+    color: var(--primary-gradient-start);
+    font-weight: 600;
+}
 
-    .top-row ::deep a:first-child {
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
+.top-row ::deep a,
+.top-row ::deep .btn-link {
+    color: var(--text-secondary);
+    white-space: nowrap;
+    margin-left: 0.75rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.top-row ::deep a:hover,
+.top-row ::deep .btn-link:hover {
+    color: var(--primary-gradient-start);
+    background-color: #f3f4f64a;
+    text-decoration: none;
+}
+
+.top-row ::deep a:first-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 
 @media (max-width: 640.98px) {
     .top-row {
         justify-content: space-between;
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
 
-    .top-row ::deep a, .top-row ::deep .btn-link {
+    .top-row ::deep a,
+    .top-row ::deep .btn-link {
         margin-left: 0;
     }
 }
@@ -52,7 +100,7 @@ main {
     }
 
     .sidebar {
-        width: 250px;
+        width: var(--sidebar-width);
         height: 100vh;
         position: sticky;
         top: 0;
@@ -61,7 +109,7 @@ main {
     .top-row {
         position: sticky;
         top: 0;
-        z-index: 1;
+        z-index: 999;
     }
 
     .top-row.auth ::deep a:first-child {
@@ -70,29 +118,53 @@ main {
         width: 0;
     }
 
-    .top-row, article {
+    .top-row,
+    article {
         padding-left: 2rem !important;
         padding-right: 1.5rem !important;
     }
 }
 
+/* Błąd UI */
 #blazor-error-ui {
     color-scheme: light only;
-    background: lightyellow;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
     bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
     box-sizing: border-box;
     display: none;
     left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    padding: 1rem 1.5rem;
     position: fixed;
     width: 100%;
     z-index: 1000;
+    border-top: 3px solid #f59e0b;
+    font-weight: 500;
+    color: #92400e;
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    color: #92400e;
+    transition: color 0.2s ease;
+}
+
+#blazor-error-ui .dismiss:hover {
+    color: #78350f;
+}
+
+#blazor-error-ui .reload {
+    color: #92400e;
+    text-decoration: underline;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+#blazor-error-ui .reload:hover {
+    color: #78350f;
+}
