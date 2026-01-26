@@ -1,0 +1,40 @@
+﻿@using BlazorBootstrap
+
+    <div class="card" style="width:750px">
+        <div class="card-header">
+            <h5 class="mb-0">@Title</h5>
+        </div>
+        <div class="card-body" style="min-height: 400px;">
+            <BarChart @ref="chart" Height="300" Width="700" />
+        </div>
+    </div>
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = "Chart";
+    
+    [Parameter]
+    public ChartData? ChartData { get; set; }
+    
+    [Parameter]
+    public BarChartOptions? ChartOptions { get; set; }
+    
+    private BarChart chart = default!;
+    private bool initialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!initialized && ChartData != null && ChartOptions != null)
+        {
+            try
+            {
+                await chart.InitializeAsync(ChartData, ChartOptions);
+                initialized = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Chart initialization error in {Title}: {ex.Message}");
+            }
+        }
+    }
+}

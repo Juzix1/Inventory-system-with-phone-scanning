@@ -30,16 +30,19 @@ else
         <!-- Key Metrics Row -->
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-3">
-                <SmallBoxStat Title="Total Items" value="@stats.TotalItems.ToString()" Icon=IconName.Box2Fill color="#0fb5ae"/>
+                <SmallBoxStat Title="Total Items" value="@stats.TotalItems.ToString()" Icon=IconName.Box2Fill
+                    color="#0fb5ae" />
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
                 <SmallBoxStat Title="Broken Items" value="@stats.BrokenItems.ToString()" Icon=IconName.XCircleFill />
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
-                <SmallBoxStat Title="Items on Loan" value="@stats.ItemsOnLoan.ToString()" Icon=IconName.PersonCheck color="#F34213"/>
+                <SmallBoxStat Title="Items on Loan" value="@stats.ItemsOnLoan.ToString()" Icon=IconName.PersonCheck
+                    color="#F34213" />
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
-                <SmallBoxStat Title="Total Users" value="@stats.TotalUsers.ToString()" Icon=IconName.People color="#644C94"/>
+                <SmallBoxStat Title="Total Users" value="@stats.TotalUsers.ToString()" Icon=IconName.People
+                    color="#644C94" />
             </div>
         </div>
     </div>
@@ -47,7 +50,8 @@ else
     <div class="container-fluid">
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-3">
-                <SmallBoxStat Title="Total Value" value="@($"{stats.TotalValue:N2} PLN")" Icon=IconName.CurrencyDollar color="#0fb5ae"/>
+                <SmallBoxStat Title="Total Value" value="@($"{stats.TotalValue:N2} PLN")" Icon=IconName.CurrencyDollar
+                    color="#0fb5ae" />
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
                 <SmallBoxStat Title="Department Value" value="@($"{stats.DepartmentValue:N2} PLN")"
@@ -55,24 +59,47 @@ else
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
                 <SmallBoxStat Title="Items w/o Review" value="@stats.ItemsWithoutReview.ToString()"
-                    Icon=IconName.ExclamationTriangle color="#F34213"/>
+                    Icon=IconName.ExclamationTriangle color="#F34213" />
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
-                <SmallBoxStat Title="Avg Item Age" value="@($"{stats.AverageItemAge:N1} months")" Icon=IconName.Calendar color="#644C94"/>
+                <SmallBoxStat Title="Avg Item Age" value="@($"{stats.AverageItemAge:N1} months")" Icon=IconName.Calendar
+                    color="#644C94" />
             </div>
         </div>
     </div>
 
-    <div class="container-fluid ">
+    <!-- Charts Row 1: Line Charts -->
+    <div class="container-fluid mb-4">
         <div class="d-flex justify-content-around">
-
-            <LineChartStat Title="Items Created Per Month" ChartData="@chartData" ChartOptions="@lineChartOptions" />
-            <LineChartStat Title="Revenue vs Damage" ChartData="@revenueChartData" ChartOptions="@revenueChartOptions" />
-            @* zamiana revenue vs damage na okręgowy wykres *@
+            <LineChartStat Title="Items Created Per Month" ChartData="@itemsCreatedChartData"
+                ChartOptions="@itemsCreatedOptions" />
+            <LineChartStat Title="Asset Value Trend" ChartData="@assetValueChartData" ChartOptions="@assetValueOptions" />
         </div>
     </div>
-    
-    <!-- All Departments Summary -->
+
+    <!-- Charts Row 2: Pie Charts -->
+    <div class="container-fluid mb-4">
+        <div class="d-flex justify-content-around">
+
+            <PieChartStat Title="Items by Category" ChartData="@categoryPieChartData" ChartOptions="@categoryPieOptions" />
+
+            <PieChartStat Title="Item Condition Distribution" ChartData="@conditionPieChartData"
+                ChartOptions="@conditionPieOptions" />
+        </div>
+    </div>
+
+    <!-- Charts Row 3: Analysis Charts -->
+    <div class="container-fluid mb-4">
+        <div class="d-flex justify-content-around">
+            <LineChartStat Title="Monthly Item Loss (Historical)" ChartData="@itemLossChartData"
+                ChartOptions="@itemLossOptions" />
+
+            <BarChartStat Title="Items Without Inventory Review" ChartData="@withoutInventoryChartData"
+                ChartOptions="@withoutInventoryOptions" />
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
     <div class="row mb-4 px-2">
         <div class="col-12">
             <div class="card">
@@ -86,154 +113,137 @@ else
                             <h3 class="text-primary">@($"{stats.AllDepartmentsValue:N2} PLN")</h3>
                         </div>
                         <div class="col-md-3">
-                            <h6>Revenue Analysis</h6>
-                            <p class="mb-0">Total Revenue: <strong>@($"{revenueAnalysis?.TotalRevenue:N2} PLN")</strong></p>
-                            <p class="mb-0">Total Damage: <strong class="text-danger">@($"{revenueAnalysis?.TotalDamage:N2}                                PLN")</strong></p>
+                            <h6>Monthly Item Creation</h6>
+                            <p class="mb-0">Total Created: <strong>@monthlyItemsData?.TotalCreated</strong></p>
+                            <p class="mb-0">Avg/Month: <strong>@($"{monthlyItemsData?.AveragePerMonth:N1}")</strong></p>
                         </div>
                         <div class="col-md-3">
-                            <h6>Purchases & Disposals</h6>
-                            <p class="mb-0">Total Purchases: <strong>@purchasesData?.TotalPurchases</strong></p>
-                            <p class="mb-0">Total Disposals: <strong>@purchasesData?.TotalDisposals</strong></p>
+                            <h6>Item Loss Analysis</h6>
+                            <p class="mb-0">Total Lost: <strong class="text-danger">@itemLossData?.TotalLost</strong></p>
+                            <p class="mb-0">Value Lost: <strong class="text-danger">@($"{itemLossData?.TotalValueLost:N2}                                PLN")</strong></p>
                         </div>
                         <div class="col-md-3">
-                            <h6>Damage Analysis</h6>
-                            <p class="mb-0">Total Damaged: <strong
-                                    class="text-warning">@damageAnalysis?.TotalDamaged</strong></p>
+                            <h6>Inventory Status</h6>
+                            <p class="mb-0">Needs Review: <strong
+                                    class="text-warning">@withoutInventoryData?.TotalOverdue</strong></p>
+                            <p class="mb-0">Categories: <strong>@categoryData?.TotalCategories</strong></p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Critical Items Alert -->
+    @if (withoutInventoryData?.CriticalItems?.Any() == true)
+    {
+        <div class="row mb-4 px-2">
+            <div class="col-12">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">⚠️ Critical Items - Overdue for Inventory Review</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Item Name</th>
+                                        <th>Category</th>
+                                        <th>Last Inventory</th>
+                                        <th>Days Overdue</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in withoutInventoryData.CriticalItems.Take(5))
+                                    {
+                                        <tr>
+                                            <td>@item.ItemName</td>
+                                            <td>@item.Category</td>
+                                            <td>@item.LastInventoryDate.ToString("dd MMM yyyy")</td>
+                                            <td><span class="badge bg-danger">@item.DaysSinceInventory days</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Top Lost Categories -->
+    @if (itemLossData?.TopLostCategories?.Any() == true)
+    {
+        <div class="row mb-4 px-2">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Top Categories by Item Loss</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Items Lost</th>
+                                        <th>Value Lost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var category in itemLossData.TopLostCategories)
+                                    {
+                                        <tr>
+                                            <td>@category.CategoryName</td>
+                                            <td><span class="badge bg-danger">@category.ItemsLost</span></td>
+                                            <td>@($"{category.TotalValueLost:N2} PLN")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
     private bool isLoading = true;
     private bool hasError = false;
-    private bool chartInitialized = false;
     private int? chosenDepartmentId;
 
     private DashboardStatistics stats = new();
-    private RevenueAnalysis? revenueAnalysis;
-    private DamageAnalysis? damageAnalysis;
-    private PurchasesVsDisposalsData? purchasesData;
+    private MonthlyItemsCreatedData? monthlyItemsData;
+    private ItemsByCategoryData? categoryData;
+    private ItemsWithoutInventoryData? withoutInventoryData;
+    private MonthlyItemLossData? itemLossData;
+    private ItemConditionDistributionData? conditionData;
+    private AssetValueTrendData? assetValueData;
 
-    // Charts
-    private LineChart lineChart = default!;
-    private LineChart revenueChart = default!;
-    private LineChartOptions? lineChartOptions = default!;
-    private LineChartOptions? revenueChartOptions = default!;
-    private ChartData? chartData = default!;
-    private ChartData? revenueChartData = default!;
+    // Chart data objects
+    private ChartData? itemsCreatedChartData;
+    private ChartData? categoryPieChartData;
+    private ChartData? withoutInventoryChartData;
+    private ChartData? itemLossChartData;
+    private ChartData? conditionPieChartData;
+    private ChartData? assetValueChartData;
+
+    // Chart options
+    private LineChartOptions? itemsCreatedOptions;
+    private PieChartOptions? categoryPieOptions;
+    private BarChartOptions? withoutInventoryOptions;
+    private LineChartOptions? itemLossOptions;
+    private PieChartOptions? conditionPieOptions;
+    private LineChartOptions? assetValueOptions;
 
     protected override async Task OnInitializedAsync()
     {
-        // Załaduj dane z bazy
         await LoadDataAsync();
-
-        // Skonfiguruj wykresy (synchronicznie)
-        SetupChartData();
-        SetupRevenueChart();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        // Inicjalizuj wykresy tylko raz, gdy dane są gotowe
-        if (!chartInitialized && !isLoading && !hasError && chartData != null)
-        {
-            try
-            {
-                // Inicjalizuj oba wykresy
-                await lineChart.InitializeAsync(chartData, lineChartOptions);
-                await revenueChart.InitializeAsync(revenueChartData, revenueChartOptions);
-
-                chartInitialized = true;
-            }
-            catch (Exception ex)
-            {
-            }
-        }
-
-        await base.OnAfterRenderAsync(firstRender);
-    }
-
-    private void SetupRevenueChart()
-    {
-        if (revenueAnalysis == null) return;
-
-        var colors = ColorUtility.CategoricalTwelveColors;
-        var datasets = new List<IChartDataset>();
-
-        var dataset1 = new LineChartDataset
-        {
-            Label = "Revenue",
-            Data = revenueAnalysis.RevenueData.Select(d => (double?)d).ToList(),
-            BackgroundColor = colors[0],
-            BorderColor = colors[0],
-            BorderWidth = 2,
-            HoverBorderWidth = 4,
-        };
-        datasets.Add(dataset1);
-
-        var dataset2 = new LineChartDataset
-        {
-            Label = "Damage",
-            Data = revenueAnalysis.DamageData.Select(d => (double?)d).ToList(),
-            BackgroundColor = colors[3],
-            BorderColor = colors[3],
-            BorderWidth = 2,
-            HoverBorderWidth = 4,
-        };
-        datasets.Add(dataset2);
-
-        revenueChartData = new ChartData { Labels = revenueAnalysis.Labels, Datasets = datasets };
-
-        revenueChartOptions = new LineChartOptions
-        {
-            Responsive = true,
-            Interaction = new Interaction { Mode = InteractionMode.Index }
-        };
-
-        revenueChartOptions.Scales.X!.Title = new ChartAxesTitle { Text = "Month", Display = true };
-        revenueChartOptions.Scales.Y!.Title = new ChartAxesTitle { Text = "Amount (PLN)", Display = true };
-
-        revenueChartOptions.Plugins.Title!.Text = "Revenue vs Damage Analysis";
-        revenueChartOptions.Plugins.Title.Display = true;
-    }
-
-    private void SetupChartData()
-    {
-        if (purchasesData == null) return;
-
-        var colors = ColorUtility.CategoricalTwelveColors;
-
-        var datasets = new List<IChartDataset>();
-
-        var dataset1 = new LineChartDataset
-        {
-            Label = "Items Created",
-            Data = purchasesData.Purchases.Select(p => (double?)p).ToList(),
-            BackgroundColor = colors[0],
-            BorderColor = colors[0],
-            BorderWidth = 2,
-            HoverBorderWidth = 4,
-            Fill = true
-        };
-        datasets.Add(dataset1);
-
-        chartData = new ChartData { Labels = purchasesData.Labels, Datasets = datasets };
-
-        lineChartOptions = new LineChartOptions
-        {
-            Responsive = true,
-            Interaction = new Interaction { Mode = InteractionMode.Index }
-        };
-
-        lineChartOptions.Scales.X!.Title = new ChartAxesTitle { Text = "Month", Display = true };
-        lineChartOptions.Scales.Y!.Title = new ChartAxesTitle { Text = "Number of Items", Display = true };
-
-        lineChartOptions.Plugins.Title!.Text = "Items Created Per Month";
-        lineChartOptions.Plugins.Title.Display = true;
+        SetupCharts();
     }
 
     private async Task LoadDataAsync()
@@ -247,9 +257,12 @@ else
             }
 
             stats = await analyticsService.GetDashboardStatistics(chosenDepartmentId);
-            revenueAnalysis = await analyticsService.GetRevenueAnalysis(chosenDepartmentId);
-            damageAnalysis = await analyticsService.GetDamageByMonthData(chosenDepartmentId);
-            purchasesData = await analyticsService.GetPurchasesVsDisposalsData(chosenDepartmentId);
+            monthlyItemsData = await analyticsService.GetMonthlyItemsCreated(chosenDepartmentId);
+            categoryData = await analyticsService.GetItemsByCategory(chosenDepartmentId);
+            withoutInventoryData = await analyticsService.GetItemsWithoutInventory(chosenDepartmentId);
+            itemLossData = await analyticsService.GetMonthlyItemLoss(chosenDepartmentId);
+            conditionData = await analyticsService.GetItemConditionDistribution(chosenDepartmentId);
+            assetValueData = await analyticsService.GetAssetValueTrend(chosenDepartmentId);
 
             hasError = false;
         }
@@ -262,5 +275,200 @@ else
         {
             isLoading = false;
         }
+    }
+
+    private void SetupCharts()
+    {
+        SetupItemsCreatedChart();
+        SetupCategoryPieChart();
+        SetupWithoutInventoryChart();
+        SetupItemLossChart();
+        SetupConditionPieChart();
+        SetupAssetValueChart();
+    }
+
+    private void SetupItemsCreatedChart()
+    {
+        if (monthlyItemsData == null) return;
+
+        var colors = ColorUtility.CategoricalTwelveColors;
+        var dataset = new LineChartDataset
+        {
+            Label = "Items Created",
+            Data = monthlyItemsData.ItemsCreated.Select(d => (double?)d).ToList(),
+            BackgroundColor = colors[0],
+            BorderColor = colors[0],
+            BorderWidth = 2,
+            Fill = true,
+            Tension = 0.4
+        };
+
+        itemsCreatedChartData = new ChartData
+        {
+            Labels = monthlyItemsData.Labels,
+            Datasets = new List<IChartDataset> { dataset }
+        };
+
+        itemsCreatedOptions = new LineChartOptions
+        {
+            Responsive = true,
+            Interaction = new Interaction { Mode = InteractionMode.Index }
+        };
+        itemsCreatedOptions.Scales.X!.Title = new ChartAxesTitle { Text = "Month", Display = true };
+        itemsCreatedOptions.Scales.Y!.Title = new ChartAxesTitle { Text = "Number of Items", Display = true };
+    }
+
+    private void SetupCategoryPieChart()
+    {
+        if (categoryData == null || !categoryData.Categories.Any()) return;
+
+        var colors = ColorUtility.CategoricalTwelveColors;
+        var dataset = new PieChartDataset
+        {
+            Label = "Items",
+            Data = categoryData.Values.Select(d => (double?)d).ToList(),
+            BackgroundColor = colors.Take(categoryData.Values.Count).ToList()
+        };
+
+        categoryPieChartData = new ChartData
+        {
+            Labels = categoryData.Labels,
+            Datasets = new List<IChartDataset> { dataset }
+        };
+
+        categoryPieOptions = new PieChartOptions
+        {
+            Responsive = true,
+            Plugins = new PieChartPlugins
+            {
+                Legend = new ChartPluginsLegend { Display = true, Position = "right" }
+            }
+        };
+    }
+
+    private void SetupWithoutInventoryChart()
+    {
+        if (withoutInventoryData == null) return;
+
+        var colors = ColorUtility.CategoricalTwelveColors;
+        var dataset = new BarChartDataset
+        {
+            Label = "Items Count",
+            Data = withoutInventoryData.Values.Select(d => (double?)d).ToList(),
+            BackgroundColor = new List<string> { colors[1], colors[4], colors[6], colors[3], colors[8] }
+        };
+
+        withoutInventoryChartData = new ChartData
+        {
+            Labels = withoutInventoryData.Labels,
+            Datasets = new List<IChartDataset> { dataset }
+        };
+
+        withoutInventoryOptions = new BarChartOptions
+        {
+            Responsive = true,
+            Interaction = new Interaction { Mode = InteractionMode.Index }
+        };
+        withoutInventoryOptions.Scales.Y!.Title = new ChartAxesTitle { Text = "Number of Items", Display = true };
+    }
+
+    private void SetupItemLossChart()
+    {
+        if (itemLossData == null) return;
+
+        var colors = ColorUtility.CategoricalTwelveColors;
+        var datasets = new List<IChartDataset>
+{
+new LineChartDataset
+{
+Label = "Items Lost",
+Data = itemLossData.ItemsLost.Select(d => (double?)d).ToList(),
+BackgroundColor = colors[3],
+BorderColor = colors[3],
+BorderWidth = 2,
+YAxisID = "y"
+},
+new LineChartDataset
+{
+Label = "Value Lost (PLN)",
+Data = itemLossData.ValueLost.Select(d => (double?)d).ToList(),
+BackgroundColor = colors[8],
+BorderColor = colors[8],
+BorderWidth = 2,
+YAxisID = "y1"
+}
+};
+
+        itemLossChartData = new ChartData
+        {
+            Labels = itemLossData.Labels,
+            Datasets = datasets
+        };
+
+        itemLossOptions = new LineChartOptions
+        {
+            Responsive = true,
+            Interaction = new Interaction { Mode = InteractionMode.Index }
+        };
+        itemLossOptions.Scales.Y!.Title = new ChartAxesTitle { Text = "Items Lost", Display = true };
+    }
+
+    private void SetupConditionPieChart()
+    {
+        if (conditionData == null || !conditionData.Conditions.Any()) return;
+
+        var colors = ColorUtility.CategoricalTwelveColors;
+        var dataset = new PieChartDataset
+        {
+            Label = "Items",
+            Data = conditionData.Values.Select(d => (double?)d).ToList(),
+            BackgroundColor = colors.Take(conditionData.Values.Count).ToList()
+        };
+
+        conditionPieChartData = new ChartData
+        {
+            Labels = conditionData.Labels,
+            Datasets = new List<IChartDataset> { dataset }
+        };
+
+        conditionPieOptions = new PieChartOptions
+        {
+            Responsive = true,
+            Plugins = new PieChartPlugins
+            {
+                Legend = new ChartPluginsLegend { Display = true, Position = "right" }
+            }
+        };
+    }
+
+    private void SetupAssetValueChart()
+    {
+        if (assetValueData == null) return;
+
+        var colors = ColorUtility.CategoricalTwelveColors;
+        var dataset = new LineChartDataset
+        {
+            Label = "Total Value (PLN)",
+            Data = assetValueData.Values.Select(d => (double?)d).ToList(),
+            BackgroundColor = colors[2],
+            BorderColor = colors[2],
+            BorderWidth = 2,
+            Fill = true,
+            Tension = 0.4
+        };
+
+        assetValueChartData = new ChartData
+        {
+            Labels = assetValueData.Labels,
+            Datasets = new List<IChartDataset> { dataset }
+        };
+
+        assetValueOptions = new LineChartOptions
+        {
+            Responsive = true,
+            Interaction = new Interaction { Mode = InteractionMode.Index }
+        };
+        assetValueOptions.Scales.X!.Title = new ChartAxesTitle { Text = "Month", Display = true };
+        assetValueOptions.Scales.Y!.Title = new ChartAxesTitle { Text = "Value (PLN)", Display = true };
     }
 }
