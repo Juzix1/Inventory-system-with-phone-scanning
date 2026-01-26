@@ -1,5 +1,5 @@
 ﻿@using InventoryLibrary.Model.Inventory
-    <div class="StatContainer" style="box-shadow: -4px 0 0 0 blue;">
+    <div class="StatContainer " style=" border: 4px solid @color; background:@(color+"DD")">
         <div class="StatBody">
             <p>@Title</p>
             <p>@value.ToString()</p>
@@ -20,8 +20,7 @@ public string value {get;set;}
 
 [Parameter]
 public IconName icon {get;set;}
-
-private string color = "#3A506B";
-
+[Parameter]
+public string color {get;set;} = "#0d6efd";
 
 }

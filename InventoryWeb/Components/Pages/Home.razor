@@ -30,16 +30,16 @@ else
         <!-- Key Metrics Row -->
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-3">
-                <SmallBoxStat Title="Total Items" value="@stats.TotalItems.ToString()" Icon=IconName.Box2Fill />
+                <SmallBoxStat Title="Total Items" value="@stats.TotalItems.ToString()" Icon=IconName.Box2Fill color="#0fb5ae"/>
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
                 <SmallBoxStat Title="Broken Items" value="@stats.BrokenItems.ToString()" Icon=IconName.XCircleFill />
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
-                <SmallBoxStat Title="Items on Loan" value="@stats.ItemsOnLoan.ToString()" Icon=IconName.PersonCheck />
+                <SmallBoxStat Title="Items on Loan" value="@stats.ItemsOnLoan.ToString()" Icon=IconName.PersonCheck color="#F34213"/>
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
-                <SmallBoxStat Title="Total Users" value="@stats.TotalUsers.ToString()" Icon=IconName.People />
+                <SmallBoxStat Title="Total Users" value="@stats.TotalUsers.ToString()" Icon=IconName.People color="#644C94"/>
             </div>
         </div>
     </div>
@@ -47,7 +47,7 @@ else
     <div class="container-fluid">
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-3">
-                <SmallBoxStat Title="Total Value" value="@($"{stats.TotalValue:N2} PLN")" Icon=IconName.CurrencyDollar />
+                <SmallBoxStat Title="Total Value" value="@($"{stats.TotalValue:N2} PLN")" Icon=IconName.CurrencyDollar color="#0fb5ae"/>
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
                 <SmallBoxStat Title="Department Value" value="@($"{stats.DepartmentValue:N2} PLN")"
@@ -55,10 +55,10 @@ else
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
                 <SmallBoxStat Title="Items w/o Review" value="@stats.ItemsWithoutReview.ToString()"
-                    Icon=IconName.ExclamationTriangle />
+                    Icon=IconName.ExclamationTriangle color="#F34213"/>
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
-                <SmallBoxStat Title="Avg Item Age" value="@($"{stats.AverageItemAge:N1} months")" Icon=IconName.Calendar />
+                <SmallBoxStat Title="Avg Item Age" value="@($"{stats.AverageItemAge:N1} months")" Icon=IconName.Calendar color="#644C94"/>
             </div>
         </div>
     </div>
@@ -143,18 +143,14 @@ else
         {
             try
             {
-                Console.WriteLine("=== Initializing charts ===");
-
                 // Inicjalizuj oba wykresy
                 await lineChart.InitializeAsync(chartData, lineChartOptions);
                 await revenueChart.InitializeAsync(revenueChartData, revenueChartOptions);
 
                 chartInitialized = true;
-                Console.WriteLine("=== Charts initialized successfully! ===");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"=== Chart initialization FAILED: {ex.Message} ===");
             }
         }
 
