@@ -21,7 +21,7 @@ public class HistoricalDataService : IHistoricalDataService
         {
             if (item == null)
             {
-                throw new ArgumentNullException(nameof(item));
+                throw new ArgumentNullException($"Item provided is null, cannot create historical item.");
             }
             var historicalItem = new HistoricalItem
             {
@@ -42,7 +42,7 @@ public class HistoricalDataService : IHistoricalDataService
             return Task.FromResult(historicalItem);
         }catch (Exception ex)
         {
-            _logger.LogError("Error in creating historical item", ex);
+            _logger.LogError("Error while creating historical item", ex);
             throw;
         }
     }
@@ -54,7 +54,6 @@ public class HistoricalDataService : IHistoricalDataService
             var historicalItem = _context.HistoricalItems.Find(id);
             if (historicalItem == null)
             {
-                _logger.LogWarning($"Historical item with ID {id} not found for deletion.");
                 throw new KeyNotFoundException($"Historical item with ID {id} not found.");
             }
 
@@ -64,7 +63,7 @@ public class HistoricalDataService : IHistoricalDataService
             return Task.CompletedTask;
         }catch (Exception ex)
         {
-            _logger.LogError("Error in deleting historical item", ex);
+            _logger.LogError("Error while deleting historical item", ex);
             throw;
         }
     }
@@ -76,7 +75,7 @@ public class HistoricalDataService : IHistoricalDataService
             return Task.FromResult<IEnumerable<HistoricalItem>>(historicalItems);
         }catch (Exception ex)
         {
-            _logger.LogError("Error in retrieving all historical items", ex);
+            _logger.LogError("Error while retrieving all historical items", ex);
             throw;
         }
     }
@@ -88,13 +87,12 @@ public class HistoricalDataService : IHistoricalDataService
             var historicalItem = _context.HistoricalItems.Find(id);
             if (historicalItem == null)
             {
-                _logger.LogWarning($"Historical item with ID {id} not found.");
                 throw new KeyNotFoundException($"Historical item with ID {id} not found.");
             }
             return Task.FromResult(historicalItem);
         }catch (Exception ex)
         {
-            _logger.LogError("Error in retrieving historical item by ID", ex);
+            _logger.LogError("Error while retrieving historical item by ID", ex);
             throw;
         }
     }
@@ -106,7 +104,6 @@ public class HistoricalDataService : IHistoricalDataService
             var existingHistoricalItem = _context.HistoricalItems.FirstOrDefault(h => h.OriginalItemId == item.Id);
             if (existingHistoricalItem == null)
             {
-                _logger.LogWarning($"Historical item for original item ID {item.Id} not found for update.");
                 throw new KeyNotFoundException($"Historical item for original item ID {item.Id} not found.");
             }
 
@@ -118,11 +115,11 @@ public class HistoricalDataService : IHistoricalDataService
 
             _context.HistoricalItems.Update(existingHistoricalItem);
             _context.SaveChanges();
-            _logger.LogInfo($"Updated historical item for OriginalItemId: {item.Id}");
+            _logger.LogInfo($"Updated historical item: {item.Id}");
             return Task.FromResult(existingHistoricalItem);
         }catch (Exception ex)
         {
-            _logger.LogError("Error in updating historical item", ex);
+            _logger.LogError("Error while updating historical item", ex);
             throw;
         }
     }

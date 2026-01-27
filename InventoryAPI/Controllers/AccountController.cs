@@ -1,10 +1,7 @@
-﻿using InventoryLibrary.Data;
-using InventoryLibrary.Model.Accounts;
-using InventoryLibrary.Services;
+﻿using InventoryLibrary.Model.Accounts;
 using InventoryLibrary.Services.Interfaces;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections;
 
 namespace InventoryAPI.Controllers
 {
@@ -13,24 +10,77 @@ namespace InventoryAPI.Controllers
     public class AccountController : ControllerBase
     {
         private readonly IAccountsService _service;
+        private readonly IJwtService _jwtService;
+        private readonly IConfiguration _configuration;
 
-        public AccountController(MyDbContext context, IAccountsService accountsService)
+        public AccountController(IAccountsService accountsService, IJwtService jwtService, IConfiguration configuration)
         {
-            _service = new AccountsService(context, new PasswordService());
+            _service = accountsService;
+            _jwtService = jwtService;
+            _configuration = configuration;
         }
 
-        // [HttpPost("auth")]
-        // public async Task<IActionResult> Authenticate([FromBody] LoginRequest request)
-        // {
-        //     var auth = await _service.AuthenticateAsync(request.Id, request.Password);
-        //     if (auth == null)
-        //         return Unauthorized("Invalid credentials.");
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            try
+            {
+                Console.WriteLine($"Login attempt - Index: {request.Index}");
+                
+                if (request.Index == 0 || string.IsNullOrEmpty(request.Password))
+                {
+                    return BadRequest(new { message = "Index and password are required." });
+                }
 
-        //     // TODO: Wygeneruj i zwróć JWT zamiast danych konta
-        //     var token = "tst"; //GenerateJwtToken(auth);
-        //     return Ok(new { Token = token });
-        // }
+                var authenticatedAccount = await _service.AuthenticateAsync(request.Index, request.Password);
+                
+                if (authenticatedAccount == null)
+                {
+                    return Unauthorized(new { message = "Invalid credentials." });
+                }
 
+                // Generuj JWT token
+                var token = _jwtService.GenerateToken(
+                    authenticatedAccount.Id,
+                    authenticatedAccount.Email,
+                    authenticatedAccount.Role,
+                    authenticatedAccount.IsAdmin
+                );
+
+                var response = new
+                {
+                    Token = token,
+                    ExpiresIn = _configuration.GetValue<int>("JwtSettings:ExpirationInMinutes") * 60,
+                    User = new
+                    {
+                        Id = authenticatedAccount.Id,
+                        Name = authenticatedAccount.Name ?? "",
+                        Email = authenticatedAccount.Email ?? "",
+                        Role = authenticatedAccount.Role ?? "",
+                        IsAdmin = authenticatedAccount.IsAdmin,
+                        IsModerator = authenticatedAccount.IsModerator,
+                        ResetPasswordOnNextLogin = authenticatedAccount.resetPasswordOnNextLogin
+                    }
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Login error: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                    new { message = $"Error during login: {ex.Message}" });
+            }
+        }
+
+        [Authorize]
+        [HttpGet("validate")]
+        public IActionResult ValidateToken()
+        {
+            return Ok(new { message = "Token is valid" });
+        }
+
+        [Authorize(Roles = "Admin")]
         [HttpPost("create")]
         public async Task<IActionResult> CreateAccount([FromBody] Account account)
         {
@@ -45,31 +95,34 @@ namespace InventoryAPI.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Error creating account: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                    $"Error creating account: {ex.Message}");
             }
         }
 
+        [Authorize]
         [HttpGet("privilage-check/{id}")]
         public async Task<IActionResult> CheckPrivilageForApp(int id)
         {
             try
             {
                 var hasPrivilage = await _service.CanAccessScanner(id);
-                if(!hasPrivilage)
+                if (!hasPrivilage)
                 {
                     return Forbid("Account does not have privilage to access the scanner app.");
                 }
                 return Ok(hasPrivilage);
-                
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
-                return StatusCode(StatusCodes.Status500InternalServerError, $"Error checking privilage: {ex.Message}");
+                return StatusCode(StatusCodes.Status500InternalServerError, 
+                    $"Error checking privilage: {ex.Message}");
             }
         }
 
         public class LoginRequest
         {
-            public string Email { get; set; }
+            public int Index { get; set; }
             public string Password { get; set; }
         }
     }

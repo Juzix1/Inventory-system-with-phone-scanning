@@ -1,16 +1,42 @@
 .log-container {
     font-family: 'Courier New', monospace;
     font-size: 13px;
+    max-height: 600px; 
+    overflow-y: auto; 
+    background-color: #1f1f1f;
+    color: white;
+    padding: 15px; 
+    border-radius: 5px;
 }
-
+.log{
+  margin-left: 10px; 
+  font-weight: bold;  
+}
 .log-INFO {
-    color: #019452;
+    color: #129b00;
 }
 
-.log-WRN {
-    color: #e0c513;
+.log-WARNING {
+    color: #e08e13;
 }
 
 .log-ERROR {
-    color: #f48771;
+    color: #ff1e1e;
+}
+
+.timestamp{
+color: #8f8f8f;
+}
+.log-source{
+    color: #0081d1; 
+    margin-left: 10px; 
+    font-weight: bold;
+}
+.log-entry{
+    margin-bottom: 8px;
+}
+.log-message{
+    color: #a0a0a0;
+    margin-left: 10px;
+    font-weight: 600;
 }

@@ -31,13 +31,13 @@ public class StocktakeService : IStocktakeService
         try
         {
             if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Nazwa inwentaryzacji jest wymagana", nameof(name));
+                throw new ArgumentException("Stocktake name is required", nameof(name));
 
             if (items == null || !items.Any())
-                throw new ArgumentException("Musisz wybrać przynajmniej jeden przedmiot", nameof(items));
+                throw new ArgumentException("You must choose at least one item for stocktake", nameof(items));
 
             if (endDate <= startDate)
-                throw new ArgumentException("Data zakończenia musi być późniejsza niż data rozpoczęcia");
+                throw new ArgumentException("End date must be after start date", nameof(endDate));
 
             var stocktake = new Stocktake
             {
@@ -56,11 +56,11 @@ public class StocktakeService : IStocktakeService
             _context.Stocktakes.Add(stocktake);
             await _context.SaveChangesAsync();
 
-            _logger?.LogInfo($"Utworzono nową inwentaryzację: {name} z {items.Count} przedmiotami" );
+            _logger?.LogInfo($"Created new stocktake: {name} with {items.Count} items.");
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Błąd podczas tworzenia inwentaryzacji",ex);
+            _logger?.LogError("Error while creating new stocktake",ex);
             throw;
         }
     }
@@ -69,8 +69,8 @@ public class StocktakeService : IStocktakeService
     public async Task CreateNewStocktake(List<InventoryItem> items, DateTime? startDate, DateTime endDate)
     {
         await CreateNewStocktake(
-            name: $"Inwentaryzacja {DateTime.Now:yyyy-MM-dd}",
-            description: "Automatycznie utworzona inwentaryzacja",
+            name: $"Stocktake {DateTime.Now:yyyy-MM-dd}",
+            description: "Auto-generated stocktake",
             items: items,
             authorizedAccounts: new List<Account>(),
             startDate: startDate ?? DateTime.Now,
@@ -95,7 +95,7 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Błąd podczas pobierania listy inwentaryzacji",ex);
+            _logger?.LogError("Error while getting stocktakes info",ex);
             throw;
         }
     }
@@ -115,13 +115,13 @@ public class StocktakeService : IStocktakeService
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (stocktake == null)
-                throw new KeyNotFoundException($"Nie znaleziono inwentaryzacji o ID {id}");
+                throw new KeyNotFoundException($"Stocktake with id {id} not found");
 
             return stocktake;
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Błąd podczas pobierania inwentaryzacji {id}", ex);
+            _logger?.LogError($"Error while getting info for stocktake {id}", ex);
             throw;
         }
     }
@@ -139,7 +139,7 @@ public class StocktakeService : IStocktakeService
                 .FirstOrDefaultAsync(s => s.Id == stocktake.Id);
 
             if (existingStocktake == null)
-                throw new KeyNotFoundException($"Nie znaleziono inwentaryzacji o ID {stocktake.Id}");
+                throw new KeyNotFoundException($"Stocktake with Id {stocktake.Id} not found");
 
             // Aktualizacja podstawowych właściwości
             existingStocktake.Name = stocktake.Name;
@@ -151,12 +151,12 @@ public class StocktakeService : IStocktakeService
 
             await _context.SaveChangesAsync();
 
-            _logger?.LogInfo($"Zaktualizowano inwentaryzację {stocktake.Id}");
+            _logger?.LogInfo($"Stocktake Updated with id {stocktake.Id}");
             return existingStocktake;
         }
         catch (Exception ex)
         {
-            _logger?.LogError($"Błąd podczas aktualizacji inwentaryzacji {stocktake?.Id}", ex);
+            _logger?.LogError($"Error while updating stocktake: {stocktake?.Id}", ex);
             throw;
         }
     }
@@ -170,14 +170,14 @@ public class StocktakeService : IStocktakeService
                 .FirstOrDefaultAsync(s => s.Id == stocktakeId);
 
             if (stocktake == null)
-                throw new KeyNotFoundException($"Nie znaleziono inwentaryzacji o ID {stocktakeId}");
+                throw new KeyNotFoundException($"Stocktake with id {stocktakeId} not found");
 
             if (stocktake.Status != StockTakeStatus.InProgress)
-                throw new InvalidOperationException("Można oznaczać przedmioty tylko w trakcie trwania inwentaryzacji");
+                throw new InvalidOperationException("Cannot mark items in a stocktake that is not in progress");
 
             var item = stocktake.ItemsToCheck.FirstOrDefault(i => i.Id == itemId);
             if (item == null)
-                throw new KeyNotFoundException($"Przedmiot {itemId} nie znajduje się w tej inwentaryzacji");
+                throw new KeyNotFoundException($"Item with id {itemId} not found in stocktake {stocktakeId}");
 
             if (!stocktake.CheckedItemIdList.Contains(itemId))
             {
@@ -188,7 +188,8 @@ public class StocktakeService : IStocktakeService
 
                 await _context.SaveChangesAsync();
 
-                _logger?.LogInfo($"Oznaczono przedmiot {itemId} w inwentaryzacji {stocktakeId} jako sprawdzony przez {checkedBy ?? "nieznany"}");
+                _logger?.LogInfo($"Marked item {itemId} as checked in stocktake {stocktakeId}" +
+                                 (checkedBy != null ? $" by {checkedBy}" : ""));
 
                 // Automatyczne ukończenie jeśli wszystkie przedmioty sprawdzone
                 if (stocktake.CheckedItemIdList.Count == stocktake.AllItems)
@@ -199,7 +200,7 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError($"Błąd podczas oznaczania przedmiotu {itemId} w inwentaryzacji {stocktakeId}", ex);
+            _logger?.LogError($"Error while marking item {itemId} as checked in stocktake {stocktakeId}", ex);
             throw;
         }
     }
@@ -216,19 +217,19 @@ public class StocktakeService : IStocktakeService
         {
             var stocktake = await _context.Stocktakes.FindAsync(stocktakeId);
             if (stocktake == null)
-                throw new KeyNotFoundException($"Nie znaleziono inwentaryzacji o ID {stocktakeId}");
+                throw new KeyNotFoundException($"Stocktake with id {stocktakeId} not found");
 
             if (stocktake.CheckedItemIdList.Contains(itemId))
             {
                 stocktake.CheckedItemIdList.Remove(itemId);
                 await _context.SaveChangesAsync();
 
-                _logger?.LogInfo($"Odznaczono przedmiot {itemId} w inwentaryzacji {stocktakeId} jako niesprawdzony");
+                _logger?.LogInfo($"Unmarked item {itemId} as checked in stocktake {stocktakeId}");
             }
         }
         catch (Exception ex)
         {
-            _logger?.LogError($"Błąd podczas odznaczania przedmiotu {itemId} w inwentaryzacji {stocktakeId}", ex);
+            _logger?.LogError($"Error while unmarking item {itemId} as checked in stocktake {stocktakeId}", ex);
             throw;
         }
     }
@@ -244,12 +245,12 @@ public class StocktakeService : IStocktakeService
                 stocktake.EndDate = DateTime.Now;
                 await _context.SaveChangesAsync();
 
-                _logger?.LogInfo($"Automatycznie ukończono inwentaryzację {stocktakeId}");
+                _logger?.LogInfo($"Auto-completed stocktake {stocktakeId} as all items have been checked.");
             }
         }
         catch (Exception ex)
         {
-            _logger?.LogError($"Błąd podczas automatycznego kończenia inwentaryzacji {stocktakeId}", ex);
+            _logger?.LogError($"Error while auto-completing stocktake {stocktakeId}", ex);
         }
     }
 
@@ -263,17 +264,17 @@ public class StocktakeService : IStocktakeService
                 .FirstOrDefaultAsync(s => s.Id == id);
 
             if (stocktake == null)
-                throw new KeyNotFoundException($"Nie znaleziono inwentaryzacji o ID {id}");
+                throw new KeyNotFoundException($"Stocktake with id {id} not found");
 
             _context.Stocktakes.Remove(stocktake);
             await _context.SaveChangesAsync();
 
-            _logger?.LogWarning($"Usunięto inwentaryzację {id}");
+            _logger?.LogWarning($"Deleted stocktake with id {id}");
             return stocktake;
         }
         catch (Exception ex)
         {
-            _logger?.LogError($"Błąd podczas usuwania inwentaryzacji {id}", ex);
+            _logger?.LogError($"Error while deleting stocktake {id}", ex);
             throw;
         }
     }
@@ -301,7 +302,7 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError($"Błąd podczas obliczania statystyk dla inwentaryzacji {stocktakeId}", ex);
+            _logger?.LogError($"Error while getting statistics for stocktake {stocktakeId}", ex);
             throw;
         }
     }
@@ -326,7 +327,7 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError($"Błąd podczas pobierania niesprawdzonych przedmiotów dla inwentaryzacji {stocktakeId}", ex);
+            _logger?.LogError($"Error while getting unchecked items for stocktake {stocktakeId}", ex);
             throw;
         }
     }
@@ -345,8 +346,8 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError($"Błąd podczas sprawdzania uprawnień użytkownika {userId} dla inwentaryzacji {stocktakeId}", ex);
-            return false;
+            _logger?.LogError($"Error while checking user authorization for stocktake {stocktakeId}", ex);
+            throw;
         }
     }
 }

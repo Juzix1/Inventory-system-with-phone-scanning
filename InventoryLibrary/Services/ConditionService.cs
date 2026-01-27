@@ -29,7 +29,7 @@ public class ConditionService : IConditionService
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error in GetAllItemConditions", ex);
+            _logger.LogError("Error while getting conditions info", ex);
             throw;
         }
     }

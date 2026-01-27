@@ -42,7 +42,7 @@ public class TypeService : ITypeService
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error in CreateItemType", ex);
+            _logger.LogError("Error while creating new type", ex);
             return null;
         }
     }
@@ -59,7 +59,7 @@ public class TypeService : ITypeService
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error in GetAllTypesAsync", ex);
+            _logger.LogError("Error while getting types", ex);
             return new List<ItemType>();
         }
     }
@@ -70,11 +70,11 @@ public class TypeService : ITypeService
         {
             _context.ItemTypes.Remove(type);
             await _context.SaveChangesAsync();
-            _logger.LogWarning($"Deleted ItemType with id: {type.Id}");
+            _logger.LogWarning($"Deleted type with id: {type.Id}");
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error in DeleteType", ex);
+            _logger.LogError("Error while deleting type", ex);
         }
     }
 
@@ -87,12 +87,12 @@ public class TypeService : ITypeService
             {
                 type.TypeName = name;
                 await _context.SaveChangesAsync();
-                _logger.LogInfo($"Changed name of ItemType with id: {index} to {name}");
+                _logger.LogInfo($"Changed name of type with id: {index} to {name}");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error in ChangeName", ex);
+            _logger.LogError("Error while changing name", ex);
         }
     }
 

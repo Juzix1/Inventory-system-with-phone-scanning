@@ -57,7 +57,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Error getting dashboard statistics",ex);
+            _logger?.LogError("Error while getting dashboard statistics",ex);
             throw;
         }
     }
@@ -95,7 +95,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Error getting monthly items created", ex);
+            _logger?.LogError("Error while getting monthly items created", ex);
             throw;
         }
     }
@@ -138,7 +138,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Error getting items by category",ex);
+            _logger?.LogError("Error while getting items by category",ex);
             throw;
         }
     }
@@ -191,7 +191,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Error getting items without inventory",ex);
+            _logger?.LogError("Error while getting items without inventory",ex);
             throw;
         }
     }
@@ -257,7 +257,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Error getting monthly item loss",ex);
+            _logger?.LogError("Error while getting monthly item loss",ex);
             throw;
         }
     }
@@ -291,7 +291,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Error getting item condition distribution",ex);
+            _logger?.LogError("Error while getting item condition distribution",ex);
             throw;
         }
     }
@@ -325,7 +325,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Error getting category value analysis",ex);
+            _logger?.LogError("Error while getting category value analysis",ex);
             throw;
         }
     }
@@ -366,7 +366,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Error getting asset value trend",ex);
+            _logger?.LogError("Error while getting asset value trend",ex);
             throw;
         }
     }

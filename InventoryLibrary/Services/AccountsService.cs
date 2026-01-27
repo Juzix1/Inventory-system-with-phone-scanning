@@ -59,7 +59,7 @@ namespace InventoryLibrary.Services
             }
             catch (DbUpdateException ex)
             {
-                _logger.LogError("Error creating account", ex);
+                _logger.LogError("Error while creating account", ex);
                 throw new InvalidOperationException("Error creating account.", ex);
             }
         }
@@ -71,12 +71,10 @@ namespace InventoryLibrary.Services
                 var account = await _context.Accounts.FindAsync(id);
                 if (account == null)
                 {
-                    _logger.LogError($"Attempted to delete non-existing account with id {id}");
                     throw new KeyNotFoundException($"Account with ID {id} not found.");
                 }
                 else if (account.Id == 1)
                 {
-                    _logger.LogError("Attempted to delete the admin account.");
                     throw new InvalidOperationException("Cannot delete the admin account.");
                 }
                 else
@@ -88,7 +86,7 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError("Error deleting account", ex);
+                _logger.LogError("Error while deleting account", ex);
                 throw new Exception("Error deleting account", ex);
             }
         }
@@ -110,7 +108,7 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error retrieving account with id {id}", ex);
+                _logger.LogError($"Error while retrieving account with id {id}", ex);
                 throw;
             }
         }
@@ -128,7 +126,7 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError("Error retrieving all accounts", ex);
+                _logger.LogError("Error while retrieving all accounts", ex);
                 throw;
             }
         }
@@ -140,7 +138,6 @@ namespace InventoryLibrary.Services
                 var existingAccount = await _context.Accounts.FindAsync(account.Id);
                 if (existingAccount == null)
                 {
-                    _logger.LogError($"Attempted to update non-existing account with id {account.Id}");
                     throw new KeyNotFoundException($"Account with ID {account.Id} not found.");
                 }
 
@@ -162,7 +159,7 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error updating account with id {account.Id}", ex);
+                _logger.LogError($"Error while updating account with id {account.Id}", ex);
                 throw;
             }
         }
@@ -215,7 +212,7 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error setting password for account id {accountId}", ex);
+                _logger.LogError($"Error while setting password for account id {accountId}", ex);
                 throw;
             }
         }
@@ -236,7 +233,7 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error resetting password for account id {accountId}", ex);
+                _logger.LogError($"Error while resetting password for account id {accountId}", ex);
                 throw;
             }
         }

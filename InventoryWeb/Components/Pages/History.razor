@@ -8,63 +8,69 @@
 
 <PageTitle>System Logs</PageTitle>
 
-<h3>Logi aplikacji</h3>
-<div class="mb-3">
-    <button class="btn btn-primary" @onclick="LoadLogs">Odśwież</button>
-    
-    <select class="form-select" style="width: 200px; display: inline-block; margin-left: 10px;" @onchange="FilterByLevel">
-        <option value="">Wszystkie poziomy</option>
-        <option value="INFO">INFO</option>
-        <option value="WRN">WARNING</option>
-        <option value="ERROR">ERROR</option>
-    </select>
-    
-    <select class="form-select" style="width: 200px; display: inline-block; margin-left: 10px;" @onchange="FilterBySource">
-        <option value="">Wszystkie źródła</option>
-        @foreach (var source in sources)
-        {
-            <option value="@source">@source</option>
-        }
-    </select>
+<div class="p-3">
+    <div class="mb-3">
+        <Card>
+            <CardHeader>
+                <CardTitle>
+                    <h3>App Logs</h3>
+                </CardTitle>
+            </CardHeader>
+            <CardBody>
+
+
+                <button class="btn btn-primary" @onclick="LoadLogs"><Icon Name="IconName.ArrowClockwise"/> Odśwież</button>
+
+                <select class="form-select" style="width: 200px; display: inline-block; margin-left: 10px;"
+                    @onchange="FilterByLevel">
+                    <option value="">All types</option>
+                    <option value="INFO">INFO</option>
+                    <option value="WRN">WARNING</option>
+                    <option value="ERROR">ERROR</option>
+                </select>
+
+                <select class="form-select" style="width: 200px; display: inline-block; margin-left: 10px;"
+                    @onchange="FilterBySource">
+                    <option value="">All Sources</option>
+                    @foreach (var source in sources)
+                    {
+                        <option value="@source">@source</option>
+                    }
+                </select>
+
+            </CardBody>
+        </Card>
+    </div>
+
+
+    @if (logs == null)
+    {
+        <p><em>Loading Logs ...</em></p>
+    }
+    else if (!logs.Any())
+    {
+        <p><em>No logs available.</em></p>
+    }
+    else
+    {
+        <div class="log-container">
+            @foreach (var log in GetFilteredLogs())
+            {
+                <div class="log-entry">
+                    <span class="timestamp">@log.Timestamp.ToString("dd-MM-yyyy HH:mm")</span>
+                    <span class="log @GetLogClass(log.Level)">[@log.Level]</span>
+                    <span class="log-source">[@log.Source]</span>
+                    <span class="log-message">@log.Message</span>
+                </div>
+            }
+        </div>
+
+        <div class="mt-3">
+            <small class="text-muted">Showed @GetFilteredLogs().Count() z @logs.Count logs</small>
+        </div>
+    }
 </div>
 
-@if (logs == null)
-{
-    <p><em>Ładowanie logów...</em></p>
-}
-else if (!logs.Any())
-{
-    <p><em>Brak logów do wyświetlenia.</em></p>
-}
-else
-{
-    <div class="log-container" style="max-height: 600px; overflow-y: auto; background: #1e1e1e; padding: 15px; border-radius: 5px;">
-        @foreach (var log in GetFilteredLogs())
-        {
-            <div class="log-entry" style="margin-bottom: 8px;">
-                <span style="color: #858585;">@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</span>
-                <span class="@GetLogClass(log.Level)" style="margin-left: 10px; font-weight: bold;">[@log.Level]</span>
-                <span style="color: #569cd6; margin-left: 10px; font-weight: bold;">[@log.Source]</span>
-                <span style="color: #d4d4d4; margin-left: 10px;">@log.Message</span>
-            </div>
-        }
-    </div>
-    
-    <div class="mt-3">
-        <small class="text-muted">Wyświetlono @GetFilteredLogs().Count() z @logs.Count logów</small>
-    </div>
-}
-
-<style>
-    .log-container {
-        font-family: 'Courier New', monospace;
-        font-size: 13px;
-    }
-    
-    .log-INFO { color: #4ec9b0; }
-    .log-WARNING { color: #dcdcaa; }
-    .log-ERROR { color: #f48771; }
-</style>
 
 @code {
     private List<LogEntry> logs;

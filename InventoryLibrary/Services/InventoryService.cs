@@ -35,7 +35,7 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError("Error in GetAllItemsAsync",ex);
+                _logger?.LogError("Error while getting all items info",ex);
                 throw;
             }
         }
@@ -49,14 +49,13 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError($"Error in GetItemByIdAsync for id {id}",ex);
+                _logger?.LogError($"Error while getting item with id {id}",ex);
                 throw;
             }
         }
 
         public async Task<InventoryItem> CreateItemAsync(InventoryItem item)
         {
-            _logger.LogInfo("Creating new Inventory Item");
             try
             {
                 if (item == null)
@@ -68,18 +67,18 @@ namespace InventoryLibrary.Services
                 _context.InventoryItems.Add(item);
 
                 await _context.SaveChangesAsync();
+                _logger?.LogInfo($"Created new item: {item}");
                 return item;
             }
             catch (Exception ex)
             {
-                _logger?.LogError($"Error creating item: {item}",ex);
+                _logger?.LogError($"Error while creating item: {item}",ex);
                 throw;
             }
         }
 
         public async Task<IEnumerable<InventoryItem>> GetItemsByName(string name)
         {
-            _logger.LogInfo("Getting items by Name");
             try
             {
                 var items = await _context.InventoryItems.Where(i => i.itemName == name).ToListAsync();
@@ -99,18 +98,17 @@ namespace InventoryLibrary.Services
 
         public async Task<InventoryItem> DeleteItemAsync(int id)
         {
-            _logger.LogWarning($"Removing item with id {id} from Inventory database, and saving to Historical database");
             try
             {
                 var item = await _context.InventoryItems.FindAsync(id);
                 if (item == null)
                 {
-                    _logger.LogError($"Error: Can't remove item with id {id}, doesn't exist!");
                     throw new KeyNotFoundException($"Item with ID {id} not found.");
                 }
                 await _historicalDataService.CreateHistoricalItemAsync(item);
                 _context.InventoryItems.Remove(item);
                 await _context.SaveChangesAsync();
+                _logger.LogWarning($"Deleted item with id {id}");
                 return item;
             }
             catch (Exception ex)
@@ -122,13 +120,11 @@ namespace InventoryLibrary.Services
 
         public async Task<InventoryItem> UpdateItemAsync(InventoryItem item)
         {
-            _logger.LogInfo($"Updating item with id {item.Id}");
             try
             {
                 var existingItem = await _context.InventoryItems.FindAsync(item.Id);
                 if (existingItem == null)
                 {
-                    _logger.LogError($"Error: Can't update item with id {item.Id}, doesn't exist!");
                     throw new KeyNotFoundException($"Item with ID {item.Id} not found.");
                 }
                 if (existingItem.personInCharge?.Id != null || existingItem.PersonInChargeId != null)
@@ -147,11 +143,12 @@ namespace InventoryLibrary.Services
                 // Update properties safely on the tracked entity
                 _context.Entry(existingItem).CurrentValues.SetValues(item);
                 await _context.SaveChangesAsync();
+                _logger?.LogInfo($"Updated item: {item}");
                 return existingItem;
             }
             catch (Exception ex)
             {
-                _logger?.LogError($"Error updating item: {item}", ex);
+                _logger?.LogError($"Error while updating item: {item}", ex);
                 throw;
             }
         }
@@ -175,7 +172,7 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError($"Error in UpdateItemInventory for item {item.Id}", ex);
+                _logger?.LogError($"Error while updating item {item.Id}", ex);
                 throw;
             }
         }

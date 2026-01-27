@@ -142,7 +142,7 @@
                             }
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between mb-1">
-                                    <small>Postęp</small>
+                                    <small>Progress</small>
                                     <small class="badge bg-light text-dark">@progress%</small>
                                 </div>
                                 <div class="progress" style="height: 8px;">
@@ -223,7 +223,7 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>name</th>
+                                <th>Name</th>
                                 <th>Location</th>
                                 <th>Last inventory</th>
                                 <th>Days</th>
@@ -458,7 +458,7 @@
     private string GetRowClass(int days) => days > 365 ? "table-danger" : days > 180 ? "table-warning" : "";
     private string GetDaysBadgeClass(int days) => days > 365 ? "bg-danger" : days > 180 ? "bg-warning" : "bg-success";
     private string GetPriorityBadgeClass(int days) => days > 365 ? "bg-danger" : days > 180 ? "bg-warning" : "bg-success";
-    private string GetPriorityText(int days) => days > 365 ? "Krytyczny" : days > 180 ? "Wysoki" : "Normalny";
+    private string GetPriorityText(int days) => days > 365 ? "Critical" : days > 180 ? "High" : "Normal";
 
     private void ShowCreateModal()
     {
