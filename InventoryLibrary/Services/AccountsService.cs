@@ -9,12 +9,14 @@ namespace InventoryLibrary.Services
     {
         private readonly MyDbContext _context;
         private readonly IPasswordService _passwordService;
+        private readonly IInventoryLogger<AccountsService> _logger;
 
 
-        public AccountsService(MyDbContext context, IPasswordService passwordService)
+        public AccountsService(MyDbContext context, IPasswordService passwordService, IInventoryLogger<AccountsService> logger)
         {
             _context = context;
             _passwordService = passwordService;
+            _logger = logger;
         }
 
         public async Task<Account?> AuthenticateAsync(int index, string password)
@@ -37,7 +39,7 @@ namespace InventoryLibrary.Services
                 }
                 return null;
             }
-
+            _logger.LogInfo($"User authenticated {(account.IsAdmin ? "with access" : "without access")} with id {account.Id}");
             return account;
         }
 
@@ -52,78 +54,117 @@ namespace InventoryLibrary.Services
             try
             {
                 await _context.SaveChangesAsync();
+                _logger.LogInfo($"Created new account with id {account.Id}");
                 return account;
             }
             catch (DbUpdateException ex)
             {
+                _logger.LogError("Error creating account", ex);
                 throw new InvalidOperationException("Error creating account.", ex);
             }
         }
 
         public async Task DeleteAccountAsync(int id)
         {
-            var account = await _context.Accounts.FindAsync(id);
-            if (account == null)
+            try
             {
-                throw new KeyNotFoundException($"Account with ID {id} not found.");
+                var account = await _context.Accounts.FindAsync(id);
+                if (account == null)
+                {
+                    _logger.LogError($"Attempted to delete non-existing account with id {id}");
+                    throw new KeyNotFoundException($"Account with ID {id} not found.");
+                }
+                else if (account.Id == 1)
+                {
+                    _logger.LogError("Attempted to delete the admin account.");
+                    throw new InvalidOperationException("Cannot delete the admin account.");
+                }
+                else
+                {
+                    _context.Accounts.Remove(account);
+                    await _context.SaveChangesAsync();
+                    _logger.LogWarning($"Deleted account with id {id}");
+                }
             }
-            else if (account.Id == 1)
+            catch (Exception ex)
             {
-                throw new InvalidOperationException("Cannot delete the admin account.");
-            }
-            else
-            {
-                _context.Accounts.Remove(account);
-                await _context.SaveChangesAsync();
+                _logger.LogError("Error deleting account", ex);
+                throw new Exception("Error deleting account", ex);
             }
         }
 
         public async Task<Account> GetAccountByIdAsync(int id)
         {
-            var account = await _context.Accounts
+            try
+            {
+                var account = await _context.Accounts
                 .AsNoTracking()
                 .FirstOrDefaultAsync(a => a.Id == id);
 
-            if (account == null)
-            {
-                throw new KeyNotFoundException($"Account with ID {id} not found.");
-            }
+                if (account == null)
+                {
+                    throw new KeyNotFoundException($"Account with ID {id} not found.");
+                }
 
-            return account;
+                return account;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error retrieving account with id {id}", ex);
+                throw;
+            }
         }
 
         public async Task<IEnumerable<Account>> GetAllAccountsAsync()
         {
-            var accounts = await _context.Accounts.ToListAsync();
-            if (accounts == null || !accounts.Any())
+            try
             {
-                return Enumerable.Empty<Account>();
+                var accounts = await _context.Accounts.ToListAsync();
+                if (accounts == null || !accounts.Any())
+                {
+                    return Enumerable.Empty<Account>();
+                }
+                return accounts;
             }
-            return accounts;
+            catch (Exception ex)
+            {
+                _logger.LogError("Error retrieving all accounts", ex);
+                throw;
+            }
         }
 
         public async Task<Account> UpdateAccountAsync(Account account)
         {
-            var existingAccount = await _context.Accounts.FindAsync(account.Id);
-            if (existingAccount == null)
+            try
             {
-                throw new KeyNotFoundException($"Account with ID {account.Id} not found.");
-            }
-
-            if (existingAccount.Email != account.Email)
-            {
-                if (!await IsEmailUniqueAsync(account.Email))
+                var existingAccount = await _context.Accounts.FindAsync(account.Id);
+                if (existingAccount == null)
                 {
-                    throw new ArgumentException("Email must be unique and valid.");
+                    _logger.LogError($"Attempted to update non-existing account with id {account.Id}");
+                    throw new KeyNotFoundException($"Account with ID {account.Id} not found.");
                 }
+
+                if (existingAccount.Email != account.Email)
+                {
+                    if (!await IsEmailUniqueAsync(account.Email))
+                    {
+                        throw new ArgumentException("Email must be unique and valid.");
+                    }
+                }
+                if (existingAccount.Role != account.Role && existingAccount.Id == 1)
+                {
+                    throw new InvalidOperationException("Cannot change the role of the first admin account.");
+                }
+                _context.Entry(existingAccount).CurrentValues.SetValues(account);
+                await _context.SaveChangesAsync();
+                _logger.LogInfo($"Updated account with id {account.Id}");
+                return account;
             }
-            if (existingAccount.Role != account.Role && existingAccount.Id == 1)
+            catch (Exception ex)
             {
-                throw new InvalidOperationException("Cannot change the role of the first admin account.");
+                _logger.LogError($"Error updating account with id {account.Id}", ex);
+                throw;
             }
-            _context.Entry(existingAccount).CurrentValues.SetValues(account);
-            await _context.SaveChangesAsync();
-            return account;
         }
 
         private async Task<bool> IsEmailUniqueAsync(string email)
@@ -157,30 +198,47 @@ namespace InventoryLibrary.Services
 
         public Task SetUserPassword(int accountId, string newPassword)
         {
-            var account = _context.Accounts.Find(accountId);
-            if (account == null)
+            try
             {
-                throw new KeyNotFoundException($"Account with ID {accountId} not found.");
+                var account = _context.Accounts.Find(accountId);
+                if (account == null)
+                {
+                    throw new KeyNotFoundException($"Account with ID {accountId} not found.");
+                }
+                else if (account.resetPasswordOnNextLogin == true)
+                {
+                    account.PasswordHash = _passwordService.Hash(newPassword);
+                    account.resetPasswordOnNextLogin = false;
+                    _context.SaveChanges();
+                }
+                return Task.CompletedTask;
             }
-            else if (account.resetPasswordOnNextLogin == true)
+            catch (Exception ex)
             {
-                account.PasswordHash = _passwordService.Hash(newPassword);
-                account.resetPasswordOnNextLogin = false;
-                _context.SaveChanges();
+                _logger.LogError($"Error setting password for account id {accountId}", ex);
+                throw;
             }
-            return Task.CompletedTask;
         }
 
         public Task resetPasswordOnNextLogin(int accountId, bool reset)
         {
-            var account = _context.Accounts.Find(accountId);
+            try
+            {
+                var account = _context.Accounts.Find(accountId);
             if (account == null)
             {
                 throw new KeyNotFoundException($"Account with ID {accountId} not found.");
             }
             account.resetPasswordOnNextLogin = true;
             _context.SaveChanges();
+            _logger.LogWarning($"Password set for reset on next login for account id {accountId}");
             return Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error resetting password for account id {accountId}", ex);
+                throw;
+            }
         }
     }
 }

@@ -12,9 +12,9 @@ namespace InventoryLibrary.Services
 
         private readonly MyDbContext _context;
         private readonly IHistoricalDataService _historicalDataService;
-        private readonly ILogger<InventoryService> _logger;
+        private readonly IInventoryLogger<InventoryService> _logger;
 
-        public InventoryService(MyDbContext context, IHistoricalDataService historic,ILogger<InventoryService> logger)
+        public InventoryService(MyDbContext context, IHistoricalDataService historic, IInventoryLogger<InventoryService> logger)
         {
             _context = context;
             _logger = logger;
@@ -35,7 +35,7 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error in GetAllItemsAsync");
+                _logger?.LogError("Error in GetAllItemsAsync",ex);
                 throw;
             }
         }
@@ -49,13 +49,14 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error in GetItemByIdAsync for id {Id}", id);
+                _logger?.LogError($"Error in GetItemByIdAsync for id {id}",ex);
                 throw;
             }
         }
 
         public async Task<InventoryItem> CreateItemAsync(InventoryItem item)
         {
+            _logger.LogInfo("Creating new Inventory Item");
             try
             {
                 if (item == null)
@@ -65,19 +66,20 @@ namespace InventoryLibrary.Services
                 item.addedDate = DateTime.Now;
                 item.lastInventoryDate = DateTime.Now;
                 _context.InventoryItems.Add(item);
-                
+
                 await _context.SaveChangesAsync();
                 return item;
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error creating item: {@Item}", item);
+                _logger?.LogError($"Error creating item: {item}",ex);
                 throw;
             }
         }
 
         public async Task<IEnumerable<InventoryItem>> GetItemsByName(string name)
         {
+            _logger.LogInfo("Getting items by Name");
             try
             {
                 var items = await _context.InventoryItems.Where(i => i.itemName == name).ToListAsync();
@@ -88,36 +90,48 @@ namespace InventoryLibrary.Services
                 }
                 return items;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                _logger.LogError($"Error getting item with name {name}", ex);
                 return new List<InventoryItem>();
             }
         }
 
         public async Task<InventoryItem> DeleteItemAsync(int id)
         {
-            var item = await _context.InventoryItems.FindAsync(id);
-            if (item == null)
+            _logger.LogWarning($"Removing item with id {id} from Inventory database, and saving to Historical database");
+            try
             {
-                throw new KeyNotFoundException($"Item with ID {id} not found.");
+                var item = await _context.InventoryItems.FindAsync(id);
+                if (item == null)
+                {
+                    _logger.LogError($"Error: Can't remove item with id {id}, doesn't exist!");
+                    throw new KeyNotFoundException($"Item with ID {id} not found.");
+                }
+                await _historicalDataService.CreateHistoricalItemAsync(item);
+                _context.InventoryItems.Remove(item);
+                await _context.SaveChangesAsync();
+                return item;
             }
-            await _historicalDataService.CreateHistoricalItemAsync(item);
-            _context.InventoryItems.Remove(item);
-            await _context.SaveChangesAsync();
-            return item;
+            catch (Exception ex)
+            {
+                _logger?.LogError($"Error deleting item with id {id}", ex);
+                throw;
+            }
         }
 
         public async Task<InventoryItem> UpdateItemAsync(InventoryItem item)
         {
+            _logger.LogInfo($"Updating item with id {item.Id}");
             try
             {
                 var existingItem = await _context.InventoryItems.FindAsync(item.Id);
                 if (existingItem == null)
                 {
+                    _logger.LogError($"Error: Can't update item with id {item.Id}, doesn't exist!");
                     throw new KeyNotFoundException($"Item with ID {item.Id} not found.");
                 }
-                if(existingItem.personInCharge?.Id != null || existingItem.PersonInChargeId != null)
+                if (existingItem.personInCharge?.Id != null || existingItem.PersonInChargeId != null)
                 {
                     existingItem.Location = null;
                     existingItem.RoomId = null;
@@ -128,7 +142,7 @@ namespace InventoryLibrary.Services
                     existingItem.personInCharge = null;
                 }
 
-                
+
 
                 // Update properties safely on the tracked entity
                 _context.Entry(existingItem).CurrentValues.SetValues(item);
@@ -137,7 +151,7 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error updating item: {@Item}", item);
+                _logger?.LogError($"Error updating item: {item}", ex);
                 throw;
             }
         }
@@ -161,31 +175,31 @@ namespace InventoryLibrary.Services
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Error in UpdateItemInventory for item {ItemId}", item?.Id);
+                _logger?.LogError($"Error in UpdateItemInventory for item {item.Id}", ex);
                 throw;
             }
         }
 
         public async Task DeleteImageAsync(int inventoryItemId)
-    {
-        try
         {
-            var inventoryItem = await _context.InventoryItems.FindAsync(inventoryItemId);
-            if (inventoryItem == null)
-                throw new InvalidOperationException("Inventory item not found");
-
-            if (!string.IsNullOrEmpty(inventoryItem.imagePath))
+            try
             {
-                inventoryItem.imagePath = null;
-                await _context.SaveChangesAsync();
+                var inventoryItem = await _context.InventoryItems.FindAsync(inventoryItemId);
+                if (inventoryItem == null)
+                    throw new InvalidOperationException("Inventory item not found");
+
+                if (!string.IsNullOrEmpty(inventoryItem.imagePath))
+                {
+                    inventoryItem.imagePath = null;
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError($"Error deleting image reference for item {inventoryItemId}", ex);
+                throw;
             }
         }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "Error deleting image reference for item {ItemId}", inventoryItemId);
-            throw;
-        }
-    }
 
 
     }

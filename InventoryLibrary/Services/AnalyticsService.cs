@@ -5,15 +5,17 @@ using InventoryLibrary.Model.Accounts;
 using InventoryLibrary.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using InventoryLibrary.Model.Data;
+using InventoryLibrary.Model.DTO;
 
 namespace InventoryLibrary.Services;
 
 public class AnalyticsService : IAnalyticsService
 {
     private readonly MyDbContext _context;
-    private readonly ILogger<AnalyticsService> _logger;
+    private readonly IInventoryLogger<AnalyticsService> _logger;
 
-    public AnalyticsService(MyDbContext context, ILogger<AnalyticsService> logger)
+    public AnalyticsService(MyDbContext context, IInventoryLogger<AnalyticsService> logger)
     {
         _context = context;
         _logger = logger;
@@ -21,6 +23,7 @@ public class AnalyticsService : IAnalyticsService
 
     public async Task<DashboardStatistics> GetDashboardStatistics(int? departmentId = null)
     {
+
         try
         {
             var items = await GetFilteredItems(departmentId);
@@ -54,12 +57,11 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error getting dashboard statistics");
+            _logger?.LogError("Error getting dashboard statistics",ex);
             throw;
         }
     }
 
-    // POPRAWIONE: Przedmioty utworzone miesięcznie - sprawdza addedDate
     public async Task<MonthlyItemsCreatedData> GetMonthlyItemsCreated(int? departmentId = null)
     {
         try
@@ -93,7 +95,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error getting monthly items created");
+            _logger?.LogError("Error getting monthly items created", ex);
             throw;
         }
     }
@@ -136,12 +138,11 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error getting items by category");
+            _logger?.LogError("Error getting items by category",ex);
             throw;
         }
     }
 
-    // POPRAWIONE: Przedmioty bez inwentaryzacji - sprawdza lastInventoryDate
     public async Task<ItemsWithoutInventoryData> GetItemsWithoutInventory(int? departmentId = null)
     {
         try
@@ -190,12 +191,11 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error getting items without inventory");
+            _logger?.LogError("Error getting items without inventory",ex);
             throw;
         }
     }
 
-    // POPRAWIONE: Utrata przedmiotów miesięcznie - sprawdza archivedDate
     public async Task<MonthlyItemLossData> GetMonthlyItemLoss(int? departmentId = null)
     {
         try
@@ -257,7 +257,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error getting monthly item loss");
+            _logger?.LogError("Error getting monthly item loss",ex);
             throw;
         }
     }
@@ -291,7 +291,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error getting item condition distribution");
+            _logger?.LogError("Error getting item condition distribution",ex);
             throw;
         }
     }
@@ -325,12 +325,11 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error getting category value analysis");
+            _logger?.LogError("Error getting category value analysis",ex);
             throw;
         }
     }
 
-    // POPRAWIONE: Trend wartości aktywów - kumuluje wartość według addedDate
     public async Task<AssetValueTrendData> GetAssetValueTrend(int? departmentId = null)
     {
         try
@@ -346,7 +345,6 @@ public class AnalyticsService : IAnalyticsService
                 
                 labels.Add(month.ToString("MMM yyyy"));
                 
-                // Sumuj wartość wszystkich przedmiotów dodanych DO KOŃCA tego miesiąca
                 var valueUpToMonth = items
                     .Where(x => x.addedDate <= monthEnd)
                     .Sum(x => x.itemPrice);
@@ -368,7 +366,7 @@ public class AnalyticsService : IAnalyticsService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error getting asset value trend");
+            _logger?.LogError("Error getting asset value trend",ex);
             throw;
         }
     }
@@ -390,120 +388,4 @@ public class AnalyticsService : IAnalyticsService
 
         return await query.ToListAsync();
     }
-}
-
-// ==================== DTOs ====================
-
-public class DashboardStatistics
-{
-    public int TotalItems { get; set; }
-    public int BrokenItems { get; set; }
-    public int ItemsOnLoan { get; set; }
-    public int TotalUsers { get; set; }
-    public decimal TotalValue { get; set; }
-    public decimal DepartmentValue { get; set; }
-    public int ItemsWithoutReview { get; set; }
-    public double AverageItemAge { get; set; }
-    public decimal AllDepartmentsValue { get; set; }
-}
-
-public class MonthlyItemsCreatedData
-{
-    public List<string> Labels { get; set; } = new();
-    public List<int> ItemsCreated { get; set; } = new();
-    public int TotalCreated { get; set; }
-    public double AveragePerMonth { get; set; }
-}
-
-public class ItemsByCategoryData
-{
-    public List<CategoryInfo> Categories { get; set; } = new();
-    public List<string> Labels { get; set; } = new();
-    public List<int> Values { get; set; } = new();
-    public int TotalCategories { get; set; }
-}
-
-public class CategoryInfo
-{
-    public string CategoryName { get; set; } = string.Empty;
-    public int ItemCount { get; set; }
-    public decimal TotalValue { get; set; }
-    public double Percentage { get; set; }
-}
-
-public class ItemsWithoutInventoryData
-{
-    public Dictionary<string, int> TimeRanges { get; set; } = new();
-    public List<string> Labels { get; set; } = new();
-    public List<int> Values { get; set; } = new();
-    public List<ItemInventoryStatus> CriticalItems { get; set; } = new();
-    public int TotalOverdue { get; set; }
-}
-
-public class ItemInventoryStatus
-{
-    public int ItemId { get; set; }
-    public string ItemName { get; set; } = string.Empty;
-    public DateTime LastInventoryDate { get; set; }
-    public int DaysSinceInventory { get; set; }
-    public string Category { get; set; } = string.Empty;
-}
-
-public class MonthlyItemLossData
-{
-    public List<string> Labels { get; set; } = new();
-    public List<int> ItemsLost { get; set; } = new();
-    public List<decimal> ValueLost { get; set; } = new();
-    public int TotalLost { get; set; }
-    public decimal TotalValueLost { get; set; }
-    public List<CategoryLossInfo> TopLostCategories { get; set; } = new();
-    public decimal AverageLossValue { get; set; }
-    public double AverageMonthlyLoss { get; set; }
-}
-
-public class CategoryLossInfo
-{
-    public string CategoryName { get; set; } = string.Empty;
-    public int ItemsLost { get; set; }
-    public decimal TotalValueLost { get; set; }
-}
-
-public class ItemConditionDistributionData
-{
-    public List<ConditionInfo> Conditions { get; set; } = new();
-    public List<string> Labels { get; set; } = new();
-    public List<int> Values { get; set; } = new();
-    public int BrokenCount { get; set; }
-    public int LostCount { get; set; }
-}
-
-public class ConditionInfo
-{
-    public string ConditionName { get; set; } = string.Empty;
-    public int ItemCount { get; set; }
-    public decimal TotalValue { get; set; }
-}
-
-public class CategoryValueData
-{
-    public List<CategoryValueInfo> Categories { get; set; } = new();
-    public List<string> Labels { get; set; } = new();
-    public List<decimal> Values { get; set; } = new();
-    public decimal TotalValue { get; set; }
-}
-
-public class CategoryValueInfo
-{
-    public string CategoryName { get; set; } = string.Empty;
-    public decimal TotalValue { get; set; }
-    public int ItemCount { get; set; }
-    public decimal AverageValue { get; set; }
-}
-
-public class AssetValueTrendData
-{
-    public List<string> Labels { get; set; } = new();
-    public List<decimal> Values { get; set; } = new();
-    public decimal CurrentValue { get; set; }
-    public decimal GrowthRate { get; set; }
 }

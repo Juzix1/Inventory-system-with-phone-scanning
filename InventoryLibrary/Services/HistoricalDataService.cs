@@ -8,10 +8,11 @@ namespace InventoryLibrary.Services;
 public class HistoricalDataService : IHistoricalDataService
 {
     private readonly MyDbContext _context;
-    public HistoricalDataService(MyDbContext context)
+    private readonly IInventoryLogger<HistoricalDataService> _logger;
+    public HistoricalDataService(MyDbContext context, IInventoryLogger<HistoricalDataService> logger)
     {
         _context = context;
-        
+        _logger = logger;
     }
 
     public Task<HistoricalItem> CreateHistoricalItemAsync(InventoryItem item)
@@ -37,9 +38,11 @@ public class HistoricalDataService : IHistoricalDataService
 
             _context.HistoricalItems.Add(historicalItem);
             _context.SaveChanges();
+            _logger.LogInfo($"Created historical item for InventoryItem ID: {item.Id}");
             return Task.FromResult(historicalItem);
         }catch (Exception ex)
         {
+            _logger.LogError("Error in creating historical item", ex);
             throw;
         }
     }
@@ -51,32 +54,49 @@ public class HistoricalDataService : IHistoricalDataService
             var historicalItem = _context.HistoricalItems.Find(id);
             if (historicalItem == null)
             {
+                _logger.LogWarning($"Historical item with ID {id} not found for deletion.");
                 throw new KeyNotFoundException($"Historical item with ID {id} not found.");
             }
 
             _context.HistoricalItems.Remove(historicalItem);
             _context.SaveChanges();
+            _logger.LogWarning($"Deleted historical item with ID: {id}");
             return Task.CompletedTask;
         }catch (Exception ex)
         {
+            _logger.LogError("Error in deleting historical item", ex);
             throw;
         }
     }
 
     public Task<IEnumerable<HistoricalItem>> GetAllHistoricalItemsAsync()
     {
-        var historicalItems = _context.HistoricalItems.ToList();
-        return Task.FromResult((IEnumerable<HistoricalItem>)historicalItems);
+        try{
+            var historicalItems = _context.HistoricalItems.ToList();
+            return Task.FromResult<IEnumerable<HistoricalItem>>(historicalItems);
+        }catch (Exception ex)
+        {
+            _logger.LogError("Error in retrieving all historical items", ex);
+            throw;
+        }
     }
 
     public Task<HistoricalItem> GetHistoricalItemByIdAsync(int id)
     {
-        var historicalItem = _context.HistoricalItems.Find(id);
-        if (historicalItem == null)
+        try
         {
-            throw new KeyNotFoundException($"Historical item with ID {id} not found.");
+            var historicalItem = _context.HistoricalItems.Find(id);
+            if (historicalItem == null)
+            {
+                _logger.LogWarning($"Historical item with ID {id} not found.");
+                throw new KeyNotFoundException($"Historical item with ID {id} not found.");
+            }
+            return Task.FromResult(historicalItem);
+        }catch (Exception ex)
+        {
+            _logger.LogError("Error in retrieving historical item by ID", ex);
+            throw;
         }
-        return Task.FromResult(historicalItem);
     }
 
     public Task<HistoricalItem> UpdateHistoricalItemAsync(InventoryItem item)
@@ -86,6 +106,7 @@ public class HistoricalDataService : IHistoricalDataService
             var existingHistoricalItem = _context.HistoricalItems.FirstOrDefault(h => h.OriginalItemId == item.Id);
             if (existingHistoricalItem == null)
             {
+                _logger.LogWarning($"Historical item for original item ID {item.Id} not found for update.");
                 throw new KeyNotFoundException($"Historical item for original item ID {item.Id} not found.");
             }
 
@@ -97,9 +118,11 @@ public class HistoricalDataService : IHistoricalDataService
 
             _context.HistoricalItems.Update(existingHistoricalItem);
             _context.SaveChanges();
+            _logger.LogInfo($"Updated historical item for OriginalItemId: {item.Id}");
             return Task.FromResult(existingHistoricalItem);
         }catch (Exception ex)
         {
+            _logger.LogError("Error in updating historical item", ex);
             throw;
         }
     }

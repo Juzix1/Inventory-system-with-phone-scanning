@@ -1,4 +1,5 @@
 using InventoryLibrary.Model.Accounts;
+using InventoryLibrary.Model.DTO.Stocktake;
 using InventoryLibrary.Model.Inventory;
 using InventoryLibrary.Model.StockTake;
 

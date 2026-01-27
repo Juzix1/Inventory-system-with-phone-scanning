@@ -1,5 +1,6 @@
 using InventoryLibrary.Data;
 using InventoryLibrary.Model.Accounts;
+using InventoryLibrary.Model.DTO.Stocktake;
 using InventoryLibrary.Model.Inventory;
 using InventoryLibrary.Model.StockTake;
 using InventoryLibrary.Services.Interfaces;
@@ -11,9 +12,9 @@ namespace InventoryLibrary.Services;
 public class StocktakeService : IStocktakeService
 {
     private readonly MyDbContext _context;
-    private readonly ILogger<StocktakeService> _logger;
+    private readonly IInventoryLogger<StocktakeService> _logger;
 
-    public StocktakeService(MyDbContext context, ILogger<StocktakeService> logger)
+    public StocktakeService(MyDbContext context, IInventoryLogger<StocktakeService> logger)
     {
         _context = context;
         _logger = logger;
@@ -55,17 +56,16 @@ public class StocktakeService : IStocktakeService
             _context.Stocktakes.Add(stocktake);
             await _context.SaveChangesAsync();
 
-            _logger?.LogInformation("Utworzono nową inwentaryzację: {Name} z {ItemCount} przedmiotami", 
-                name, items.Count);
+            _logger?.LogInfo($"Utworzono nową inwentaryzację: {name} z {items.Count} przedmiotami" );
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Błąd podczas tworzenia inwentaryzacji");
+            _logger?.LogError("Błąd podczas tworzenia inwentaryzacji",ex);
             throw;
         }
     }
 
-    // Przeciążenie dla zachowania zgodności wstecznej
+    // Stara nazwa metody dla kompatybilności
     public async Task CreateNewStocktake(List<InventoryItem> items, DateTime? startDate, DateTime endDate)
     {
         await CreateNewStocktake(
@@ -95,7 +95,7 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Błąd podczas pobierania listy inwentaryzacji");
+            _logger?.LogError("Błąd podczas pobierania listy inwentaryzacji",ex);
             throw;
         }
     }
@@ -121,7 +121,7 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Błąd podczas pobierania inwentaryzacji {Id}", id);
+            _logger?.LogError("Błąd podczas pobierania inwentaryzacji {id}", ex);
             throw;
         }
     }
@@ -151,12 +151,12 @@ public class StocktakeService : IStocktakeService
 
             await _context.SaveChangesAsync();
 
-            _logger?.LogInformation("Zaktualizowano inwentaryzację {Id}", stocktake.Id);
+            _logger?.LogInfo($"Zaktualizowano inwentaryzację {stocktake.Id}");
             return existingStocktake;
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Błąd podczas aktualizacji inwentaryzacji {Id}", stocktake?.Id);
+            _logger?.LogError($"Błąd podczas aktualizacji inwentaryzacji {stocktake?.Id}", ex);
             throw;
         }
     }
@@ -188,8 +188,7 @@ public class StocktakeService : IStocktakeService
 
                 await _context.SaveChangesAsync();
 
-                _logger?.LogInformation("Oznaczono przedmiot {ItemId} w inwentaryzacji {StocktakeId} przez {User}", 
-                    itemId, stocktakeId, checkedBy ?? "system");
+                _logger?.LogInfo($"Oznaczono przedmiot {itemId} w inwentaryzacji {stocktakeId} jako sprawdzony przez {checkedBy ?? "nieznany"}");
 
                 // Automatyczne ukończenie jeśli wszystkie przedmioty sprawdzone
                 if (stocktake.CheckedItemIdList.Count == stocktake.AllItems)
@@ -200,8 +199,7 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Błąd podczas oznaczania przedmiotu {ItemId} w inwentaryzacji {StocktakeId}", 
-                itemId, stocktakeId);
+            _logger?.LogError($"Błąd podczas oznaczania przedmiotu {itemId} w inwentaryzacji {stocktakeId}", ex);
             throw;
         }
     }
@@ -225,14 +223,12 @@ public class StocktakeService : IStocktakeService
                 stocktake.CheckedItemIdList.Remove(itemId);
                 await _context.SaveChangesAsync();
 
-                _logger?.LogInformation("Odznaczono przedmiot {ItemId} w inwentaryzacji {StocktakeId}", 
-                    itemId, stocktakeId);
+                _logger?.LogInfo($"Odznaczono przedmiot {itemId} w inwentaryzacji {stocktakeId} jako niesprawdzony");
             }
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Błąd podczas odznaczania przedmiotu {ItemId} w inwentaryzacji {StocktakeId}", 
-                itemId, stocktakeId);
+            _logger?.LogError($"Błąd podczas odznaczania przedmiotu {itemId} w inwentaryzacji {stocktakeId}", ex);
             throw;
         }
     }
@@ -248,12 +244,12 @@ public class StocktakeService : IStocktakeService
                 stocktake.EndDate = DateTime.Now;
                 await _context.SaveChangesAsync();
 
-                _logger?.LogInformation("Automatycznie ukończono inwentaryzację {StocktakeId}", stocktakeId);
+                _logger?.LogInfo($"Automatycznie ukończono inwentaryzację {stocktakeId}");
             }
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Błąd podczas automatycznego kończenia inwentaryzacji {StocktakeId}", stocktakeId);
+            _logger?.LogError($"Błąd podczas automatycznego kończenia inwentaryzacji {stocktakeId}", ex);
         }
     }
 
@@ -272,12 +268,12 @@ public class StocktakeService : IStocktakeService
             _context.Stocktakes.Remove(stocktake);
             await _context.SaveChangesAsync();
 
-            _logger?.LogInformation("Usunięto inwentaryzację {Id}", id);
+            _logger?.LogWarning($"Usunięto inwentaryzację {id}");
             return stocktake;
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Błąd podczas usuwania inwentaryzacji {Id}", id);
+            _logger?.LogError($"Błąd podczas usuwania inwentaryzacji {id}", ex);
             throw;
         }
     }
@@ -305,7 +301,7 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Błąd podczas obliczania statystyk dla inwentaryzacji {Id}", stocktakeId);
+            _logger?.LogError($"Błąd podczas obliczania statystyk dla inwentaryzacji {stocktakeId}", ex);
             throw;
         }
     }
@@ -330,8 +326,7 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Błąd podczas pobierania niesprawdzonych przedmiotów dla inwentaryzacji {Id}", 
-                stocktakeId);
+            _logger?.LogError($"Błąd podczas pobierania niesprawdzonych przedmiotów dla inwentaryzacji {stocktakeId}", ex);
             throw;
         }
     }
@@ -350,21 +345,8 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Błąd podczas sprawdzania uprawnień użytkownika {UserId} dla inwentaryzacji {StocktakeId}", 
-                userId, stocktakeId);
+            _logger?.LogError($"Błąd podczas sprawdzania uprawnień użytkownika {userId} dla inwentaryzacji {stocktakeId}", ex);
             return false;
         }
     }
-}
-
-// Klasa pomocnicza dla statystyk
-public class StocktakeStatistics
-{
-    public int TotalItems { get; set; }
-    public int CheckedItems { get; set; }
-    public int UncheckedItems { get; set; }
-    public double ProgressPercentage { get; set; }
-    public int DaysRemaining { get; set; }
-    public bool IsOverdue { get; set; }
-    public double AverageItemsPerDay { get; set; }
 }

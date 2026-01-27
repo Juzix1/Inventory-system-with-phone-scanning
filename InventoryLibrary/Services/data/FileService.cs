@@ -21,11 +21,13 @@ public class FileService : IFileService
 {
     private readonly MyDbContext _context;
     private readonly IInventoryService _inventoryService;
+    private readonly IInventoryLogger<FileService> _logger;
 
-    public FileService(MyDbContext context, IInventoryService inventoryService)
+    public FileService(MyDbContext context, IInventoryService inventoryService, IInventoryLogger<FileService> logger)
     {
         _context = context;
         _inventoryService = inventoryService;
+        _logger = logger;
     }
 
 
@@ -35,7 +37,7 @@ public class FileService : IFileService
     {
         var result = new Result();
         ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
-
+        _logger.LogInfo("Starting import of inventory items from Excel");
         try
         {
             using var package = new ExcelPackage(excelStream);
@@ -44,6 +46,7 @@ public class FileService : IFileService
             if (worksheet.Dimension == null)
             {
                 result.Errors.Add("Worksheet is empty");
+                _logger.LogError("Import failed: Worksheet is empty");
                 return result;
             }
 
@@ -99,21 +102,22 @@ public class FileService : IFileService
                 catch (Exception ex)
                 {
                     result.Errors.Add($"Row {row}: {ex.Message}");
+                    _logger.LogError($"Row {row}: Error importing item",ex);
                 }
             }
 
-
-            // Zapisz wszystko naraz (transakcja)
             if (itemsToAdd.Any())
             {
                 await _context.InventoryItems.AddRangeAsync(itemsToAdd);
                 await _context.SaveChangesAsync();
                 result.SuccessCount = itemsToAdd.Count;
+                _logger.LogInfo($"Imported {itemsToAdd.Count} items successfully.");
             }
         }
         catch (Exception ex)
         {
             result.Errors.Add($"Critical Error: {ex.Message}");
+            _logger.LogError("Critical error during import of inventory items",ex);
         }
 
         return result;
@@ -245,6 +249,7 @@ public class FileService : IFileService
         catch (Exception ex)
         {
             result.Errors.Add($"Mapping error: {ex.Message}");
+            _logger.LogError($"Row {row}: Error mapping common fields",ex);
         }
 
         return result;
@@ -295,7 +300,7 @@ public class FileService : IFileService
 
         }
         worksheet.Cells.AutoFitColumns();
-
+        _logger.LogInfo($"Exported {items.Count} items to Excel.");
         return await package.GetAsByteArrayAsync();
 
     }
@@ -335,9 +340,9 @@ public class FileService : IFileService
         var person1 = new Account { Email = "john.doe@company.com" };
         var person2 = new Account { Email = "jane.smith@company.com" };
 
-        var room1 = new Department { DepartmentName = "Wyższa szkoła", Rooms = new List<Room> { new Room { RoomName = "Dziekanat" } } };
-        var room2 = new Department { DepartmentName = "Biblioteka", Rooms = new List<Room> { new Room { RoomName = "112" } } };
-        var room3 = new Department { DepartmentName = "Magazyn", Rooms = new List<Room> { new Room { RoomName = "001" } } };
+        var room1 = new Department { DepartmentName = "Wydział Informatyki", Rooms = new List<Room> { new Room { RoomName = "Dziekanat" } } };
+        var room2 = new Department { DepartmentName = "Wydział Robotyki", Rooms = new List<Room> { new Room { RoomName = "Sala 112" } } };
+        var room3 = new Department { DepartmentName = "Wydział Prawa", Rooms = new List<Room> { new Room { RoomName = "Aula15" } } };
 
         // 1. Laptop Dell
         items.Add(new AGD
@@ -350,7 +355,7 @@ public class FileService : IFileService
             itemPrice = 3500.00,
             addedDate = DateTime.Now.AddMonths(-6),
             warrantyEnd = DateTime.Now.AddYears(2),
-            lastInventoryDate = DateTime.Now.AddDays(-30),
+            lastInventoryDate = DateTime.Now.AddDays(-156),
             ModelName = "Latitude 5520",
             CPU = "Intel Core i7-1185G7",
             RAM = "16GB DDR4",

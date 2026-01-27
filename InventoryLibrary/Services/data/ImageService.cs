@@ -13,13 +13,15 @@ public class ImageService : IImageService
     private readonly MyDbContext _context;
     private readonly HttpClient _httpClient;
     private readonly ISettingsService _settingsService;
+    private readonly IInventoryLogger<ImageService> _logger;
 
 
-    public ImageService(HttpClient httpClient, ISettingsService settingsService, MyDbContext context)
+    public ImageService(HttpClient httpClient, ISettingsService settingsService, MyDbContext context, IInventoryLogger<ImageService> logger)
     {
         _httpClient = httpClient;
         _settingsService = settingsService;
         _context = context;
+        _logger = logger;
     }
 
     public async Task<ImageUploadResult> SendImageAsync(Stream imageStream, string fileName, int? inventoryItemId = null)
@@ -47,8 +49,7 @@ public class ImageService : IImageService
                 await imageStream.CopyToAsync(fileStream);
             }
 
-            // Do NOT update DB here — caller will set Model.imagePath and persist on submit.
-
+            _logger.LogInfo($"Image uploaded successfully: {uniqueFileName}");
             return new ImageUploadResult
             {
                 Success = true,
@@ -60,6 +61,7 @@ public class ImageService : IImageService
         }
         catch (Exception ex)
         {
+            _logger.LogError("Error uploading image", ex);
             return new ImageUploadResult
             {
                 Success = false,

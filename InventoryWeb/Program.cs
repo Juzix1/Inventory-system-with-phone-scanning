@@ -11,8 +11,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using InventoryLibrary.Services.Logs;
+
+
+
 
 var builder = WebApplication.CreateBuilder(args);
+
+
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -20,7 +26,7 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddBlazorBootstrap();
 
-//Authorization
+// Authorization
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(option =>
     {
@@ -33,7 +39,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
-//Inventory
+
+
+// Inventory
 builder.Services.AddScoped<IInventoryService,InventoryService>();
 builder.Services.AddScoped<ITypeService,TypeService>();
 builder.Services.AddScoped<IConditionService,ConditionService>();
@@ -44,16 +52,20 @@ builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IHistoricalDataService, HistoricalDataService>();
 
-//Account
+// Account
 builder.Services.AddScoped<IAccountsService, AccountsService>();
 builder.Services.AddScoped<IPasswordService,PasswordService>();
-//Settings
+// Settings
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 
-//Analytics
+// Analytics
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
+// Logging
+builder.Services.AddScoped(typeof(IInventoryLogger<>), typeof(InventoryLogger<>));
 
+// Log Reader
+builder.Services.AddScoped<ILogReaderService, LogReaderService>();
 
 
 builder.Services.AddHttpContextAccessor();

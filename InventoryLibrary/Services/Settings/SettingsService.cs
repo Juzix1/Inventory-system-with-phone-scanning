@@ -12,9 +12,11 @@ namespace InventoryWeb.Services;
 public class SettingsService : ISettingsService
 {
     private readonly MyDbContext _context;
-    public SettingsService(MyDbContext context)
+    private readonly IInventoryLogger<SettingsService> _logger;
+    public SettingsService(MyDbContext context, IInventoryLogger<SettingsService> logger)
     {
         _context = context;
+        _logger = logger;
     }
     public async Task<List<Setting>> GetSettings()
     {
@@ -23,11 +25,14 @@ public class SettingsService : ISettingsService
 
     public async Task UpdateSetting(SettingsModel model)
     {
-        var settings = await _context.Settings.ToListAsync();
+        try
+        {
+            var settings = await _context.Settings.ToListAsync();
 
         var fileStoragePathSetting = settings.Find(s => s.Key == "FileStoragePath");
         if (fileStoragePathSetting != null)
         {
+            _logger.LogInfo("Updating file storage path setting");
             fileStoragePathSetting.Value = model.FileStoragePath;
         }
         else
@@ -38,6 +43,7 @@ public class SettingsService : ISettingsService
         var maxFileSizeSetting = settings.Find(s => s.Key == "MaxFileSize");
         if (maxFileSizeSetting != null)
         {
+            _logger.LogInfo("Updating max file size setting");
             maxFileSizeSetting.Value = (model.MaxFileSizeMB * 1024 * 1024).ToString();
         }
         else
@@ -45,19 +51,10 @@ public class SettingsService : ISettingsService
             _context.Settings.Add(new Setting { Key = "MaxFileSize", Value = (model.MaxFileSizeMB * 1024 * 1024).ToString() });
         }
 
-        var enableNotificationsSetting = settings.Find(s => s.Key == "EnableNotifications");
-        if (enableNotificationsSetting != null)
-        {
-            enableNotificationsSetting.Value = model.EnableNotifications.ToString();
-        }
-        else
-        {
-            _context.Settings.Add(new Setting { Key = "EnableNotifications", Value = model.EnableNotifications.ToString() });
-        }
-
         var companyNameSetting = settings.Find(s => s.Key == "CompanyName");
         if (companyNameSetting != null)
         {
+            _logger.LogInfo("Updating Company Name");
             companyNameSetting.Value = model.CompanyName;
         }
         else
@@ -68,6 +65,7 @@ public class SettingsService : ISettingsService
         var chosenDepSetting = settings.Find(s => s.Key == "ChosenDepartmentId");
         if (chosenDepSetting != null)
         {
+            _logger.LogInfo("Updating ChosenDepartmentId setting");
             chosenDepSetting.Value = model.ChosenDepartmentId?.ToString() ?? string.Empty;
         }
         else
@@ -76,6 +74,12 @@ public class SettingsService : ISettingsService
         }
 
         await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Error updating settings", ex);
+            throw new Exception("Error updating settings", ex);
+        }
     }
 
     public async Task<string> GetImageStoragePath()

@@ -1,0 +1,16 @@
+.log-container {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+}
+
+.log-INFO {
+    color: #019452;
+}
+
+.log-WRN {
+    color: #e0c513;
+}
+
+.log-ERROR {
+    color: #f48771;
+}

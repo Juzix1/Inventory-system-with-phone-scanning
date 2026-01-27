@@ -1,3 +1,5 @@
+using InventoryLibrary.Model.Data;
+using InventoryLibrary.Model.DTO;
 using InventoryLibrary.Services;
 
 namespace InventoryLibrary.Services.Interfaces;

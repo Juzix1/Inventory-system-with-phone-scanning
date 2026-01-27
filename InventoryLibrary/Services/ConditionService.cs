@@ -9,20 +9,29 @@ public class ConditionService : IConditionService
 {
 
     private readonly MyDbContext _context;
-    public ConditionService(MyDbContext context)
+    private readonly IInventoryLogger<ConditionService> _logger;
+    public ConditionService(MyDbContext context, IInventoryLogger<ConditionService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<ItemCondition>> GetAllItemConditions()
     {
 
-        if (!await _context.ItemTypes.AnyAsync())
+        try
         {
-            return new List<ItemCondition>();
+            if (!await _context.ItemTypes.AnyAsync())
+            {
+                return new List<ItemCondition>();
+            }
+            return await _context.itemConditions.ToListAsync();
         }
-        return await _context.itemConditions.ToListAsync();
-;
+        catch (Exception ex)
+        {
+            _logger.LogError("Error in GetAllItemConditions", ex);
+            throw;
+        }
     }
 
 }
