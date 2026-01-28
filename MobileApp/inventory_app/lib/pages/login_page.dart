@@ -118,11 +118,17 @@ class _LoginPageState extends State<LoginPage> {
     if (response.success) {
       if (response.resetPasswordOnNextLogin == true) {
         _showError('You must reset your password');
-      } else {
+        _api.deleteToken();
+      }else if(response.isAdmin == true || response.isModerator == true){
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomePage()),
         );
+      }
+       else {
+        _showError("You don't have access for this app");
+        _api.deleteToken();
+        
       }
     } else {
       _showError(response.errorMessage ?? 'Login failed');

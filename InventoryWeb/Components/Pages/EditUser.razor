@@ -91,6 +91,9 @@ else
                 }else if(user.Role == "Moderator"){
                     user.IsAdmin = false;
                     user.IsModerator = true;
+                }else{
+                    user.IsAdmin = false;
+                    user.IsModerator = false;
                 }
                 user.PasswordHash = "";
                 user.resetPasswordOnNextLogin = true;
@@ -104,6 +107,9 @@ else
                 }else if(user.Role == "Moderator"){
                     user.IsAdmin = false;
                     user.IsModerator = true;
+                }else{
+                    user.IsAdmin = false;
+                    user.IsModerator = false;
                 }
                 await AccountsService.UpdateAccountAsync(user);
             }

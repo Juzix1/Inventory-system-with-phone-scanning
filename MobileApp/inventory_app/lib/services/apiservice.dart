@@ -49,7 +49,11 @@ class ApiService {
 
   // Get base URL for items to use
   String? get baseUrl => _baseUrl;
-
+  Future deleteToken() async{
+    final prefs = await SharedPreferences.getInstance();
+    _token = null;
+    await prefs.setString('token', "");;
+  }
   Future<bool> isTokenValid() async {
     await initialize();
 
@@ -130,8 +134,10 @@ class ApiService {
           'tokenExpiration',
           expirationDate.toIso8601String(),
         );
-
-        _token = data['token'];
+        if(data['user']['resetPasswordOnNextLogin'] != true){
+          _token = data['token'];
+        }
+        
         _baseUrl = 'https://$ip/api';
 
         return LoginResponse(
@@ -257,6 +263,52 @@ class ApiService {
       throw Exception('Error loading my items: $e');
     }
   }
+  /// Mark item as checked in stocktake
+Future<Map<String, dynamic>> markItemAsChecked(int stocktakeId, int itemId) async {
+  await initialize();
+  
+  final url = Uri.parse('$_baseUrl/Stocktake/$stocktakeId/mark-item/$itemId');
+  
+  try {
+    final response = await http.post(url, headers: _getHeaders());
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 404) {
+      throw Exception('Stocktake or item not found');
+    } else if (response.statusCode == 400) {
+      final error = jsonDecode(response.body);
+      throw Exception(error['message'] ?? 'Cannot mark item');
+    } else if (response.statusCode == 401) {
+      throw Exception('Unauthorized - please login again');
+    } else {
+      throw Exception('Failed to mark item: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error marking item as checked: $e');
+    rethrow;
+  }
+}
+
+/// Get stocktake progress
+Future<Map<String, dynamic>> getStocktakeProgress(int stocktakeId) async {
+  await initialize();
+  
+  final url = Uri.parse('$_baseUrl/Stocktake/$stocktakeId/progress');
+  
+  try {
+    final response = await http.get(url, headers: _getHeaders());
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to get progress: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error getting stocktake progress: $e');
+    rethrow;
+  }
+}
 
   Future<Map<String, dynamic>?> getUserData() async {
     await initialize();

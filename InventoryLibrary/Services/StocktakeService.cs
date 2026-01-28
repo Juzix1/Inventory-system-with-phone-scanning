@@ -192,48 +192,51 @@ public class StocktakeService : IStocktakeService
     }
 
     public async Task MarkItemAsChecked(int stocktakeId, int itemId, string checkedBy = null)
+{
+    try
     {
-        try
+        var stocktake = await _context.Stocktakes
+            .Include(s => s.ItemsToCheck)
+            .FirstOrDefaultAsync(s => s.Id == stocktakeId);
+            
+        if (stocktake == null)
+            throw new KeyNotFoundException($"Stocktake with id {stocktakeId} not found");
+            
+        if (stocktake.Status != StockTakeStatus.InProgress)
+            throw new InvalidOperationException("Cannot mark items in a stocktake that is not in progress");
+            
+        var item = stocktake.ItemsToCheck.FirstOrDefault(i => i.Id == itemId);
+        if (item == null)
+            throw new KeyNotFoundException($"Item with id {itemId} not found in stocktake {stocktakeId}");
+            
+        if (!stocktake.CheckedItemIdList.Contains(itemId))
         {
-            var stocktake = await _context.Stocktakes
-                .Include(s => s.ItemsToCheck)
-                .FirstOrDefaultAsync(s => s.Id == stocktakeId);
-
-            if (stocktake == null)
-                throw new KeyNotFoundException($"Stocktake with id {stocktakeId} not found");
-
-            if (stocktake.Status != StockTakeStatus.InProgress)
-                throw new InvalidOperationException("Cannot mark items in a stocktake that is not in progress");
-
-            var item = stocktake.ItemsToCheck.FirstOrDefault(i => i.Id == itemId);
-            if (item == null)
-                throw new KeyNotFoundException($"Item with id {itemId} not found in stocktake {stocktakeId}");
-
-            if (!stocktake.CheckedItemIdList.Contains(itemId))
+            stocktake.CheckedItemIdList.Add(itemId);
+            item.lastInventoryDate = DateTime.Now;
+            
+            _context.Entry(stocktake).Property(s => s.CheckedItemIdList).IsModified = true;
+            
+            await _context.SaveChangesAsync();
+            
+            _logger?.LogInfo($"Marked item {itemId} as checked in stocktake {stocktakeId}" +
+                             (checkedBy != null ? $" by {checkedBy}" : ""));
+            
+            if (stocktake.CheckedItemIdList.Count == stocktake.AllItems)
             {
-                stocktake.CheckedItemIdList.Add(itemId);
-
-                // Aktualizacja daty ostatniej inwentaryzacji przedmiotu
-                item.lastInventoryDate = DateTime.Now;
-
-                await _context.SaveChangesAsync();
-
-                _logger?.LogInfo($"Marked item {itemId} as checked in stocktake {stocktakeId}" +
-                                 (checkedBy != null ? $" by {checkedBy}" : ""));
-
-                // Automatyczne ukończenie jeśli wszystkie przedmioty sprawdzone
-                if (stocktake.CheckedItemIdList.Count == stocktake.AllItems)
-                {
-                    await AutoCompleteStocktake(stocktakeId);
-                }
+                await AutoCompleteStocktake(stocktakeId);
             }
         }
-        catch (Exception ex)
+        else
         {
-            _logger?.LogError($"Error while marking item {itemId} as checked in stocktake {stocktakeId}", ex);
-            throw;
+            _logger?.LogInfo($"Item {itemId} already checked in stocktake {stocktakeId}");
         }
     }
+    catch (Exception ex)
+    {
+        _logger?.LogError($"Error while marking item {itemId} as checked in stocktake {stocktakeId}", ex);
+        throw;
+    }
+}
 
     // Stara nazwa metody dla kompatybilności
     public async Task MarkItem(int id, InventoryItem item)

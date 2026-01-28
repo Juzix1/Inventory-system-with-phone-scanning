@@ -69,6 +69,89 @@ namespace InventoryAPI.Controllers
                 return StatusCode(500, new { message = "Error loading items", error = ex.Message });
             }
         }
+
+        [HttpPost("{stocktakeId}/mark-item/{itemId}")]
+        public async Task<ActionResult> MarkItemAsChecked(int stocktakeId, int itemId)
+        {
+            try
+            {
+                // Pobierz userId z tokenu
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                {
+                    return Unauthorized(new { message = "Invalid token" });
+                }
+                string checkedBy = userId.ToString();
+
+                await _stocktakeService.MarkItemAsChecked(stocktakeId, itemId, checkedBy);
+                var stocktake = await _stocktakeService.GetStocktakeById(stocktakeId);
+
+                if (stocktake == null)
+                {
+                    return NotFound(new { message = $"Stocktake with ID {stocktakeId} not found" });
+                }
+
+                return Ok(new
+                {
+                    message = "Item marked as checked successfully",
+                    stocktakeId = stocktakeId,
+                    itemId = itemId,
+                    checkedCount = stocktake.CheckedItemIdList.Count,
+                    totalItems = stocktake.AllItems,
+                    isCompleted = stocktake.Status == StockTakeStatus.Completed,
+                    progress = $"{stocktake.CheckedItemIdList.Count}/{stocktake.AllItems}"
+                });
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error marking item as checked", error = ex.Message });
+            }
+        }
+        
+        [HttpGet("{stocktakeId}/progress")]
+        public async Task<ActionResult> GetStocktakeProgress(int stocktakeId)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userIdClaim == null || !int.TryParse(userIdClaim, out int userId))
+                {
+                    return Unauthorized(new { message = "Invalid token" });
+                }
+                var stocktake = await _stocktakeService.GetStocktakeById(stocktakeId);
+
+                if (stocktake == null)
+                {
+                    return NotFound(new { message = $"Stocktake with ID {stocktakeId} not found" });
+                }
+
+                return Ok(new
+                {
+                    stocktakeId = stocktake.Id,
+                    status = stocktake.Status.ToString(),
+                    checkedCount = stocktake.CheckedItemIdList.Count,
+                    totalItems = stocktake.AllItems,
+                    progress = stocktake.AllItems > 0
+                        ? (double)stocktake.CheckedItemIdList.Count / stocktake.AllItems * 100
+                        : 0,
+                    isCompleted = stocktake.Status == StockTakeStatus.Completed,
+                    checkedItemIds = stocktake.CheckedItemIdList
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error getting stocktake progress", error = ex.Message });
+            }
+        }
+
         private InventoryDTO MapToDTO(InventoryItem item)
         {
             return new InventoryDTO
