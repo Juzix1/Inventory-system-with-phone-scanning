@@ -105,7 +105,6 @@ builder.Services.AddDbContextFactory<MyDbContext>(options =>
 
 builder.Services.AddControllers();
 
-// Enable detailed Blazor circuit exceptions in development to aid debugging
 builder.Services.Configure<CircuitOptions>(options =>
 {
     options.DetailedErrors = true;
@@ -114,11 +113,9 @@ builder.Services.Configure<CircuitOptions>(options =>
 var app = builder.Build();
 
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     _ = app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     _ = app.UseHsts();
 }
 
@@ -128,7 +125,6 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<MyDbContext>();
-        // This will create the database if it doesn't exist
         _ = context.Database.EnsureCreated();
 
     }
