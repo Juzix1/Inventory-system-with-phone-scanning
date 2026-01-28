@@ -10,7 +10,14 @@ class ItemDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Item Details"),
+        backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+        title: Text(
+          "Item Details",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.surface,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -19,69 +26,81 @@ class ItemDetailPage extends StatelessWidget {
           children: [
             // Header Card
             Card(
+              color: Theme.of(context).colorScheme.primaryContainer,
               child: Expanded(
                 child: Row(
-                  children:[ Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.itemName,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (item.itemDescription != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              item.itemDescription!,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.itemName,
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.surface,
                             ),
                           ),
-                      ],
+                          if (item.itemDescription != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Text(
+                                item.itemDescription!,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
 
-            // Details Card
             Card(
+              color: Theme.of(context).colorScheme.primaryContainer,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                     Text(
                       'Details',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
                       ),
                     ),
-                    const Divider(),
-                    _buildDetailRow('ID', item.id.toString()),
-                    _buildDetailRow('Price', item.formattedPrice),
-                    _buildDetailRow('Weight', item.formattedWeight),
-                    _buildDetailRow('Type', item.itemType.toString()),
+                     Divider(color: Theme.of(context).colorScheme.onPrimaryContainer,),
+                    _buildDetailRow('ID', item.id.toString(), context),
+                    _buildDetailRow('Price', item.formattedPrice, context),
+                    _buildDetailRow('Weight', item.formattedWeight, context),
+                    _buildDetailRow('Type', item.itemType.toString(), context),
                     if (item.itemConditionId != null)
-                      _buildDetailRow('Condition', item.itemConditionId.toString()),
-                    _buildDetailRow('Added', item.formattedAddedDate),
-                    _buildDetailRow('Last Inventory', item.formattedAddedDate),
+                      _buildDetailRow(
+                        'Condition',
+                        item.itemConditionId.toString(),
+                        context
+                      ),
+                    _buildDetailRow('Added', item.formattedAddedDate,context),
+                    _buildDetailRow('Last Inventory', item.formattedAddedDate,context),
                     if (item.warrantyEnd != null)
                       _buildDetailRow(
                         'Warranty',
                         item.formattedWarrantyEnd,
+                        context,
                         trailing: item.hasWarranty
-                            ? const Icon(Icons.check_circle, color: Colors.green)
+                            ? const Icon(
+                                Icons.check_circle,
+                                color: Colors.green,
+                              )
                             : const Icon(Icons.cancel, color: Colors.red),
                       ),
                   ],
@@ -92,22 +111,28 @@ class ItemDetailPage extends StatelessWidget {
 
             // Location Card
             Card(
+              color: Theme.of(context).colorScheme.onSecondary,
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Location',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.surface
                       ),
                     ),
-                    const Divider(),
-                    _buildDetailRow('Room', item.room.toString()),
+                    Divider(color: Theme.of(context).colorScheme.secondary,),
+                    _buildDetailRow('Room', item.room.toString(),context),
                     if (item.personInChargeId != null)
-                      _buildDetailRow('Person in Charge ID', item.personInChargeId.toString()),
+                      _buildDetailRow(
+                        'Person in Charge ID',
+                        item.personInChargeId.toString(),
+                        context
+                      ),
                   ],
                 ),
               ),
@@ -118,7 +143,7 @@ class ItemDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value, {Widget? trailing}) {
+  Widget _buildDetailRow(String label, String value, BuildContext context,{Widget? trailing}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -126,24 +151,15 @@ class ItemDetailPage extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w500,
-              fontSize: 16,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16, color:Theme.of(context).colorScheme.surface,),
           ),
           Row(
             children: [
               Text(
                 value,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[700],
-                ),
+                style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimaryContainer),
               ),
-              if (trailing != null) ...[
-                const SizedBox(width: 8),
-                trailing,
-              ],
+              if (trailing != null) ...[const SizedBox(width: 8), trailing],
             ],
           ),
         ],

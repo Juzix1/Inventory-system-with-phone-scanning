@@ -30,7 +30,7 @@ class _ItemListState extends State<ItemList> {
 
     try {
       final items = await _api.getMyItems();
-      
+
       if (mounted) {
         setState(() {
           _items = items;
@@ -102,14 +102,15 @@ class _ItemListState extends State<ItemList> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[300]),
+              Icon(
+                Icons.inventory_2_outlined,
+                size: 64,
+                color: Colors.grey[300],
+              ),
               const SizedBox(height: 16),
               Text(
                 'No items assigned to you',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 18, color: Colors.grey[600]),
               ),
             ],
           ),
@@ -153,28 +154,39 @@ class _ItemListState extends State<ItemList> {
               itemBuilder: (context, index) {
                 final item = _items![index];
                 return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 4,
+                    horizontal: 8,
+                  ),
+                  color: Theme.of(context).colorScheme.primaryContainer,
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer,
                       child: Text(
                         item.itemName[0].toUpperCase(),
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                     title: Text(
                       item.itemName,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 4),
-                        Text('Room13'),
-                        if (item.itemDescription != null && 
+                        
+                        if (item.itemDescription != null &&
                             item.itemDescription!.isNotEmpty)
                           Text(
                             item.itemDescription!,
@@ -182,18 +194,38 @@ class _ItemListState extends State<ItemList> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: Theme.of(context).colorScheme.tertiary,
                             ),
                           ),
+                          Text(
+                          'Room13',
+                          style: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
+                          ),
+                        ),
                       ],
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.onSecondary,
+                        borderRadius: BorderRadius.circular(4.0),
+                      ),
+                      child: Icon(
+                        Icons.chevron_right,
+                        color: Theme.of(context).colorScheme.surface,
+                        ),
+                    ),
                     onTap: () {
                       Navigator.push(
-                        context, 
+                        context,
                         MaterialPageRoute(
-                          builder: (context) => ItemDetailPage(item: item))
-                        );
+                          builder: (context) => ItemDetailPage(item: item),
+                        ),
+                      );
                     },
                   ),
                 );

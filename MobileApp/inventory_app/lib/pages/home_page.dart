@@ -9,45 +9,37 @@ import 'package:inventory_app/services/auth_wrapper.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  Future<void> _handleBarcodeScanned(BuildContext context, String barcode) async {
-    // Pokaż loading indicator
+  Future<void> _handleBarcodeScanned(
+    BuildContext context,
+    String barcode,
+  ) async {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
-      // Konwertuj barcode na int (usuwa wiodące zera: "001199" -> 1199)
       final itemId = int.parse(barcode);
-            
-      // Pobierz item po ID
       final item = await ApiService().getItemById(itemId);
-      
+
       if (!context.mounted) return;
-      
+
       // Zamknij loading indicator
       Navigator.pop(context);
-      
-      // Przejdź do szczegółów itemu
+
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => ItemDetailPage(item: item),
-        ),
+        MaterialPageRoute(builder: (context) => ItemDetailPage(item: item)),
       );
     } catch (e) {
       if (!context.mounted) return;
-      
-      // Zamknij loading indicator
+
       Navigator.pop(context);
-      
-      // Pokaż error
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: Item not found ${e}'),
+          content: Text('Error: Item not found '),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 3),
         ),
@@ -60,10 +52,29 @@ class HomePage extends StatelessWidget {
     return AuthWrapper(
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Home'),
+          backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+          title: Row(
+            children: [
+              Icon(
+                Icons.barcode_reader,
+                color: Theme.of(context).colorScheme.surface,
+              ),
+              SizedBox(width: 15),
+              Text(
+                'Inventory Scanner',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+              ),
+            ],
+          ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.logout),
+              icon: Icon(
+                Icons.logout,
+                color: Theme.of(context).colorScheme.surface,
+              ),
               onPressed: () async {
                 final shouldLogout = await showDialog<bool>(
                   context: context,
@@ -95,18 +106,20 @@ class HomePage extends StatelessWidget {
           ],
         ),
         body: const ItemList(),
+        backgroundColor: Theme.of(context).colorScheme.surface,
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => ScannerScreen(
-                  onBarcodeScanned: (barcode) => _handleBarcodeScanned(context, barcode),
+                  onBarcodeScanned: (barcode) =>
+                      _handleBarcodeScanned(context, barcode),
                 ),
               ),
             );
           },
-          icon: const Icon(Icons.qr_code_scanner),
+          icon: const Icon(Icons.barcode_reader),
           label: const Text('Scan'),
         ),
       ),

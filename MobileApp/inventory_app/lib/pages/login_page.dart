@@ -158,7 +158,7 @@ class _LoginPageState extends State<LoginPage> {
               Icon(
                 Icons.barcode_reader,
                 size: 100,
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.surface,
               ),
               const SizedBox(height: 20),
               Text(
@@ -166,19 +166,19 @@ class _LoginPageState extends State<LoginPage> {
                 style: TextStyle(
                   fontSize: 40,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Theme.of(context).colorScheme.surface,
                 ),
               ),
               const SizedBox(height: 30),
               CircularProgressIndicator(
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.surface,
               ),
               const SizedBox(height: 20),
               Text(
                 'Checking authentication...',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
               ),
             ],
@@ -198,7 +198,7 @@ class _LoginPageState extends State<LoginPage> {
               icon: Icon(
                 Icons.settings,
                 size: 30,
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.secondaryContainer,
               ),
               onPressed: () {
                 Navigator.push(
@@ -218,14 +218,15 @@ class _LoginPageState extends State<LoginPage> {
                   Icon(
                     Icons.barcode_reader,
                     size: 60,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Theme.of(context).colorScheme.secondaryContainer,
                   ),
                   const SizedBox(height: 5),
                   Text(
                     "Scanner App",
                     style: TextStyle(
                       fontSize: 35,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      fontWeight: FontWeight.bold
                     ),
                   ),
                   const SizedBox(height: 50),
