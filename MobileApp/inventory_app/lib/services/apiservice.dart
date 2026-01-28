@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:inventory_app/HttpOverride/NoCertHttpOverride.dart';
 import 'package:inventory_app/Models/inventory_item.dart';
+import 'package:inventory_app/Models/item_condition.dart';
+import 'package:inventory_app/Models/room.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
@@ -17,15 +19,15 @@ class ApiService {
 
   Future<void> initialize() async {
     if (_initialized) return;
-    
+
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString('token');
-    
+
     final savedBaseUrl = prefs.getString('baseUrl');
     if (savedBaseUrl != null) {
       setBaseUrl(savedBaseUrl);
     }
-    
+
     _initialized = true;
   }
 
@@ -50,12 +52,12 @@ class ApiService {
 
   Future<bool> isTokenValid() async {
     await initialize();
-    
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    
+
     if (token == null) return false;
-    
+
     try {
       bool isExpired = JwtDecoder.isExpired(token);
       return !isExpired;
@@ -66,12 +68,12 @@ class ApiService {
 
   Future<int?> getTokenExpirationTime() async {
     await initialize();
-    
+
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    
+
     if (token == null) return null;
-    
+
     try {
       DateTime expirationDate = JwtDecoder.getExpirationDate(token);
       Duration timeUntilExpiration = expirationDate.difference(DateTime.now());
@@ -91,16 +93,12 @@ class ApiService {
 
   Future<LoginResponse> login(String ip, int index, String password) async {
     setBaseUrl(ip);
-    
+
     final url = Uri.parse('$_baseUrl/Account/login');
-  
-    
+
     try {
-      final body = jsonEncode({
-        'index': index,
-        'password': password,
-      });
-      
+      final body = jsonEncode({'index': index, 'password': password});
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -109,7 +107,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
         await prefs.setString('baseUrl', ip);
@@ -118,16 +116,24 @@ class ApiService {
         await prefs.setString('userName', data['user']['name'] ?? '');
         await prefs.setString('userRole', data['user']['role'] ?? '');
         await prefs.setBool('isAdmin', data['user']['isAdmin'] ?? false);
-        await prefs.setBool('isModerator', data['user']['isModerator'] ?? false);
-        await prefs.setBool('resetPasswordOnNextLogin', 
-            data['user']['resetPasswordOnNextLogin'] ?? false);
-        
+        await prefs.setBool(
+          'isModerator',
+          data['user']['isModerator'] ?? false,
+        );
+        await prefs.setBool(
+          'resetPasswordOnNextLogin',
+          data['user']['resetPasswordOnNextLogin'] ?? false,
+        );
+
         DateTime expirationDate = JwtDecoder.getExpirationDate(data['token']);
-        await prefs.setString('tokenExpiration', expirationDate.toIso8601String());
-        
+        await prefs.setString(
+          'tokenExpiration',
+          expirationDate.toIso8601String(),
+        );
+
         _token = data['token'];
         _baseUrl = 'https://$ip/api';
-        
+
         return LoginResponse(
           success: true,
           statusCode: response.statusCode,
@@ -139,7 +145,8 @@ class ApiService {
           role: data['user']['role'] ?? '',
           isAdmin: data['user']['isAdmin'] ?? false,
           isModerator: data['user']['isModerator'] ?? false,
-          resetPasswordOnNextLogin: data['user']['resetPasswordOnNextLogin'] ?? false,
+          resetPasswordOnNextLogin:
+              data['user']['resetPasswordOnNextLogin'] ?? false,
         );
       } else {
         return LoginResponse(
@@ -159,9 +166,9 @@ class ApiService {
 
   Future<bool> checkPrivilege(int userId) async {
     await initialize();
-    
+
     final url = Uri.parse('$_baseUrl/Account/privilage-check/$userId');
-    
+
     try {
       final response = await http.get(url, headers: _getHeaders());
       return response.statusCode == 200;
@@ -172,13 +179,13 @@ class ApiService {
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     final savedIp = prefs.getString('baseUrl');
     await prefs.clear();
     if (savedIp != null) {
       await prefs.setString('baseUrl', savedIp);
     }
-    
+
     _token = null;
     _baseUrl = null;
     _initialized = false;
@@ -186,12 +193,12 @@ class ApiService {
 
   Future<bool> isLoggedIn() async {
     await initialize();
-    
+
     final prefs = await SharedPreferences.getInstance();
     final hasToken = prefs.containsKey('token');
-    
+
     if (!hasToken) return false;
-    
+
     return await isTokenValid();
   }
 
@@ -200,7 +207,7 @@ class ApiService {
     try {
       final url = '$_baseUrl/Inventory/$id';
       print('Fetching from URL: $url');
-      
+
       final response = await http.get(
         Uri.parse(url),
         headers: {
@@ -217,7 +224,9 @@ class ApiService {
       } else if (response.statusCode == 401) {
         throw Exception('Unauthorized - please login again');
       } else {
-        throw Exception('Server error ${response.statusCode}: ${response.body}');
+        throw Exception(
+          'Server error ${response.statusCode}: ${response.body}',
+        );
       }
     } catch (e) {
       rethrow;
@@ -226,16 +235,16 @@ class ApiService {
 
   Future<List<InventoryItem>> getMyItems() async {
     await initialize();
-    
+
     final url = Uri.parse('$_baseUrl/Stocktake/my-items');
-    
+
     try {
       final response = await http.get(url, headers: _getHeaders());
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         final items = data.map((json) => InventoryItem.fromJson(json)).toList();
-        
+
         return items;
       } else if (response.statusCode == 401) {
         throw Exception('Unauthorized - please login again');
@@ -251,9 +260,9 @@ class ApiService {
 
   Future<Map<String, dynamic>?> getUserData() async {
     await initialize();
-    
+
     final prefs = await SharedPreferences.getInstance();
-    
+
     if (!prefs.containsKey('userId')) {
       return null;
     }
@@ -267,6 +276,153 @@ class ApiService {
       'isModerator': prefs.getBool('isModerator'),
       'baseUrl': prefs.getString('baseUrl'),
     };
+  }
+
+  // NEW METHODS FOR CONDITIONS AND ROOMS
+
+  /// Get all available item conditions
+  Future<List<ItemCondition>?> getAllConditions() async {
+    await initialize();
+
+    final url = Uri.parse('$_baseUrl/Condition/all');
+
+    try {
+      final response = await http.get(url, headers: _getHeaders());
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => ItemCondition.fromJson(json)).toList();
+      } else if (response.statusCode == 204) {
+        // No content
+        return [];
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized - please login again');
+      } else {
+        throw Exception('Failed to load conditions: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error loading conditions: $e');
+      return null;
+    }
+  }
+
+  /// Get all available rooms
+  /// Note: You'll need to create a similar endpoint in your backend
+  Future<List<Room>?> getAllRooms() async {
+    await initialize();
+
+    final url = Uri.parse(
+      '$_baseUrl/Room/all',
+    ); // You need to create this endpoint
+
+    try {
+      final response = await http.get(url, headers: _getHeaders());
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Room.fromJson(json)).toList();
+      } else if (response.statusCode == 204) {
+        return [];
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized - please login again');
+      } else {
+        throw Exception('Failed to load rooms: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error loading rooms: $e');
+      return null;
+    }
+  }
+
+  /// Update item condition
+  Future<InventoryItem> updateItemCondition(int itemId, int conditionId) async {
+    await initialize();
+
+    // First, get the current item
+    final currentItem = await getItemById(itemId);
+
+    // Update the condition
+    final url = Uri.parse('$_baseUrl/Inventory/$itemId/condition/$conditionId');
+    try {
+      // Create updated item object
+      final updatedItemData = {
+        'id': currentItem.id,
+        'itemName': currentItem.itemName,
+        'itemDescription': currentItem.itemDescription,
+        'itemType': currentItem.itemType,
+        'price': currentItem.itemPrice,
+        'weight': currentItem.itemWeight,
+        'itemConditionId': conditionId,
+        'roomId': currentItem.room != null ? null : null,
+        'personInChargeId': currentItem.personInChargeId,
+        'warrantyEnd': currentItem.warrantyEnd?.toIso8601String(),
+        'imagePath': currentItem.imagePath,
+      };
+
+      final response = await http.patch(url, headers: _getHeaders());
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return InventoryItem.fromJson(json);
+      } else if (response.statusCode == 404) {
+        throw Exception('Item not found');
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized - please login again');
+      } else {
+        throw Exception(
+          'Failed to update item: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      print('Error updating item condition: $e');
+      rethrow;
+    }
+  }
+
+  /// Update item location (room)
+  Future<InventoryItem> updateItemLocation(int itemId, int roomId) async {
+    await initialize();
+
+    // First, get the current item
+    final currentItem = await getItemById(itemId);
+
+    // Update the location
+    final url = Uri.parse('$_baseUrl/Inventory/$itemId/location/$roomId');
+    try {
+      // Create updated item object
+      final updatedItemData = {
+        'id': currentItem.id,
+        'itemName': currentItem.itemName,
+        'itemDescription': currentItem.itemDescription,
+        'itemType': currentItem.itemType,
+        'price': currentItem.itemPrice,
+        'weight': currentItem.itemWeight,
+        'itemConditionId': currentItem.itemConditionId,
+        'roomId': roomId, // Updated field
+        'personInChargeId':
+            null, // Set to null when assigning to room (per backend logic)
+        'warrantyEnd': currentItem.warrantyEnd?.toIso8601String(),
+        'imagePath': currentItem.imagePath,
+      };
+
+      final response = await http.patch(url, headers: _getHeaders());
+
+      if (response.statusCode == 200) {
+        final json = jsonDecode(response.body);
+        return InventoryItem.fromJson(json);
+      } else if (response.statusCode == 404) {
+        throw Exception('Item not found');
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized - please login again');
+      } else {
+        throw Exception(
+          'Failed to update item: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      print('Error updating item location: $e');
+      rethrow;
+    }
   }
 }
 

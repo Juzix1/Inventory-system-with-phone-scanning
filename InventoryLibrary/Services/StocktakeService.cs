@@ -113,6 +113,8 @@ public class StocktakeService : IStocktakeService
                                 .ThenInclude(i => i.ItemCondition)
                             .Include(s => s.ItemsToCheck)
                                 .ThenInclude(i => i.ItemType)
+                            .Include(s => s.ItemsToCheck)
+                                .ThenInclude(i => i.Location.Department)
                             .Include(s => s.AuthorizedAccounts)
                             .Where(i => i.EndDate > DateTime.Now)
                             .Where(a => a.AuthorizedAccounts.Any(a => a.Id == id))

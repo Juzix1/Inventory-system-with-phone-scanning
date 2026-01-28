@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Folder Include="Model/Data/" />
+    <Folder Include="Model/DTO/Location/" />
     <Folder Include="Model/DTO/Stocktake/" />
     <Folder Include="Model/Logs/" />
   </ItemGroup>

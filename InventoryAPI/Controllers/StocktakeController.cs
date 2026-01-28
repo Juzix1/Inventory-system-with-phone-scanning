@@ -21,7 +21,7 @@ namespace InventoryAPI.Controllers
             _accountService = accountService;
         }
 
-        
+
         [HttpGet("my-items")]
         public async Task<ActionResult<IEnumerable<InventoryDTO>>> GetMyItems()
         {
@@ -42,23 +42,25 @@ namespace InventoryAPI.Controllers
                 .DistinctBy(item => item.Id)
                 .ToList();
 
-                    var items = allItems.Select(item => new InventoryDTO(
-                id: item.Id,
-                itemName: item.itemName,
-                itemDescription: item.itemDescription,
-                itemType: item.ItemType.TypeName,
-                ItemConditionId: item.ItemConditionId,
-                itemWeight: item.itemWeight,
-                itemPrice: item.itemPrice,
-                addedDate: item.addedDate,
-                warrantyEnd: item.warrantyEnd,
-                lastInventoryDate: item.lastInventoryDate,
-                personInChargeId: item.PersonInChargeId,
-                room: item?.Location?.RoomName,
-                stocktakeId: item.StocktakeId,
-                imagePath: item.imagePath
-            ))
-            .ToList();
+                var items = allItems.Select(item => new InventoryDTO(
+            id: item.Id,
+            itemName: item.itemName,
+            itemDescription: item.itemDescription,
+            itemType: item.ItemType.TypeName,
+            ItemConditionId: item.ItemConditionId,
+            itemWeight: item.itemWeight,
+            itemPrice: item.itemPrice,
+            addedDate: item.addedDate,
+            warrantyEnd: item.warrantyEnd,
+            lastInventoryDate: item.lastInventoryDate,
+            personInChargeId: item.PersonInChargeId,
+            room: item.Location == null
+                ? ""
+                : $"{item?.Location?.RoomName} ({item?.Location?.Department.DepartmentName})",
+            stocktakeId: item.StocktakeId,
+            imagePath: item.imagePath
+        ))
+        .ToList();
 
                 return Ok(items);
             }
@@ -66,6 +68,26 @@ namespace InventoryAPI.Controllers
             {
                 return StatusCode(500, new { message = "Error loading items", error = ex.Message });
             }
+        }
+        private InventoryDTO MapToDTO(InventoryItem item)
+        {
+            return new InventoryDTO
+            (
+                id: item.Id,
+                itemName: item.itemName,
+                itemDescription: item.itemDescription,
+                itemType: item.ItemType.TypeName,
+                itemPrice: item.itemPrice,
+                itemWeight: item.itemWeight,
+                ItemConditionId: item.ItemConditionId,
+                room: item.Location?.RoomName,
+                personInChargeId: item.PersonInChargeId,
+                addedDate: item.addedDate,
+                lastInventoryDate: item.lastInventoryDate,
+                warrantyEnd: item.warrantyEnd,
+                stocktakeId: item.StocktakeId,
+                imagePath: item.imagePath
+            );
         }
     }
 }

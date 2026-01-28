@@ -251,6 +251,7 @@ class _ItemListState extends State<ItemList> {
                         Text(
                           item.room ?? 'No room assigned',
                           style: TextStyle(
+                            fontSize: 12,
                             color: Theme.of(
                               context,
                             ).colorScheme.onPrimaryContainer,
