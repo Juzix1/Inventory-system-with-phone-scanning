@@ -9,6 +9,7 @@ using Scalar.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -102,9 +103,19 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 
 }
-
+app.MapStaticAssets();
 app.UseHttpsRedirection();
 
+var sharedImagesPath = Path.Combine(
+    Directory.GetParent(app.Environment.ContentRootPath)!.FullName,
+    "Images"
+);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(sharedImagesPath),
+    RequestPath = "/api/images"
+});
 app.UseCors(MyOrigins);
 app.UseAuthentication(); 
 app.UseAuthorization();

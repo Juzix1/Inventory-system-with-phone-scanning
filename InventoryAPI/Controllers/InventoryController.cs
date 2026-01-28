@@ -96,7 +96,8 @@ namespace InventoryAPI.Controllers
             lastInventoryDate: item.lastInventoryDate,
             personInChargeId: item.PersonInChargeId,
             room: item.Location?.RoomName,
-            stocktakeId: item.StocktakeId
+            stocktakeId: item.StocktakeId,
+            imagePath: item.imagePath
         );
         
         return Ok(dto);

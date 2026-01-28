@@ -47,6 +47,71 @@ class _ItemListState extends State<ItemList> {
     }
   }
 
+  Widget _buildItemImage(InventoryItem item) {
+    final imageUrl = _api.getImageUrl(item.imagePath);    
+    if (imageUrl == null || imageUrl.isEmpty) {
+      // Fallback do awatara z literą gdy brak obrazka
+      return CircleAvatar(
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        radius: 28,
+        child: Text(
+          item.itemName[0].toUpperCase(),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onPrimaryContainer,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+      );
+    }
+
+    // Wyświetl obrazek przedmiotu
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Image.network(
+        imageUrl,
+        width: 56,
+        height: 56,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback do awatara przy błędzie
+          return CircleAvatar(
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            radius: 28,
+            child: Text(
+              item.itemName[0].toUpperCase(),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+                strokeWidth: 2,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Loading
@@ -69,9 +134,9 @@ class _ItemListState extends State<ItemList> {
             children: [
               Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'Error loading items',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -160,20 +225,7 @@ class _ItemListState extends State<ItemList> {
                   ),
                   color: Theme.of(context).colorScheme.primaryContainer,
                   child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.primaryContainer,
-                      child: Text(
-                        item.itemName[0].toUpperCase(),
-                        style: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onPrimaryContainer,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    leading: _buildItemImage(item),
                     title: Text(
                       item.itemName,
                       style: TextStyle(
@@ -185,7 +237,6 @@ class _ItemListState extends State<ItemList> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 4),
-                        
                         if (item.itemDescription != null &&
                             item.itemDescription!.isNotEmpty)
                           Text(
@@ -197,8 +248,8 @@ class _ItemListState extends State<ItemList> {
                               color: Theme.of(context).colorScheme.tertiary,
                             ),
                           ),
-                          Text(
-                          'Room13',
+                        Text(
+                          item.room ?? 'No room assigned',
                           style: TextStyle(
                             color: Theme.of(
                               context,
@@ -217,13 +268,17 @@ class _ItemListState extends State<ItemList> {
                       child: Icon(
                         Icons.chevron_right,
                         color: Theme.of(context).colorScheme.surface,
-                        ),
+                      ),
                     ),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ItemDetailPage(item: item),
+                          builder: (context) => 
+                          ItemDetailPage(
+                            item: item,
+                            api: _api,
+                            ),
                         ),
                       );
                     },

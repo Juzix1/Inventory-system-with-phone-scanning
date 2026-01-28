@@ -12,6 +12,7 @@ class InventoryItem {
   final int? personInChargeId;
   final String? room;
   final int? stocktakeId;
+  final String? imagePath;
 
   InventoryItem({
     required this.id,
@@ -27,6 +28,7 @@ class InventoryItem {
     this.personInChargeId,
     this.room,
     this.stocktakeId,
+    this.imagePath
   });
 
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
@@ -50,6 +52,7 @@ class InventoryItem {
       personInChargeId: json['personInChargeId'],
       room: json['room'],
       stocktakeId: json['stocktakeId'],
+      imagePath: json['imagePath'],
     );
   }
 
@@ -68,6 +71,7 @@ class InventoryItem {
       'personInChargeId': personInChargeId,
       'room': room,
       'stocktakeId': stocktakeId,
+      'imagePath':imagePath,
     };
   }
 

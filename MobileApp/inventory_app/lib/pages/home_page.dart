@@ -6,8 +6,15 @@ import 'package:inventory_app/pages/login_page.dart';
 import 'package:inventory_app/services/apiservice.dart';
 import 'package:inventory_app/services/auth_wrapper.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {  // ✅ Zmień na StatefulWidget
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final ApiService _api = ApiService();  // ✅ Utwórz jedną instancję
 
   Future<void> _handleBarcodeScanned(
     BuildContext context,
@@ -21,7 +28,7 @@ class HomePage extends StatelessWidget {
 
     try {
       final itemId = int.parse(barcode);
-      final item = await ApiService().getItemById(itemId);
+      final item = await _api.getItemById(itemId);  // ✅ Użyj _api
 
       if (!context.mounted) return;
 
@@ -30,16 +37,20 @@ class HomePage extends StatelessWidget {
 
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => ItemDetailPage(item: item)),
+        MaterialPageRoute(
+          builder: (context) => ItemDetailPage(
+            item: item,
+            api: _api,  // ✅ Przekaż _api
+          ),
+        ),
       );
     } catch (e) {
       if (!context.mounted) return;
-
       Navigator.pop(context);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error: Item not found '),
+          content: Text('Error: Item not found'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 3),
         ),
@@ -59,7 +70,7 @@ class HomePage extends StatelessWidget {
                 Icons.barcode_reader,
                 color: Theme.of(context).colorScheme.surface,
               ),
-              SizedBox(width: 15),
+              const SizedBox(width: 15),
               Text(
                 'Inventory Scanner',
                 style: TextStyle(
@@ -93,9 +104,11 @@ class HomePage extends StatelessWidget {
                     ],
                   ),
                 );
+
                 if (shouldLogout == true) {
-                  await ApiService().logout();
+                  await _api.logout();  // ✅ Użyj _api
                   if (!context.mounted) return;
+
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (context) => const LoginPage()),
                     (route) => false,

@@ -12,5 +12,6 @@ public record InventoryDTO
     DateTime lastInventoryDate,
     int? personInChargeId,
     string? room,
-    int? stocktakeId
+    int? stocktakeId,
+    string? imagePath
 );
