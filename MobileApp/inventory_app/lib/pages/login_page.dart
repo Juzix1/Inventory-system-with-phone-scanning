@@ -65,7 +65,6 @@ class _LoginPageState extends State<LoginPage> {
   String indexStr = _indexController.text.trim();
   String password = _pwController.text;
 
-  print('=== LOGIN DEBUG START ===');
   
   // Pobierz IP z ustawień
   await _api.initialize();

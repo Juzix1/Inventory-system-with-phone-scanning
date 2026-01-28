@@ -53,6 +53,7 @@ builder.Services.AddScoped<IConditionService, ConditionService>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IStocktakeService, StocktakeService>();
 
 builder.Services.AddScoped<ILocationService, InventoryLibrary.Services.Location.LocationService>();
 

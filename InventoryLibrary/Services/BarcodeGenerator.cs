@@ -12,7 +12,8 @@ public class BarcodeGenerator
     public string GenerateBarcodeNumber(int id, int itemTypeId)
     {
         // return $"INV-{id:D6}-{itemTypeId}-{locationIdentifier}";
-        return id.ToString("D6") + itemTypeId.ToString("D6");
+        // return id.ToString("D6") + itemTypeId.ToString("D6");
+        return id.ToString("D6");
     }
     
 

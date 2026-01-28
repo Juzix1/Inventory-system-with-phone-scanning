@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:inventory_app/HttpOverride/NoCertHttpOverride.dart';
+import 'package:inventory_app/Models/inventory_item.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 
@@ -14,7 +15,6 @@ class ApiService {
     HttpOverrides.global = NoCertHttpOverrides();
   }
 
-  // Inicjalizacja - wywołaj przed użyciem
   Future<void> initialize() async {
     if (_initialized) return;
     
@@ -82,10 +82,7 @@ class ApiService {
     setBaseUrl(ip);
     
     final url = Uri.parse('$_baseUrl/Account/login');
-    
-    print('=== LOGIN DEBUG ===');
-    print('URL: $url');
-    print('Index: $index');
+  
     
     try {
       final body = jsonEncode({
@@ -98,9 +95,6 @@ class ApiService {
         headers: {'Content-Type': 'application/json'},
         body: body,
       );
-
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -144,8 +138,6 @@ class ApiService {
         );
       }
     } catch (e, stackTrace) {
-      print('Exception during login: $e');
-      print('StackTrace: $stackTrace');
       return LoginResponse(
         success: false,
         statusCode: 0,
@@ -191,6 +183,64 @@ class ApiService {
     
     return await isTokenValid();
   }
+
+
+Future<InventoryItem> getItemById(int id) async {
+  await initialize();
+  try {
+    final url = '$_baseUrl/Inventory/$id';
+    print('Fetching from URL: $url');
+    
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return InventoryItem.fromJson(json);
+    } else if (response.statusCode == 404) {
+      throw Exception('Item with ID $id not found');
+    } else if (response.statusCode == 401) {
+      throw Exception('Unauthorized - please login again');
+    } else {
+      throw Exception('Server error ${response.statusCode}: ${response.body}');
+    }
+  } catch (e) {
+    rethrow;
+  }
+}
+
+  Future<List<InventoryItem>> getMyItems() async {
+  await initialize();
+  
+  final url = Uri.parse('$_baseUrl/Stocktake/my-items');
+
+  
+  try {
+    final response = await http.get(url, headers: _getHeaders());
+    
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      final items = data.map((json) => InventoryItem.fromJson(json)).toList();
+      
+      return items;
+    } else if (response.statusCode == 401) {
+      throw Exception('Unauthorized - please login again');
+    } else if (response.statusCode == 404) {
+      throw Exception('User not found');
+    } else {
+      throw Exception('Failed to load my items: ${response.statusCode}');
+    }
+  } catch (e, stackTrace) {
+
+    throw Exception('Error loading my items: $e');
+  }
+}
 
   Future<Map<String, dynamic>?> getUserData() async {
     await initialize();

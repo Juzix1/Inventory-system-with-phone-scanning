@@ -2,6 +2,7 @@
 using InventoryLibrary.Model.Inventory;
 using InventoryLibrary.Model.Location;
 using InventoryLibrary.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ namespace InventoryAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class InventoryController : ControllerBase
     {
         private readonly MyDbContext _context;
@@ -55,73 +57,6 @@ namespace InventoryAPI.Controllers
             }
         }
 
-        // [HttpPost("add")]
-        // public async Task<IActionResult> AddInventoryItem()
-        // {
-        //     var barcodeGen = new BarcodeGenerator();
-        //     var barcodeNumber = await barcodeGen.GenerateBarcodeNumber(_context);
-
-        //     // var agd = new AGD
-        //     // {
-        //     //     itemName = "Laptop MSI f123",
-        //     //     Barcode = barcodeNumber,
-        //     //     imagePath = "image1.png",
-        //     //     itemCondition = "Nowy",
-        //     //     ItemTypeId = 1,
-        //     //     quantity = 1,
-        //     //     itemWeight = 2.5,
-        //     //     itemPrice = 4500,
-        //     //     addedDate = DateTime.Now,
-        //     //     warrantyEnd = DateTime.Now.AddYears(2),
-        //     //     lastInventoryDate = DateTime.Now,
-        //     //     itemLocation = "Pokój 103",
-        //     //     ModelName = "MSI AERO 2",
-        //     //     CPU = "AMD Ryzen 5 5600g",
-        //     //     RAM = "8GB",
-        //     //     Storage = "216GB SSD",
-        //     //     Graphics = "AMD Vega 9"
-        //     // };
-        //     var type = await _context.ItemTypes.FindAsync(1);
-        //     Department department = new Department
-        //     {
-        //         DepartmentName = "PANS",
-        //         DepartmentLocation = "32sd-323s",
-        //     };
-        //     Room room = new Room
-        //     {
-        //         RoomName = "Magazyn",
-        //         Department = department
-        //     };
-        //     _context.Departments.Add(department);
-        //     _context.Rooms.Add(room);
-        //     var item = new InventoryItem
-        //     {
-        //         itemName = "Laptop",
-        //         Barcode = barcodeNumber,
-        //         ItemType = type,
-        //         addedDate = DateTime.Now,
-        //         lastInventoryDate = DateTime.Now,
-        //         Location = room
-        //     };
-
-        //     var furniture = new Furniture
-        //     {
-        //         FurnitureType = "Biurko",
-        //         itemName = "Biurko IKEA",
-        //         imagePath = "image2.png",
-        //         Barcode = barcodeNumber,
-        //         itemWeight = 20.0,
-        //         itemPrice = 300,
-        //         addedDate = DateTime.Now,
-        //         warrantyEnd = DateTime.Now.AddYears(1),
-        //         lastInventoryDate = DateTime.Now,
-        //     };
-
-        //     _context.InventoryItems.Add(item);
-        //     await _context.SaveChangesAsync();
-        //     return Ok();
-        // }
-
         [HttpGet("all")]
         public async Task<ActionResult<IEnumerable<InventoryItem>>> GetAllInventoryItems()
         {
@@ -133,10 +68,43 @@ namespace InventoryAPI.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<InventoryItem>> GetInventoryItemById(int id)
         {
-            var item = await _inventoryService.GetItemByIdAsync(id);
-
-
-            return Ok(item);
+            try
+    {
+        var item = await _context.InventoryItems
+            .AsNoTracking()
+            .Include(i => i.Location)
+            .Include(i => i.ItemType)
+            .Include(i => i.ItemCondition)
+            .Include(i => i.personInCharge)
+            .FirstOrDefaultAsync(i => i.Id == id);
+        
+        if (item == null)
+        {
+            return NotFound(new { message = "Item not found" });
+        }
+        
+        var dto = new InventoryDTO(
+            id: item.Id,
+            itemName: item.itemName,
+            itemDescription: item.itemDescription,
+            itemType: item.ItemType?.TypeName,
+            ItemConditionId: item.ItemConditionId,
+            itemWeight: item.itemWeight,
+            itemPrice: item.itemPrice,
+            addedDate: item.addedDate,
+            warrantyEnd: item.warrantyEnd,
+            lastInventoryDate: item.lastInventoryDate,
+            personInChargeId: item.PersonInChargeId,
+            room: item.Location?.RoomName,
+            stocktakeId: item.StocktakeId
+        );
+        
+        return Ok(dto);
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, new { message = "Internal server error" });
+    }
         }
 
     }

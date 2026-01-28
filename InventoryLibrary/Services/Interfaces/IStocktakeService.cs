@@ -75,4 +75,5 @@ public interface IStocktakeService
     /// Sprawdza czy użytkownik jest upoważniony do inwentaryzacji
     /// </summary>
     Task<bool> IsUserAuthorized(int stocktakeId, int userId);
+    Task<IEnumerable<Stocktake>> GetStocktakesByAccount(int id);
 }

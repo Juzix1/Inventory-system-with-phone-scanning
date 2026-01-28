@@ -60,7 +60,7 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Error while creating new stocktake",ex);
+            _logger?.LogError("Error while creating new stocktake", ex);
             throw;
         }
     }
@@ -95,8 +95,36 @@ public class StocktakeService : IStocktakeService
         }
         catch (Exception ex)
         {
-            _logger?.LogError("Error while getting stocktakes info",ex);
+            _logger?.LogError("Error while getting stocktakes info", ex);
             throw;
+        }
+    }
+    public async Task<IEnumerable<Stocktake>> GetStocktakesByAccount(int id)
+    {
+        try
+        {
+            var stocktakes = await _context.Stocktakes
+                            .AsNoTracking()
+                            .Include(s => s.ItemsToCheck)
+                                .ThenInclude(i => i.Location)
+                            .Include(s => s.ItemsToCheck)
+                                .ThenInclude(i => i.ItemType)
+                            .Include(s => s.ItemsToCheck)
+                                .ThenInclude(i => i.ItemCondition)
+                            .Include(s => s.ItemsToCheck)
+                                .ThenInclude(i => i.ItemType)
+                            .Include(s => s.AuthorizedAccounts)
+                            .Where(i => i.EndDate > DateTime.Now)
+                            .Where(a => a.AuthorizedAccounts.Any(a => a.Id == id))
+                            
+                            // .Where(i => i.StartDate < DateTime.Now)
+                            
+                            .ToListAsync();
+            return stocktakes;
+        }
+        catch (Exception ex)
+        {
+            return new List<Stocktake>();
         }
     }
 
@@ -290,8 +318,8 @@ public class StocktakeService : IStocktakeService
                 TotalItems = stocktake.AllItems,
                 CheckedItems = stocktake.CheckedItemIdList.Count,
                 UncheckedItems = stocktake.AllItems - stocktake.CheckedItemIdList.Count,
-                ProgressPercentage = stocktake.AllItems > 0 
-                    ? (double)stocktake.CheckedItemIdList.Count / stocktake.AllItems * 100 
+                ProgressPercentage = stocktake.AllItems > 0
+                    ? (double)stocktake.CheckedItemIdList.Count / stocktake.AllItems * 100
                     : 0,
                 DaysRemaining = (stocktake.EndDate - DateTime.Now).Days,
                 IsOverdue = DateTime.Now > stocktake.EndDate,
@@ -320,7 +348,7 @@ public class StocktakeService : IStocktakeService
         try
         {
             var stocktake = await GetStocktakeById(stocktakeId);
-            
+
             return stocktake.ItemsToCheck
                 .Where(item => !stocktake.CheckedItemIdList.Contains(item.Id))
                 .ToList();
