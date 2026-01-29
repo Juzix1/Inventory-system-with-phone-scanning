@@ -1,16 +1,17 @@
 ﻿@page "/access-denied"
 @using Microsoft.AspNetCore.Authorization
 
+<PageTitle>Access Denied</PageTitle>
 <div class="row">
     <div class="col-12">
         <div class="card">
             <div class="card-body flex-column">
                 <div class="text-center">
-                    <img src="/images/access-denied.png" style="max-height: 5rem;"/>
+                    <Icon Name="IconName.DashCircleFill" Color="IconColor.Danger" Size="IconSize.x3"/>
                 </div>
                 <div class="text-center mt-2">
                     <span class="text-danger fw-bolder">You don't have permission to access this page.</span>
-                    <a href="/login">Go back</a>
+                    <a href="/logout">logout</a>
 
                 </div>
             </div>
