@@ -10,20 +10,13 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using InventoryLibrary.Services.Logs;
 
-
-
-
 var builder = WebApplication.CreateBuilder(args);
-
-
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
-
 builder.Services.AddBlazorBootstrap();
 
 // Authorization
@@ -39,8 +32,6 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
-
-
 // Inventory
 builder.Services.AddScoped<IInventoryService,InventoryService>();
 builder.Services.AddScoped<ITypeService,TypeService>();
@@ -55,6 +46,7 @@ builder.Services.AddScoped<IHistoricalDataService, HistoricalDataService>();
 // Account
 builder.Services.AddScoped<IAccountsService, AccountsService>();
 builder.Services.AddScoped<IPasswordService,PasswordService>();
+
 // Settings
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 
@@ -66,52 +58,38 @@ builder.Services.AddScoped(typeof(IInventoryLogger<>), typeof(InventoryLogger<>)
 
 // Log Reader
 builder.Services.AddScoped<ILogReaderService, LogReaderService>();
-
-
 builder.Services.AddHttpContextAccessor();
-
 builder.Services.AddScoped(sp =>
 {
     var navigationManager = sp.GetRequiredService<NavigationManager>();
     var httpContextAccessor = sp.GetRequiredService<IHttpContextAccessor>();
-
     var baseUri = navigationManager.BaseUri;
     if (baseUri.Contains("0.0.0.0"))
     {
         baseUri = baseUri.Replace("0.0.0.0", "localhost");
     }
-
     var client = new HttpClient
     {
         BaseAddress = new Uri(baseUri)
     };
-
     var context = httpContextAccessor.HttpContext;
     var cookie = context?.Request.Headers["Cookie"].ToString();
-
     if (!string.IsNullOrEmpty(cookie))
     {
         client.DefaultRequestHeaders.Add("Cookie", cookie);
     }
-
     return client;
 });
-
-
 builder.Services.AddDbContextFactory<MyDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
     b => b.MigrationsAssembly("InventoryAPI")));
 
-
 builder.Services.AddControllers();
-
 builder.Services.Configure<CircuitOptions>(options =>
 {
     options.DetailedErrors = true;
 });
-
 var app = builder.Build();
-
 
 if (!app.Environment.IsDevelopment())
 {
@@ -126,7 +104,6 @@ using (var scope = app.Services.CreateScope())
     {
         var context = services.GetRequiredService<MyDbContext>();
         _ = context.Database.EnsureCreated();
-
     }
     catch (Exception ex)
     {
@@ -136,12 +113,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseHttpsRedirection();
-
-
-app.UseAntiforgery();
-
 app.MapStaticAssets();
-
 var sharedImagesPath = Path.Combine(
     Directory.GetParent(app.Environment.ContentRootPath)!.FullName,
     "Images"
@@ -153,10 +125,10 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/images"
 });
 app.UseRouting();
-app.UseAntiforgery();
-
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseAntiforgery();
+
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

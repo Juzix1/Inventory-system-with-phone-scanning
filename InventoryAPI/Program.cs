@@ -15,8 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.ListenAnyIP(5000); // HTTP
-     options.ListenAnyIP(7164, listenOptions => listenOptions.UseHttps()); // HTTPS jeśli potrzebne
+    options.ListenAnyIP(5000);
+     options.ListenAnyIP(7164, listenOptions => listenOptions.UseHttps());
 });
 
 // Add services to the container.
@@ -119,6 +119,7 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseCors(MyOrigins);
 app.UseAuthentication(); 
 app.UseAuthorization();
+app.UseHsts();
 
 app.MapControllers();
 
