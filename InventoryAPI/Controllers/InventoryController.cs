@@ -11,7 +11,7 @@ namespace InventoryAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize (Roles = "Admin, Moderator")]
     public class InventoryController : ControllerBase
     {
         private readonly MyDbContext _context;
@@ -38,8 +38,6 @@ namespace InventoryAPI.Controllers
                 return NotFound("Item not found.");
             }
             var barcodeHandler = new BarcodeGenerator();
-            // Ensure we have a barcode value to encode. If missing, generate one and persist it.
-
             var outputPath = Path.Combine("Images", $"{item.Id}.jpg");
             var barcodeText = barcodeHandler.GenerateBarcodeNumber(item.Id, item.ItemTypeId);
             var companyName = await _settingsService.GetSettingValue<string>("CompanyName") ?? string.Empty;

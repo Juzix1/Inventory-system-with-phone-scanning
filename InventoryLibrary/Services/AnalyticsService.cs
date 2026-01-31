@@ -373,7 +373,9 @@ public class AnalyticsService : IAnalyticsService
 
     private async Task<List<InventoryItem>> GetFilteredItems(int? departmentId)
     {
-        var query = _context.InventoryItems
+        try
+        {
+            var query = _context.InventoryItems
             .Include(i => i.Location)
                 .ThenInclude(r => r.Department)
             .Include(i => i.ItemType)
@@ -381,11 +383,17 @@ public class AnalyticsService : IAnalyticsService
             .Include(i => i.personInCharge)
             .AsQueryable();
 
-        if (departmentId.HasValue && departmentId.Value > 0)
-        {
-            query = query.Where(i => i.Location != null && i.Location.DepartmentId == departmentId.Value);
-        }
+            if (departmentId.HasValue && departmentId.Value > 0)
+            {
+                query = query.Where(i => i.Location != null && i.Location.DepartmentId == departmentId.Value);
+            }
 
-        return await query.ToListAsync();
+            return await query.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Error while getting Filtered items: {ex.Message}");
+            return new List<InventoryItem>();
+        }
     }
 }

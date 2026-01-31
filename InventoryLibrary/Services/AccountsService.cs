@@ -21,26 +21,34 @@ namespace InventoryLibrary.Services
 
         public async Task<Account?> AuthenticateAsync(int index, string password)
         {
-            if (index == 0 || string.IsNullOrEmpty(password))
+            try
             {
-                throw new ArgumentException("Email and password cannot be null or empty.");
-            }
-
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == index);
-            if (account == null)
-            {
-                return null;
-            }
-            if (!_passwordService.VerifyPassword(account.PasswordHash, password))
-            {
-                if (account.resetPasswordOnNextLogin && account.PasswordHash == "")
+                if (index == 0 || string.IsNullOrEmpty(password))
                 {
-                    return account;
+                    throw new ArgumentException("Email and password cannot be null or empty.");
                 }
+
+                var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Id == index);
+                if (account == null)
+                {
+                    return null;
+                }
+                if (!_passwordService.VerifyPassword(account.PasswordHash, password))
+                {
+                    if (account.resetPasswordOnNextLogin && account.PasswordHash == "")
+                    {
+                        return account;
+                    }
+                    return null;
+                }
+                _logger.LogInfo($"User authenticated {(account.IsAdmin ? "with access" : "without access")} with id {account.Id}");
+                return account;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError($"Error while authenticating user {ex.Message}");
                 return null;
             }
-            _logger.LogInfo($"User authenticated {(account.IsAdmin ? "with access" : "without access")} with id {account.Id}");
-            return account;
         }
 
         public async Task<Account> CreateAccountAsync(Account account)
