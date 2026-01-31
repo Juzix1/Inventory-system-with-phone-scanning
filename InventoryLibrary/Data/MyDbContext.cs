@@ -75,12 +75,8 @@ namespace InventoryLibrary.Data
                             .HasForeignKey("StocktakeId")
                             .OnDelete(DeleteBehavior.Cascade)
                     );
-                entity.Property(s => s.CheckedItemIdList)
-                    .HasConversion(
-                        v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
-                        v => System.Text.Json.JsonSerializer.Deserialize<List<int>>(v, (System.Text.Json.JsonSerializerOptions)null) ?? new List<int>()
-                    )
-                    .HasColumnType("nvarchar(max)");
+
+                // Indeksy dla lepszej wydajności
                 entity.HasIndex(s => s.Status);
                 entity.HasIndex(s => s.StartDate);
                 entity.HasIndex(s => s.EndDate);
