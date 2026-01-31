@@ -11,10 +11,13 @@
 @if(UserId == null)
 {
     <h3>Create a new user</h3>
+    <PageTitle>Create New User</PageTitle>
 }
 else
 {
     <h3>Edit User</h3>
+    <PageTitle>Edit User</PageTitle>
+
 }
 <EditForm Model="@user" OnValidSubmit="Submit" FormName="UserEdit">
     <DataAnnotationsValidator/>
