@@ -49,10 +49,7 @@ public class FileService : IFileService
                 _logger.LogError("Import failed: Worksheet is empty");
                 return result;
             }
-
             var rowCount = worksheet.Dimension.Rows;
-
-            // Załaduj słowniki referencyjne
             var itemTypes = await _context.ItemTypes
                 .ToDictionaryAsync(t => t.TypeName.ToLower(), t => t);
             var itemConditions = await _context.itemConditions
@@ -64,7 +61,6 @@ public class FileService : IFileService
                 .ToDictionaryAsync(r => r.RoomName.ToLower(), r => r);
 
             var itemsToAdd = new List<InventoryItem>();
-
             for (int row = 2; row <= rowCount; row++)
             {
                 try
@@ -72,13 +68,11 @@ public class FileService : IFileService
                     var itemTypeName = GetCellValue(worksheet, row, 1);
                     if (string.IsNullOrWhiteSpace(itemTypeName))
                         continue;
-
                     if (!itemTypes.TryGetValue(itemTypeName.ToLower(), out var itemType))
                     {
                         result.Errors.Add($"Row {row}: Unknown ItemType '{itemTypeName}'");
                         continue;
                     }
-
                     InventoryItem item = itemType.TypeName.ToLower() switch
                     {
                         "computer" or "electronics" or "agd" => CreateAGD(worksheet, row),
@@ -258,17 +252,6 @@ public class FileService : IFileService
     private string GetCellValue(ExcelWorksheet worksheet, int row, int col)
     {
         return worksheet.Cells[row, col].Value?.ToString()?.Trim() ?? string.Empty;
-    }
-
-    private double GetDoubleValue(ExcelWorksheet worksheet, int row, int col)
-    {
-        var value = worksheet.Cells[row, col].Value;
-        if (value == null) return 0;
-
-        if (double.TryParse(value.ToString(), out double result))
-            return result;
-
-        return 0;
     }
 
     public async Task<byte[]> ExportInventoryItemsAsync(List<InventoryItem> items)

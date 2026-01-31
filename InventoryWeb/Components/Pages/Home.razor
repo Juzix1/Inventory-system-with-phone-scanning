@@ -60,7 +60,7 @@ else
                     Icon=IconName.Building />
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
-                <SmallBoxStat Title="Items w/o Review" value="@stats.ItemsWithoutReview.ToString()"
+                <SmallBoxStat Title="Items without Review" value="@stats.ItemsWithoutReview.ToString()"
                     Icon=IconName.ExclamationTriangle color="#F34213" />
             </div>
             <div class="col-xl-3 col-md-6 mb-3">
@@ -70,7 +70,6 @@ else
         </div>
     </div>
 
-    <!-- Charts Row 1: Line Charts -->
     <div class="container-fluid mb-4">
         <div class="d-flex justify-content-around">
             <LineChartStat Title="Items Added Per Month" ChartData="@itemsCreatedChartData"
@@ -78,8 +77,6 @@ else
             <LineChartStat Title="Asset Value Trend" ChartData="@assetValueChartData" ChartOptions="@assetValueOptions" />
         </div>
     </div>
-
-    <!-- Charts Row 2: Pie Charts -->
     <div class="container-fluid mb-4">
         <div class="d-flex justify-content-around">
 
@@ -89,8 +86,6 @@ else
                 ChartOptions="@conditionPieOptions" />
         </div>
     </div>
-
-    <!-- Charts Row 3: Analysis Charts -->
     <div class="container-fluid mb-4">
         <div class="d-flex justify-content-around">
             <LineChartStat Title="Monthly Item Loss (Historical)" ChartData="@itemLossChartData"
@@ -100,35 +95,31 @@ else
                 ChartOptions="@withoutInventoryOptions" />
         </div>
     </div>
-
-    <!-- Summary Cards -->
-    <div class="row mb-4 px-2">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">All Departments Summary</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <h6>Total Value (All Departments)</h6>
-                            <h3 class="text-primary">@($"{stats.AllDepartmentsValue:N2} PLN")</h3>
-                        </div>
-                        <div class="col-md-3">
-                            <h6>Monthly Item Creation</h6>
-                            <p class="mb-0">Total Created: <strong>@monthlyItemsData?.TotalCreated</strong></p>
-                            <p class="mb-0">Avg/Month: <strong>@($"{monthlyItemsData?.AveragePerMonth:N1}")</strong></p>
-                        </div>
-                        <div class="col-md-3">
-                            <h6>Item Loss Analysis</h6>
-                            <p class="mb-0">Total Lost: <strong class="text-danger">@itemLossData?.TotalLost</strong></p>
-                            <p class="mb-0">Value Lost: <strong class="text-danger">@($"{itemLossData?.TotalValueLost:N2}                                PLN")</strong></p>
-                        </div>
-                        <div class="col-md-3">
-                            <h6>Inventory Status</h6>
-                            <p class="mb-0">Needs Review: <strong
-                                    class="text-warning">@withoutInventoryData?.TotalOverdue</strong></p>
-                            <p class="mb-0">Categories: <strong>@categoryData?.TotalCategories</strong></p>
+    <div class="d-flex justify-content-center">
+        <div class="row mb-4 px-2 w-75">
+            <div class="col-12 w-100">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">All Departments Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row d-flex justify-content-around">
+                            <div class="col-md-3">
+                                <h6>Monthly Item Creation</h6>
+                                <p class="mb-0">Total Created: <strong>@monthlyItemsData?.TotalCreated</strong></p>
+                                <p class="mb-0">Average per Month: <strong>@($"{monthlyItemsData?.AveragePerMonth:N1}")</strong></p>
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Item Loss Analysis</h6>
+                                <p class="mb-0">Total Lost Items: <strong class="text-danger">@itemLossData?.TotalLost</strong></p>
+                                <p class="mb-0">Value Lost: <strong class="text-danger">@($"{itemLossData?.TotalValueLost:N2}                                PLN")</strong></p>
+                            </div>
+                            <div class="col-md-3">
+                                <h6>Inventory Status</h6>
+                                <p class="mb-0">Items needing Review: <strong
+                                        class="text-warning">@withoutInventoryData?.TotalOverdue</strong></p>
+                                <p class="mb-0">Categories: <strong>@categoryData?.TotalCategories</strong></p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -143,7 +134,7 @@ else
             <div class="col-12">
                 <div class="card border-warning">
                     <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0">⚠️ Critical Items - Overdue for Inventory Review</h5>
+                        <h5 class="mb-0"><Icon Name="IconName.ExclamationTriangleFill"/>Overdue for Inventory Review</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">

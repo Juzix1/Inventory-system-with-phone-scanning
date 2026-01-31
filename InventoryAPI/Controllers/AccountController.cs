@@ -24,16 +24,13 @@ namespace InventoryAPI.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             try
-            {
-                Console.WriteLine($"Login attempt - Index: {request.Index}");
-                
+            {                
                 if (request.Index == 0 || string.IsNullOrEmpty(request.Password))
                 {
                     return BadRequest(new { message = "Index and password are required." });
                 }
 
                 var authenticatedAccount = await _service.AuthenticateAsync(request.Index, request.Password);
-                
                 if (authenticatedAccount == null)
                 {
                     return Unauthorized(new { message = "Invalid credentials." });
@@ -59,12 +56,10 @@ namespace InventoryAPI.Controllers
                         ResetPasswordOnNextLogin = authenticatedAccount.resetPasswordOnNextLogin
                     }
                 };
-
                 return Ok(response);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Login error: {ex.Message}");
                 return StatusCode(StatusCodes.Status500InternalServerError, 
                     new { message = $"Error during login: {ex.Message}" });
             }

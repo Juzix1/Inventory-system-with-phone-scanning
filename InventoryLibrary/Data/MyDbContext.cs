@@ -33,31 +33,23 @@ namespace InventoryLibrary.Data
                 .ToTable("Accounts")
                 .Property(a => a.Id)
                 .ValueGeneratedNever();
-
             modelBuilder.Entity<Account>()
                 .HasMany(a => a.InventoryItems)
                 .WithOne(i => i.personInCharge)
                 .HasForeignKey(i => i.PersonInChargeId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // InventoryItem configuration
             modelBuilder.Entity<InventoryItem>()
                 .ToTable("InventoryItems")
                 .HasOne(i => i.Location)
                 .WithMany()
                 .HasForeignKey(i => i.RoomId)
                 .OnDelete(DeleteBehavior.SetNull);
-
-            // HistoricalItem configuration
             modelBuilder.Entity<HistoricalItem>()
                 .ToTable("HistoricalItems");
-
-            // Stocktake configuration
             modelBuilder.Entity<Stocktake>(entity =>
             {
                 entity.ToTable("Stocktakes");
-
-                // Relacja one-to-many z InventoryItem
                 entity.HasMany(s => s.ItemsToCheck)
                     .WithOne(i => i.Stocktake)
                     .HasForeignKey(i => i.StocktakeId)
@@ -83,8 +75,12 @@ namespace InventoryLibrary.Data
                             .HasForeignKey("StocktakeId")
                             .OnDelete(DeleteBehavior.Cascade)
                     );
-
-                // Indeksy dla lepszej wydajności
+                entity.Property(s => s.CheckedItemIdList)
+                    .HasConversion(
+                        v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
+                        v => System.Text.Json.JsonSerializer.Deserialize<List<int>>(v, (System.Text.Json.JsonSerializerOptions)null) ?? new List<int>()
+                    )
+                    .HasColumnType("nvarchar(max)");
                 entity.HasIndex(s => s.Status);
                 entity.HasIndex(s => s.StartDate);
                 entity.HasIndex(s => s.EndDate);
@@ -178,7 +174,7 @@ namespace InventoryLibrary.Data
 
             modelBuilder.Entity<Setting>().HasData(
                 new Setting { Id = 1, Key = "FileStoragePath", Value = $"{imagesPath}" },
-                new Setting { Id = 2, Key = "MaxFileSize", Value = "10485760" },
+                new Setting { Id = 2, Key = "MaxFileSize", Value = "10" },
                 new Setting { Id = 3, Key = "CompanyName", Value = "My Company" },
                 new Setting { Id = 4, Key = "ChosenDepartmentId", Value = "" }
             );

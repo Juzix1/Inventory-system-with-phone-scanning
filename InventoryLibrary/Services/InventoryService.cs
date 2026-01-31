@@ -136,10 +136,6 @@ namespace InventoryLibrary.Services
                     existingItem.PersonInChargeId = null;
                     existingItem.personInCharge = null;
                 }
-
-
-
-                // Update properties safely on the tracked entity
                 _context.Entry(existingItem).CurrentValues.SetValues(item);
                 await _context.SaveChangesAsync();
                 _logger?.LogInfo($"Updated item: {item}");

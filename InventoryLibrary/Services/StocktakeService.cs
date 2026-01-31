@@ -6,6 +6,7 @@ using InventoryLibrary.Model.StockTake;
 using InventoryLibrary.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 
 namespace InventoryLibrary.Services;
 
@@ -20,25 +21,16 @@ public class StocktakeService : IStocktakeService
         _logger = logger;
     }
 
-    public async Task CreateNewStocktake(
-        string name,
-        string description,
-        List<InventoryItem> items,
-        List<Account> authorizedAccounts,
-        DateTime startDate,
-        DateTime endDate)
+    public async Task CreateNewStocktake(string name,string description,List<InventoryItem> items,List<Account> authorizedAccounts,DateTime startDate,DateTime endDate)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Stocktake name is required", nameof(name));
-
             if (items == null || !items.Any())
                 throw new ArgumentException("You must choose at least one item for stocktake", nameof(items));
-
             if (endDate <= startDate)
                 throw new ArgumentException("End date must be after start date", nameof(endDate));
-
             var stocktake = new Stocktake
             {
                 Name = name,
@@ -52,10 +44,8 @@ public class StocktakeService : IStocktakeService
                 AuthorizedAccounts = authorizedAccounts ?? new List<Account>(),
                 CheckedItems = new List<StocktakeCheckedItem>() // Nowa kolekcja
             };
-
             _context.Stocktakes.Add(stocktake);
             await _context.SaveChangesAsync();
-
             _logger?.LogInfo($"Created new stocktake: {name} with {items.Count} items.");
         }
         catch (Exception ex)

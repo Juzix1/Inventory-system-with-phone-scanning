@@ -56,13 +56,11 @@ public class BarcodeGenerator
     {
         try
         {
-            //w przyszłości, po prostu usunąć wszystkie pliki
             string filePath = fileName;
             if (System.IO.File.Exists(filePath))
             {
                 if(IsLinux())
                 {
-                    // On Linux, we might need to use a different path separator or handle permissions
                     filePath = filePath.Replace('\\', '/');
                 }
                 System.IO.File.Delete(filePath);
