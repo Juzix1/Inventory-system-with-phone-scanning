@@ -50,15 +50,16 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span>@item.Value</span>
                         <div>
-                            @* Change Name *@
-                            <a class="text-decoration-none me-2" style="cursor: pointer;" @onclick="@( e => showEditFormDialog(item.Key))" >
-                                <Icon Name="IconName.PencilFill" Color="color"/>
-                            </a>
-
-                            @* Delete                                                                       add here deleting*@
-                            <a class="text-decoration-none me-2" style="cursor: pointer;" @onclick="@( () => {})" >
-                                <Icon Name="IconName.TrashFill" Color="IconColor.Danger"/>
-                            </a>
+                            @if(IsEditable){
+                                <a class="text-decoration-none me-2" style="cursor: pointer;" @onclick="@( e => showEditFormDialog(item.Key))" >
+                                    <Icon Name="IconName.PencilFill" Color="color"/>
+                                </a>
+                            }
+                            @if(IsRemovable){
+                                <a class="text-decoration-none me-2" style="cursor: pointer;" @onclick="@( () => {})" >
+                                    <Icon Name="IconName.TrashFill" Color="IconColor.Danger"/>
+                                </a>
+                            }
                             <br/>
                         </div>
                     </div>
@@ -124,6 +125,11 @@ public CategoryFormMode Type {get;set;} = CategoryFormMode.Types;
 public Dictionary<int, string> Items {get;set;} = new Dictionary<int, string>();
 [Parameter]
 public bool ShowAddButton {get;set;} = false;
+[Parameter]
+public bool IsEditable { get; set; } = true;
+[Parameter]
+public bool IsRemovable { get; set; } = true;
+
 private int Id;
 private string Title = "";
 private IconName icon;

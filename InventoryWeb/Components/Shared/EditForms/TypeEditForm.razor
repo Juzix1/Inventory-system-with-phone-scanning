@@ -14,9 +14,8 @@
 </div>
 @code {
     [Parameter]
-    public string Name {get;set;} = string.Empty;
-    private string closeClass= string.Empty;
-
+    public string Name { get; set; } = string.Empty;
+    private string closeClass = string.Empty;
     [Parameter]
     public EventCallback OnClose { get; set; }
     [Parameter]
@@ -29,7 +28,7 @@
 
     }
 
-        private async Task Submit()
+    private async Task Submit()
     {
         closeClass = "edit--close";
         await OnSubmit.InvokeAsync(Name);
