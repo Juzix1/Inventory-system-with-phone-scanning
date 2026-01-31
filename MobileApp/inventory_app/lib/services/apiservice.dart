@@ -170,19 +170,6 @@ class ApiService {
     }
   }
 
-  Future<bool> checkPrivilege(int userId) async {
-    await initialize();
-
-    final url = Uri.parse('$_baseUrl/Account/privilage-check/$userId');
-
-    try {
-      final response = await http.get(url, headers: _getHeaders());
-      return response.statusCode == 200;
-    } catch (e) {
-      return false;
-    }
-  }
-
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
 

@@ -20,6 +20,7 @@ namespace InventoryLibrary.Data
         public DbSet<Department> Departments { get; set; }
         public DbSet<Room> Rooms { get; set; }
         public DbSet<Stocktake> Stocktakes { get; set; }
+        public DbSet<StocktakeCheckedItem> StocktakeCheckedItems { get; set; }
         public DbSet<Setting> Settings { get; set; }
         public DbSet<HistoricalItem> HistoricalItems { get; set; }
 
@@ -62,6 +63,12 @@ namespace InventoryLibrary.Data
                     .HasForeignKey(i => i.StocktakeId)
                     .OnDelete(DeleteBehavior.SetNull);
 
+                // Relacja one-to-many z StocktakeCheckedItem
+                entity.HasMany(s => s.CheckedItems)
+                    .WithOne(ci => ci.Stocktake)
+                    .HasForeignKey(ci => ci.StocktakeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
                 // Relacja many-to-many z Account (AuthorizedAccounts)
                 entity.HasMany(s => s.AuthorizedAccounts)
                     .WithMany()
@@ -77,18 +84,26 @@ namespace InventoryLibrary.Data
                             .OnDelete(DeleteBehavior.Cascade)
                     );
 
-                // Konwersja listy CheckedItemIdList do formatu JSON
-                entity.Property(s => s.CheckedItemIdList)
-                    .HasConversion(
-                        v => System.Text.Json.JsonSerializer.Serialize(v, (System.Text.Json.JsonSerializerOptions)null),
-                        v => System.Text.Json.JsonSerializer.Deserialize<List<int>>(v, (System.Text.Json.JsonSerializerOptions)null) ?? new List<int>()
-                    )
-                    .HasColumnType("nvarchar(max)");
-
                 // Indeksy dla lepszej wydajności
                 entity.HasIndex(s => s.Status);
                 entity.HasIndex(s => s.StartDate);
                 entity.HasIndex(s => s.EndDate);
+            });
+
+            // StocktakeCheckedItem configuration
+            modelBuilder.Entity<StocktakeCheckedItem>(entity =>
+            {
+                entity.ToTable("StocktakeCheckedItems");
+
+                // Composite index for better query performance
+                entity.HasIndex(ci => new { ci.StocktakeId, ci.InventoryItemId })
+                    .IsUnique();
+
+                entity.HasIndex(ci => ci.CheckedDate);
+
+                // Default value for CheckedDate
+                entity.Property(ci => ci.CheckedDate)
+                    .HasDefaultValueSql("GETDATE()");
             });
 
             

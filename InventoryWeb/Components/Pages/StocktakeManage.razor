@@ -97,7 +97,8 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-md-3">
                         <label class="form-label small">Status</label>
-                        <select class="form-select" value="@selectedStatus" @onchange="e => FilterByStatus(ParseStatus(e.Value?.ToString()))">
+                        <select class="form-select" value="@selectedStatus"
+                            @onchange="e => FilterByStatus(ParseStatus(e.Value?.ToString()))">
                             <option value="">All</option>
                             <option value="@StockTakeStatus.Planned">Planned</option>
                             <option value="@StockTakeStatus.InProgress">In Progress</option>
@@ -146,11 +147,10 @@
                                     <small class="badge bg-light text-dark">@progress%</small>
                                 </div>
                                 <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar @GetProgressBarClass(progress)" 
-                                         style="width: @progress%"></div>
+                                    <div class="progress-bar @GetProgressBarClass(progress)" style="width: @progress%"></div>
                                 </div>
                                 <small class="text-muted">
-                                    @stocktake.CheckedItemIdList.Count / @stocktake.AllItems items 
+                                    @GetAssignedCount(stocktake.Id) / @stocktake.AllItems items
                                 </small>
                             </div>
 
@@ -178,28 +178,24 @@
                             }
 
                             <div class="btn-group w-100">
-                                <button class="btn btn-sm btn-outline-primary" 
-                                        @onclick="() => ViewDetails(stocktake.Id)">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewDetails(stocktake.Id)">
                                     <i class="bi bi-eye"></i> Details
                                 </button>
                                 @if (stocktake.Status == StockTakeStatus.Planned)
                                 {
-                                    <button class="btn btn-sm btn-outline-success" 
-                                            @onclick="() => StartStocktake(stocktake.Id)">
+                                    <button class="btn btn-sm btn-outline-success" @onclick="() => StartStocktake(stocktake.Id)">
                                         <i class="bi bi-play-circle"></i> Start
                                     </button>
                                 }
                                 @if (stocktake.Status == StockTakeStatus.InProgress)
                                 {
-                                    <button class="btn btn-sm btn-outline-success" 
-                                            @onclick="() => CompleteStocktake(stocktake.Id)">
+                                    <button class="btn btn-sm btn-outline-success" @onclick="() => CompleteStocktake(stocktake.Id)">
                                         <i class="bi bi-check-circle"></i> End
                                     </button>
                                 }
                                 @if (stocktake.Status != StockTakeStatus.Completed)
                                 {
-                                    <button class="btn btn-sm btn-outline-danger" 
-                                            @onclick="() => ShowCancelConfirm(stocktake.Id)">
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => ShowCancelConfirm(stocktake.Id)">
                                         <i class="bi bi-x-circle"></i> Cancel
                                     </button>
                                 }
@@ -214,7 +210,7 @@
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-exclamation-triangle text-warning"></i> 
+                    <i class="bi bi-exclamation-triangle text-warning"></i>
                     Items Needing Inventory Check
                 </h5>
             </div>
@@ -288,20 +284,21 @@
                             <label class="form-label">Items filter</label>
                             <select class="form-select" @bind="itemFilterType" @bind:after="UpdateFilteredItems">
                                 <option value="all">All (@allItems.Count)</option>
-                                <option value="overdue">Overdue (@allItems.Count(i => (DateTime.Now - i.lastInventoryDate).Days > 180))</option>
-                                <option value="critical">Critical (@allItems.Count(i => (DateTime.Now - i.lastInventoryDate).Days > 365))</option>
-                                <option value="custom">Choose manually</option>
-                            </select>
-                        </div>
-                        @if (itemFilterType == "custom")
+                                <option value="overdue">Overdue (@allItems.Count(i => (DateTime.Now - i.lastInventoryDate).Days
+                                                                > 180))</option>
+                        <option value="critical">Critical (@allItems.Count(i => (DateTime.Now -
+                                                        i.lastInventoryDate).Days > 365))</option>
+                        <option value="custom">Choose manually</option>
+                    </select>
+                </div>
+                @if (itemFilterType == "custom")
                         {
                             <div style="max-height: 300px; overflow-y: auto;" class="border rounded p-2">
                                 @foreach (var item in allItems)
                                 {
                                     <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" 
-                                               checked="@selectedItems.Contains(item)"
-                                               @onchange="e => ToggleItem(item, (bool)e.Value)" />
+                                        <input class="form-check-input" type="checkbox" checked="@selectedItems.Contains(item)"
+                                            @onchange="e => ToggleItem(item, (bool)e.Value)" />
                                         <label class="form-check-label">@item.itemName</label>
                                     </div>
                                 }
@@ -316,9 +313,8 @@
                             @foreach (var acc in allAccounts)
                             {
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" 
-                                           checked="@selectedAccounts.Contains(acc)"
-                                           @onchange="e => ToggleAccount(acc, (bool)e.Value)" />
+                                    <input class="form-check-input" type="checkbox" checked="@selectedAccounts.Contains(acc)"
+                                        @onchange="e => ToggleAccount(acc, (bool)e.Value)" />
                                     <label class="form-check-label">@acc.Name</label>
                                 </div>
                             }
@@ -352,7 +348,7 @@
     private List<Stocktake> filteredStocktakes = new();
     private List<InventoryItem> allItems = new();
     private List<InventoryItem> itemsNeedingCheck = new();
-    private List<Account> allAccounts = new();
+    private Dictionary<int, int> assignedItemsCountByStocktake = new(); private List<Account> allAccounts = new();
 
     private StockTakeStatus? selectedStatus = StockTakeStatus.InProgress;
     private DateTime? filterDateFrom, filterDateTo;
@@ -381,6 +377,13 @@
             allItems = (await InventoryService.GetAllItemsAsync()).ToList();
             allAccounts = (await AccountsService.GetAllAccountsAsync()).ToList();
 
+            foreach (var s in allStocktakes)
+            {
+                var items = await StocktakeService.GetAssignedItemsIds(s.Id);
+                assignedItemsCountByStocktake[s.Id] = items.Count;
+            }
+
+
             itemsNeedingCheck = allItems.OrderBy(x => x.lastInventoryDate).ToList();
             ApplyFilters();
         }
@@ -389,7 +392,6 @@
             isLoading = false;
         }
     }
-
     private void FilterByStatus(StockTakeStatus? status)
     {
         selectedStatus = status;
@@ -412,11 +414,18 @@
         ApplyFilters();
     }
 
-    private StockTakeStatus? ParseStatus(string value) => 
-        Enum.TryParse<StockTakeStatus>(value, out var s) ? s : null;
+    private StockTakeStatus? ParseStatus(string value) =>
+    Enum.TryParse<StockTakeStatus>(value, out var s) ? s : null;
 
-    private int GetProgress(Stocktake s) => 
-        s.AllItems == 0 ? 0 : (int)((double)s.CheckedItemIdList.Count / s.AllItems * 100);
+    private int GetProgress(Stocktake s)
+    {
+        var assigned = GetAssignedCount(s.Id);
+        return s.AllItems == 0 ? 0 : (int)((double)assigned / s.AllItems * 100);
+    }
+
+    private int GetAssignedCount(int stocktakeId)
+    => assignedItemsCountByStocktake.TryGetValue(stocktakeId, out var c) ? c : 0;
+
 
     private string GetCompletionRate()
     {
@@ -444,9 +453,11 @@
         _ => "Unknown"
     };
 
-    private string GetProgressBarClass(int p) => p >= 75 ? "bg-success" : p >= 50 ? "bg-info" : p >= 25 ? "bg-warning" : "bg-danger";
+    private string GetProgressBarClass(int p) => p >= 75 ? "bg-success" : p >= 50 ? "bg-info" : p >= 25 ? "bg-warning" :
+    "bg-danger";
 
-    private string GetTimeLeftAlertClass(TimeSpan t) => t.TotalDays > 2 ? "alert-success" : t.TotalHours > 0 ? "alert-warning" : "alert-danger";
+    private string GetTimeLeftAlertClass(TimeSpan t) => t.TotalDays > 2 ? "alert-success" : t.TotalHours > 0 ?
+    "alert-warning" : "alert-danger";
 
     private string GetTimeLeftText(TimeSpan t)
     {
@@ -511,7 +522,7 @@
         try
         {
             await StocktakeService.CreateNewStocktake(newStocktake.Name, newStocktake.Description,
-                selectedItems, selectedAccounts, newStocktake.StartDate, newStocktake.EndDate);
+            selectedItems, selectedAccounts, newStocktake.StartDate, newStocktake.EndDate);
             HideCreateModal();
             await LoadData();
         }

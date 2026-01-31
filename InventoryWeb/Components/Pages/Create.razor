@@ -16,6 +16,7 @@
 @inject ILogger<Create> Logger
 @inject NavigationManager nav
 @rendermode InteractiveServer
+<PageTitle>@(EditID == null?"Create Item":"Edit Item")</PageTitle>
 
 <div class="itemForm">
     @if(EditID.HasValue)

@@ -38,15 +38,12 @@ namespace InventoryAPI.Controllers
                 {
                     return Unauthorized(new { message = "Invalid credentials." });
                 }
-
-                // Generuj JWT token
                 var token = _jwtService.GenerateToken(
                     authenticatedAccount.Id,
                     authenticatedAccount.Email,
                     authenticatedAccount.Role,
                     authenticatedAccount.IsAdmin
                 );
-
                 var response = new
                 {
                     Token = token,
@@ -72,54 +69,6 @@ namespace InventoryAPI.Controllers
                     new { message = $"Error during login: {ex.Message}" });
             }
         }
-
-        [Authorize]
-        [HttpGet("validate")]
-        public IActionResult ValidateToken()
-        {
-            return Ok(new { message = "Token is valid" });
-        }
-
-        [Authorize(Roles = "Admin")]
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateAccount([FromBody] Account account)
-        {
-            if (account == null)
-            {
-                return BadRequest("Account data is null.");
-            }
-            try
-            {
-                var createdAccount = await _service.CreateAccountAsync(account);
-                return CreatedAtAction(nameof(CreateAccount), new { id = createdAccount.Id }, createdAccount);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, 
-                    $"Error creating account: {ex.Message}");
-            }
-        }
-
-        [Authorize]
-        [HttpGet("privilage-check/{id}")]
-        public async Task<IActionResult> CheckPrivilageForApp(int id)
-        {
-            try
-            {
-                var hasPrivilage = await _service.CanAccessScanner(id);
-                if (!hasPrivilage)
-                {
-                    return Forbid("Account does not have privilage to access the scanner app.");
-                }
-                return Ok(hasPrivilage);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, 
-                    $"Error checking privilage: {ex.Message}");
-            }
-        }
-
         public class LoginRequest
         {
             public int Index { get; set; }

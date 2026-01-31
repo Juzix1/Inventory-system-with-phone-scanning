@@ -12,7 +12,6 @@ public class BarcodeGenerator
     public string GenerateBarcodeNumber(int id, int itemTypeId)
     {
         // return $"INV-{id:D6}-{itemTypeId}-{locationIdentifier}";
-        // return id.ToString("D6") + itemTypeId.ToString("D6");
         return id.ToString("D6");
     }
     
@@ -36,13 +35,11 @@ public class BarcodeGenerator
             b.AlternateLabel = LabelText;
         var skFore = SKColor.Parse("#000000");
         var skBack = SKColor.Parse("#FFFFFF");
-        var fore = new SKColorF(skFore.Red / 255f, skFore.Green / 255f, skFore.Blue / 255f, skFore.Alpha / 255f);
-        var back = new SKColorF(skBack.Red / 255f, skBack.Green / 255f, skBack.Blue / 255f, skBack.Alpha / 255f);
         var img = b.Encode(
             BarcodeStandard.Type.Code128B,
             barcodeText,
-            fore,
-            back,
+            skFore,
+            skBack,
             400,
             200
         );

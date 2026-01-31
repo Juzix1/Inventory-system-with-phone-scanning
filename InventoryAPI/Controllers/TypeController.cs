@@ -1,5 +1,6 @@
 using InventoryLibrary.Data;
 using InventoryLibrary.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,6 +8,7 @@ namespace InventoryAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize (Roles = "Admin, Moderator")]
     public class TypeController : ControllerBase
     {
         private readonly MyDbContext _context;
@@ -33,7 +35,6 @@ namespace InventoryAPI.Controllers
             }
 
         }
-
         [HttpGet("all")]
         public async Task<ActionResult> GetAllTypes()
         {

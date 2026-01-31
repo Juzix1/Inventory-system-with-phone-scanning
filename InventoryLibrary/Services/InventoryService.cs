@@ -39,7 +39,6 @@ namespace InventoryLibrary.Services
                 throw;
             }
         }
-
         public async Task<InventoryItem> GetItemByIdAsync(int id)
         {
             try

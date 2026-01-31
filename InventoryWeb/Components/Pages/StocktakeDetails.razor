@@ -80,7 +80,7 @@
                             </div>
                             <div class="ms-3">
                                 <p class="text-muted mb-0 small">Checked</p>
-                                <h3 class="mb-0">@stocktake.CheckedItemIdList.Count</h3>
+                                <h3 class="mb-0">@CheckedItemIdList.Count</h3>
                             </div>
                         </div>
                     </div>
@@ -123,12 +123,11 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between mb-2">
                     <h5>Overall Stocktake Progress</h5>
-                    <span class="text-muted">@stocktake.CheckedItemIdList.Count / @stocktake.AllItems</span>
+                    <span class="text-muted">@CheckedItemIdList.Count / @stocktake.AllItems</span>
                 </div>
                 <div class="progress" style="height: 25px;">
-                    <div class="progress-bar @GetProgressBarClass(GetProgress())" 
-                         role="progressbar" 
-                         style="width: @GetProgress()%">
+                    <div class="progress-bar @GetProgressBarClass(GetProgress())" role="progressbar"
+                        style="width: @GetProgress()%">
                         @GetProgress()%
                     </div>
                 </div>
@@ -198,9 +197,8 @@
                 <div class="row g-3 align-items-end">
                     <div class="col-md-4">
                         <label class="form-label small">Search</label>
-                        <input type="text" class="form-control" @bind="searchTerm" 
-                               @bind:event="oninput" @bind:after="FilterItems"
-                               placeholder="Item name" />
+                        <input type="text" class="form-control" @bind="searchTerm" @bind:event="oninput"
+                            @bind:after="FilterItems" placeholder="Item name" />
                     </div>
                     <div class="col-md-3">
                         <label class="form-label small">Status</label>
@@ -233,14 +231,14 @@
             <div class="card-header bg-white border-bottom">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
-                        <i class="bi bi-list-check"></i> 
+                        <i class="bi bi-list-check"></i>
                         Items to check (@filteredItems.Count)
                     </h5>
                     @if (stocktake.Status == StockTakeStatus.InProgress && isAuthorized)
                     {
                         <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" 
-                                   @bind="showOnlyUnchecked" @bind:after="FilterItems" />
+                            <input class="form-check-input" type="checkbox" @bind="showOnlyUnchecked"
+                                @bind:after="FilterItems" />
                             <label class="form-check-label">Only unchecked</label>
                         </div>
                     }
@@ -254,8 +252,8 @@
                                 @if (stocktake.Status == StockTakeStatus.InProgress && isAuthorized)
                                 {
                                     <th style="width: 50px;">
-                                        <input type="checkbox" class="form-check-input" 
-                                               @bind="selectAll" @bind:after="ToggleSelectAll" />
+                                        <input type="checkbox" class="form-check-input" @bind="selectAll"
+                                            @bind:after="ToggleSelectAll" />
                                     </th>
                                 }
                                 <th>Name</th>
@@ -273,21 +271,23 @@
                         <tbody>
                             @foreach (var item in filteredItems)
                             {
-                                var isChecked = stocktake.CheckedItemIdList.Contains(item.Id);
+                                var isChecked = CheckedItemIdList.Contains(item.Id);
                                 <tr class="@(isChecked ? "table-success" : "")">
                                     @if (stocktake.Status == StockTakeStatus.InProgress && isAuthorized)
                                     {
                                         <td>
                                             <input type="checkbox" class="form-check-input"
-                                                   checked="@selectedItems.Contains(item.Id)"
-                                                   @onchange="e => ToggleItemSelection(item.Id, (bool)e.Value)" />
+                                                checked="@selectedItems.Contains(item.Id)"
+                                                @onchange="e => ToggleItemSelection(item.Id, (bool)e.Value)" />
                                         </td>
                                     }
                                     <td>
                                         <strong>@item.itemName</strong>
                                         @if (!string.IsNullOrEmpty(item.imagePath))
                                         {
-                                            <br /><small class="text-muted">
+                                            <br />
+                                
+                                            <small class="text-muted">
                                                 <i class="bi bi-image"></i> Has photo
                                             </small>
                                         }
@@ -296,11 +296,13 @@
                                     <td>
                                         @if (item.Location != null)
                                         {
-                                            <i class="bi bi-geo-alt"></i> @item.Location.RoomName
+                                            <i class="bi bi-geo-alt"></i> 
+                                            @item.Location.RoomName
                                         }
                                         else if (item.personInCharge != null)
                                         {
-                                            <i class="bi bi-person"></i> @item.personInCharge.Name
+                                            <i class="bi bi-person"></i> 
+                                            @item.personInCharge.Name
                                         }
                                         else
                                         {
@@ -332,15 +334,13 @@
                                         <td class="text-center">
                                             @if (!isChecked)
                                             {
-                                                <button class="btn btn-sm btn-success" 
-                                                        @onclick="() => CheckItem(item.Id)">
+                                                <button class="btn btn-sm btn-success" @onclick="() => CheckItem(item.Id)">
                                                     <i class="bi bi-check"></i> Mark
                                                 </button>
                                             }
                                             else
                                             {
-                                                <button class="btn btn-sm btn-outline-secondary" 
-                                                        @onclick="() => UncheckItem(item.Id)">
+                                                <button class="btn btn-sm btn-outline-secondary" @onclick="() => UncheckItem(item.Id)">
                                                     <i class="bi bi-x"></i> Unmark
                                                 </button>
                                             }
@@ -389,9 +389,10 @@
     private List<InventoryItem> uncheckedItems = new();
     private List<InventoryItem> filteredItems = new();
     private List<int> selectedItems = new();
-    
+    private List<int> CheckedItemIdList = new();
+
     private bool isLoading = true;
-    private bool isAuthorized = false;
+    private bool isAuthorized = true;
     private int currentUserId;
 
     private string searchTerm = "";
@@ -411,18 +412,19 @@
         try
         {
             stocktake = await StocktakeService.GetStocktakeById(Id);
-            
+            CheckedItemIdList = await StocktakeService.GetAssignedItemsIds(stocktake.Id);
+
             // Sprawdź uprawnienia użytkownika
             var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
-            
+
             if (user.Identity?.IsAuthenticated == true)
             {
                 var userIdClaim = user.FindFirst("UserId");
                 if (userIdClaim != null && int.TryParse(userIdClaim.Value, out currentUserId))
                 {
                     isAuthorized = await StocktakeService.IsUserAuthorized(Id, currentUserId) ||
-                                   user.IsInRole("Admin");
+                    user.IsInRole("Admin");
                 }
             }
 
@@ -454,12 +456,18 @@
         // Filtr po statusie
         if (filterStatus == "checked")
         {
-            items = items.Where(i => stocktake.CheckedItemIdList.Contains(i.Id));
+            items = items.Where(i => CheckedItemIdList.Contains(i.Id));
         }
-        else if (filterStatus == "unchecked" || showOnlyUnchecked)
+        else if (filterStatus == "unchecked")
         {
-            items = items.Where(i => !stocktake.CheckedItemIdList.Contains(i.Id));
+            items = items.Where(i => !CheckedItemIdList.Contains(i.Id));
         }
+
+        if (showOnlyUnchecked)
+        {
+            items = items.Where(i => !CheckedItemIdList.Contains(i.Id));
+        }
+
 
         // Sortowanie
         items = sortBy switch
@@ -540,8 +548,8 @@
         if (selectAll)
         {
             selectedItems.AddRange(filteredItems
-                .Where(i => !stocktake.CheckedItemIdList.Contains(i.Id))
-                .Select(i => i.Id));
+            .Where(i => !CheckedItemIdList.Contains(i.Id))
+            .Select(i => i.Id));
         }
     }
 
@@ -559,11 +567,11 @@
     private int GetProgress()
     {
         if (stocktake == null || stocktake.AllItems == 0) return 0;
-        return (int)((double)stocktake.CheckedItemIdList.Count / stocktake.AllItems * 100);
+        return (int)((double)CheckedItemIdList.Count / stocktake.AllItems * 100);
     }
 
-    private string GetProgressBarClass(int progress) => 
-        progress >= 75 ? "bg-success" : progress >= 50 ? "bg-info" : progress >= 25 ? "bg-warning" : "bg-danger";
+    private string GetProgressBarClass(int progress) =>
+    progress >= 75 ? "bg-success" : progress >= 50 ? "bg-info" : progress >= 25 ? "bg-warning" : "bg-danger";
 
     private string GetStatusBadgeClass(StockTakeStatus status) => status switch
     {
@@ -583,8 +591,8 @@
         _ => "Unknown"
     };
 
-    private string GetTimeLeftClass(TimeSpan timeLeft) => 
-        timeLeft.TotalDays > 2 ? "text-success" : timeLeft.TotalHours > 0 ? "text-warning" : "text-danger";
+    private string GetTimeLeftClass(TimeSpan timeLeft) =>
+    timeLeft.TotalDays > 2 ? "text-success" : timeLeft.TotalHours > 0 ? "text-warning" : "text-danger";
 
     private string GetTimeLeftText(TimeSpan timeLeft)
     {

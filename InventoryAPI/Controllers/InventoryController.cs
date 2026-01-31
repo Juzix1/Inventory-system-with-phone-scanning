@@ -11,7 +11,7 @@ namespace InventoryAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize (Roles = "Admin, Moderator")]
     public class InventoryController : ControllerBase
     {
         private readonly MyDbContext _context;
@@ -31,7 +31,7 @@ namespace InventoryAPI.Controllers
         public async Task<ActionResult> getBarcodeImage(int id)
         {
 
-            var item = await _context.InventoryItems.FindAsync(id);
+            var item = await _inventoryService.GetItemByIdAsync(id);
 
             if (item == null)
             {

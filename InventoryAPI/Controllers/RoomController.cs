@@ -9,7 +9,7 @@ namespace InventoryAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize (Roles = "Admin, Moderator")]
     public class RoomController : ControllerBase
     {
         private readonly MyDbContext _context;
