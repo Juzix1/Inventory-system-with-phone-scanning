@@ -12,17 +12,17 @@ namespace InventoryLibrary.Data
         public MyDbContext(DbContextOptions<MyDbContext> options) : base(options) { }
 
         public DbSet<Account> Accounts { get; set; }
-        public virtual DbSet<InventoryItem> InventoryItems { get; set; }
-        public virtual DbSet<AGD> AGD { get; set; }
-        public virtual DbSet<Furniture> Furnitures { get; set; }
-        public virtual DbSet<ItemType> ItemTypes { get; set; }
-        public virtual DbSet<ItemCondition> itemConditions { get; set; }
-        public virtual DbSet<Department> Departments { get; set; }
-        public virtual DbSet<Room> Rooms { get; set; }
-        public virtual DbSet<Stocktake> Stocktakes { get; set; }
-        public virtual DbSet<StocktakeCheckedItem> StocktakeCheckedItems { get; set; }
-        public virtual DbSet<Setting> Settings { get; set; }
-        public virtual DbSet<HistoricalItem> HistoricalItems { get; set; }
+        public DbSet<InventoryItem> InventoryItems { get; set; }
+        public DbSet<AGD> AGD { get; set; }
+        public DbSet<Furniture> Furnitures { get; set; }
+        public DbSet<ItemType> ItemTypes { get; set; }
+        public DbSet<ItemCondition> itemConditions { get; set; }
+        public DbSet<Department> Departments { get; set; }
+        public DbSet<Room> Rooms { get; set; }
+        public DbSet<Stocktake> Stocktakes { get; set; }
+        public DbSet<StocktakeCheckedItem> StocktakeCheckedItems { get; set; }
+        public DbSet<Setting> Settings { get; set; }
+        public DbSet<HistoricalItem> HistoricalItems { get; set; }
 
         private string imagesPath = "";
 

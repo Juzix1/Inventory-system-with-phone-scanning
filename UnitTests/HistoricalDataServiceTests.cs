@@ -1,79 +1,86 @@
-// using System;
+using InventoryLibrary.Data;
+using InventoryLibrary.Services;
+using Microsoft.EntityFrameworkCore;
+using Moq;
+using InventoryLibrary.Services.Interfaces;
+using InventoryLibrary.Model.Inventory;
 
-// namespace Tests;
+namespace Tests
+{
+    public class HistoricalDataServiceTests : IDisposable
+    {
+        private readonly MyDbContext _context;
+        private readonly HistoricalDataService _service;
 
-// public class HistoricalDataServiceTests
-//     {
-//         private readonly Mock<MyDbContext> _mockContext;
-//         private readonly HistoricalDataService _service;
+        public HistoricalDataServiceTests()
+        {
+            var options = new DbContextOptionsBuilder<MyDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
 
-//         public HistoricalDataServiceTests()
-//         {
-//             _mockContext = new Mock<MyDbContext>();
-//             _service = new HistoricalDataService(_mockContext.Object);
-//         }
+            _context = new MyDbContext(options);
+            var logger = new Mock<IInventoryLogger<HistoricalDataService>>();
+            _service = new HistoricalDataService(_context, logger.Object);
+        }
 
-//         [Fact]
-//         public async Task GetAllHistoricalItemsAsync_ReturnsAllItems()
-//         {
-//             // Arrange
-//             var historicalItems = new List<HistoricalItem>
-//             {
-//                 new HistoricalItem { Id = 1, ItemName = "Deleted Item 1" },
-//                 new HistoricalItem { Id = 2, ItemName = "Deleted Item 2" }
-//             };
-            
-//             _mockContext.Setup(x => x.HistoricalItems).ReturnsDbSet(historicalItems);
+        [Fact]
+        public async Task GetAllHistoricalItemsAsync_ReturnsAllItems()
+        {
+            // Arrange
+            _context.HistoricalItems.AddRange(
+                new HistoricalItem { Id = 1, itemName = "Deleted Item 1" },
+                new HistoricalItem { Id = 2, itemName = "Deleted Item 2" }
+            );
+            await _context.SaveChangesAsync();
 
-//             // Act
-//             var result = await _service.GetAllHistoricalItemsAsync();
+            // Act
+            var result = await _service.GetAllHistoricalItemsAsync();
 
-//             // Assert
-//             result.Should().HaveCount(2);
-//         }
+            // Assert
+            Assert.Equal(2, result.Count());
+            Assert.Contains(result, x => x.itemName == "Deleted Item 1");
+        }
 
-//         [Fact]
-//         public async Task CreateHistoricalItemAsync_ValidItem_CreatesRecord()
-//         {
-//             // Arrange
-//             var inventoryItem = new InventoryItem
-//             {
-//                 Id = 1,
-//                 ItemName = "Test Item",
-//                 ItemPrice = 1000,
-//                 AddedDate = DateTime.Now
-//             };
+        [Fact]
+        public async Task CreateHistoricalItemAsync_ValidItem_CreatesRecord()
+        {
+            // Arrange
+            var inventoryItem = new InventoryItem
+            {
+                Id = 1,
+                itemName = "Test Item",
+                itemPrice = 1000,
+                addedDate = DateTime.Now
+            };
 
-//             _mockContext.Setup(x => x.HistoricalItems).ReturnsDbSet(new List<HistoricalItem>());
-//             _mockContext.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-//                        .ReturnsAsync(1);
+            // Act
+            var result = await _service.CreateHistoricalItemAsync(inventoryItem);
 
-//             // Act
-//             var result = await _service.CreateHistoricalItemAsync(inventoryItem);
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Test Item", result.itemName);
+        }
 
-//             // Assert
-//             result.Should().NotBeNull();
-//             result.ItemName.Should().Be("Test Item");
-//             _mockContext.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-//         }
+        [Fact]
+        public async Task DeleteHistoricalItemAsync_ExistingId_DeletesRecord()
+        {
+            // Arrange
+            var historicalItem = new HistoricalItem { Id = 1, itemName = "Test" };
+            _context.HistoricalItems.Add(historicalItem);
+            await _context.SaveChangesAsync();
 
-//         [Fact]
-//         public async Task DeleteHistoricalItemAsync_ExistingId_DeletesRecord()
-//         {
-//             // Arrange
-//             var historicalItems = new List<HistoricalItem>
-//             {
-//                 new HistoricalItem { Id = 1, ItemName = "Test" }
-//             };
-            
-//             _mockContext.Setup(x => x.HistoricalItems).ReturnsDbSet(historicalItems);
-//             _mockContext.Setup(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()))
-//                        .ReturnsAsync(1);
+            // Act
+            await _service.DeleteHistoricalItemAsync(1);
 
-//             // Act
-//             await _service.DeleteHistoricalItemAsync(1);
+            // Assert
+            var allItems = await _context.HistoricalItems.ToListAsync();
+            Assert.Empty(allItems);
+        }
 
-//             // Assert
-//             _mockContext.Verify(x => x.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-//         }
-//     }
+        public void Dispose()
+        {
+            _context.Database.EnsureDeleted();
+            _context.Dispose();
+        }
+    }
+}

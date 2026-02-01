@@ -14,7 +14,7 @@ public class AccountsServiceTests : IDisposable
 {
     private readonly MyDbContext _context;
     private readonly Mock<IPasswordService> _mockPasswordService;
-    private readonly AccountsService _service;
+    private readonly IAccountsService _service;
     private readonly Mock<IInventoryLogger<AccountsService>> _mockLogger;
 
 
@@ -99,9 +99,6 @@ public class AccountsServiceTests : IDisposable
             .Returns(true);
 
         account.PasswordHash = _mockPasswordService.Object.Hash(password);
-
-
-
         // Act
         var result = await _service.CreateAccountAsync(account);
 

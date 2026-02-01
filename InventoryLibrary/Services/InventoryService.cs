@@ -44,6 +44,10 @@ namespace InventoryLibrary.Services
             try
             {
                 var item = await _context.InventoryItems.FindAsync(id);
+                if(item == null)
+                {
+                    throw new KeyNotFoundException("The item with this id doesnt exist");
+                }
                 return item;
             }
             catch (Exception ex)
@@ -60,6 +64,10 @@ namespace InventoryLibrary.Services
                 if (item == null)
                 {
                     throw new ArgumentNullException(nameof(item));
+                }
+                if (item.itemName == null || item.itemName.IsNullOrEmpty())
+                {
+                    throw new ArgumentException("Item name can't be empty");
                 }
                 item.addedDate = DateTime.Now;
                 item.lastInventoryDate = DateTime.Now;

@@ -12,7 +12,7 @@ namespace InventorySystem.Tests.Services;
 public class AnalyticsServiceTests : IDisposable
 {
     private readonly MyDbContext _context;
-    private readonly AnalyticsService _service;
+    private readonly IAnalyticsService _service;
 
     public AnalyticsServiceTests()
     {
@@ -193,7 +193,7 @@ public async Task GetMonthlyItemsCreated_ReturnsCorrectMonthlyData()
 public async Task GetItemsByCategory_GroupsItemsCorrectly()
 {
     // Arrange
-     var department = new Department { Id = 1, DepartmentName = "Test Dept", DepartmentLocation = "Building A" };
+    var department = new Department { Id = 1, DepartmentName = "Test Dept", DepartmentLocation = "Building A" };
     var room = new Room { Id = 1, RoomName = "Test Room", DepartmentId = 1 };
     _context.Departments.Add(department);
     _context.Rooms.Add(room);

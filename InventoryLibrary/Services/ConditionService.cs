@@ -21,7 +21,7 @@ public class ConditionService : IConditionService
 
         try
         {
-            if (!await _context.ItemTypes.AnyAsync())
+            if (!await _context.itemConditions.AnyAsync())
             {
                 return new List<ItemCondition>();
             }
