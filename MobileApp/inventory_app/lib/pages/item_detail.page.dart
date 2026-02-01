@@ -7,8 +7,9 @@ import 'package:inventory_app/services/apiservice.dart';
 class ItemDetailPage extends StatefulWidget {
   final InventoryItem item;
   final ApiService api;
+  final List<ItemCondition>? conditions;
 
-  const ItemDetailPage({super.key, required this.item, required this.api});
+  const ItemDetailPage({super.key, required this.item, required this.api, this.conditions});
 
   @override
   State<ItemDetailPage> createState() => _ItemDetailPageState();
@@ -17,11 +18,38 @@ class ItemDetailPage extends StatefulWidget {
 class _ItemDetailPageState extends State<ItemDetailPage> {
   late InventoryItem currentItem;
   bool isLoading = false;
+  List<ItemCondition>? allConditions;
 
   @override
   void initState() {
     super.initState();
     currentItem = widget.item;
+    _loadConditions();
+  }
+
+  Future<void> _loadConditions() async {
+    final conditions = await widget.api.getAllConditions();
+    if (mounted) {
+      setState(() {
+        allConditions = conditions;
+      });
+    }
+  }
+
+  String _getConditionName(int? conditionId) {
+    if (conditionId == null || allConditions == null) {
+      return conditionId?.toString() ?? 'N/A';
+    }
+    
+    final condition = allConditions!.firstWhere(
+      (c) => c.id == conditionId,
+      orElse: () => ItemCondition(
+        id: conditionId,
+        conditionName: 'Unknown',
+      ),
+    );
+    
+    return condition.conditionName;
   }
 
   Widget _buildItemImage(BuildContext context) {
@@ -109,7 +137,6 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
       ),
     );
   }
-
   Future<void> _showEditConditionDialog() async {
     final conditions = await widget.api.getAllConditions();
     if (conditions == null || conditions.isEmpty) {
@@ -248,7 +275,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
       );
 
       setState(() {
-        currentItem = updatedItem;
+        currentItem = updatedItem; 
         isLoading = false;
       });
 
@@ -462,7 +489,7 @@ class _ItemDetailPageState extends State<ItemDetailPage> {
                         if (currentItem.itemConditionId != null)
                           _buildDetailRow(
                             'Condition',
-                            currentItem.itemConditionId.toString(),
+                            _getConditionName(currentItem.itemConditionId),
                             context,
                           ),
                         _buildDetailRow(
