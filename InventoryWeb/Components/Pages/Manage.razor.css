@@ -202,21 +202,18 @@
     margin-bottom: 0;
 }
 
-/* Loading Container */
 .loading-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
 }
 
-/* Grouped Items Container */
 .grouped-items-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 1.5rem;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .manage-container {
         padding: 1rem 0.5rem;
