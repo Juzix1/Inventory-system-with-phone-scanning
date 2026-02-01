@@ -18,11 +18,11 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div class="page-header mb-4">
-        <h2 style="font-weight:bold;padding:5px;">
-            <Icon Name="IconName.BoxSeamFill" Size="IconSize.x3" />
-            Manage Inventory
-        </h2>
-    </div>
+            <h2 style="font-weight:bold;padding:5px;">
+                <Icon Name="IconName.BoxSeamFill" Size="IconSize.x3" />
+                Manage Inventory
+            </h2>
+        </div>
         <button class="btn btn-primary btn-lg" @onclick="ShowCreateModal">
             <i class="bi bi-plus-circle"></i> New Stocktake
         </button>
@@ -41,56 +41,24 @@
         <!-- Statystyki KPI -->
         <div class="row g-3 mb-4">
             <div class="col-xl-3 col-md-6">
-                <div class="card border-1 h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-shrink-0 bg-primary bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-clipboard-data fs-3 text-primary"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <p class="text-muted mb-1 small">All</p>
-                            <h3 class="mb-0">@allStocktakes.Count</h3>
-                        </div>
-                    </div>
+                <SmallBoxStat Title="All" value="@allStocktakes.Count.ToString()" icon="IconName.Clipboard2DataFill"
+                    color="#5591fa" />
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="flex-grow-1 ms-3">
+                    <SmallBoxStat Title="In Progress"
+                        value="@allStocktakes.Count(s => s.Status == StockTakeStatus.InProgress).ToString()"
+                        icon="IconName.Hourglass" color="#ffc64b" />
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="card border-1 h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-shrink-0 bg-warning bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-hourglass-split fs-3 text-warning"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <p class="text-muted mb-1 small">In Progress</p>
-                            <h3 class="mb-0">@allStocktakes.Count(s => s.Status == StockTakeStatus.InProgress)</h3>
-                        </div>
-                    </div>
-                </div>
+                <SmallBoxStat Title="Completed"
+                    value="@allStocktakes.Count(s => s.Status == StockTakeStatus.Completed).ToString()"
+                    icon="IconName.CheckCircleFill" color="#42986c" />
             </div>
             <div class="col-xl-3 col-md-6">
-                <div class="card border-1 h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-shrink-0 bg-success bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-check-circle fs-3 text-success"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <p class="text-muted mb-1 small">Completed</p>
-                            <h3 class="mb-0">@allStocktakes.Count(s => s.Status == StockTakeStatus.Completed)</h3>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-md-6">
-                <div class="card border-1 h-100">
-                    <div class="card-body d-flex align-items-center">
-                        <div class="flex-shrink-0 bg-info bg-opacity-10 rounded-3 p-3">
-                            <i class="bi bi-percent fs-3 text-info"></i>
-                        </div>
-                        <div class="flex-grow-1 ms-3">
-                            <p class="text-muted mb-1 small">Effectiveness</p>
-                            <h3 class="mb-0">@GetCompletionRate()%</h3>
-                        </div>
-                    </div>
-                </div>
+                <SmallBoxStat Title="Success Rate" value="@($"{GetCompletionRate()}%")" icon="IconName.Percent"
+                    color="#2bb0cb" />
             </div>
         </div>
 
@@ -150,7 +118,8 @@
                                     <small class="badge bg-light text-dark">@progress%</small>
                                 </div>
                                 <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar @GetProgressBarClass(progress)" style="width: @progress%"></div>
+                                    <div class="progress-bar @GetProgressBarClass(progress)" style="width: @progress%">
+                                    </div>
                                 </div>
                                 <small class="text-muted">
                                     @GetAssignedCount(stocktake.Id) / @stocktake.AllItems items
@@ -212,7 +181,7 @@
         <div class="card border-1">
             <div class="card-header bg-white">
                 <h5 class="mb-0">
-                    <i class="bi bi-exclamation-triangle text-warning"></i>
+                    <Icon Name="IconName.ExclamationTriangleFill" />
                     Items Needing Inventory Check
                 </h5>
             </div>
@@ -286,7 +255,8 @@
                             <label class="form-label">Items filter</label>
                             <select class="form-select" @bind="itemFilterType" @bind:after="UpdateFilteredItems">
                                 <option value="all">All (@allItems.Count)</option>
-                                <option value="overdue">Overdue (@allItems.Count(i => (DateTime.Now - i.lastInventoryDate).Days
+                                <option value="overdue">Overdue (@allItems.Count(i => (DateTime.Now -
+                                                                i.lastInventoryDate).Days
                                                                 > 180))</option>
                         <option value="critical">Critical (@allItems.Count(i => (DateTime.Now -
                                                         i.lastInventoryDate).Days > 365))</option>
@@ -470,7 +440,8 @@
 
     private string GetRowClass(int days) => days > 365 ? "table-danger" : days > 180 ? "table-warning" : "";
     private string GetDaysBadgeClass(int days) => days > 365 ? "bg-danger" : days > 180 ? "bg-warning" : "bg-success";
-    private string GetPriorityBadgeClass(int days) => days > 365 ? "bg-danger" : days > 180 ? "bg-warning" : "bg-success";
+    private string GetPriorityBadgeClass(int days) => days > 365 ? "bg-danger" : days > 180 ? "bg-warning" :
+    "bg-success";
     private string GetPriorityText(int days) => days > 365 ? "Critical" : days > 180 ? "High" : "Normal";
 
     private void ShowCreateModal()
