@@ -1,6 +1,7 @@
 ﻿@using InventoryLibrary.Model.Inventory
 @using InventoryLibrary.Services
 @using InventoryLibrary.Services.Interfaces
+@using InventoryWeb.Models
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.EntityFrameworkCore.Metadata.Internal
 @using Microsoft.IdentityModel.Tokens
@@ -112,9 +113,6 @@
             }
         </InputSelect>
     </div>
-    @* add person assignment *@
-
-
 
     <div class="itemForm_buttons">
         <div class="mt-3">
@@ -161,7 +159,6 @@
         conditions = (await conditionService.GetAllItemConditions()).ToList();
         oldImagePath = Model.imagePath;
 
-        // load rooms filtered by chosen department setting
         try
         {
             var settings = await SettingsService.GetSettings();
@@ -225,8 +222,6 @@
             {
                 item = await inventoryService.CreateItemAsync(Model);
             }
-
-            // After successful save, delete previously replaced image (if any)
             if (!string.IsNullOrEmpty(pendingOldImageToDelete))
             {
                 await imageService.DeleteImageAsync(pendingOldImageToDelete);
@@ -286,7 +281,6 @@
 
             if (result.Success)
             {
-                // track uploaded file until user confirms save
                 pendingUploadedImage = result.ImageId;
 
                 if (!string.IsNullOrEmpty(Model.imagePath) && Model.imagePath != pendingUploadedImage)
@@ -307,8 +301,6 @@
     private async Task HandlePersonSearch(ChangeEventArgs e)
     {
         personSearchQuery = e.Value?.ToString() ?? string.Empty;
-
-        // Debounce the search
         searchDebounceTimer?.Dispose();
 
         if (string.IsNullOrWhiteSpace(personSearchQuery))
@@ -366,7 +358,7 @@
         selectedPerson = person;
         personSearchQuery = $"{person.IndexNumber} - {person.FullName}";
         showPersonSuggestions = false;
-        Model.PersonInChargeId = person.Id; // Add this property to your model
+        Model.PersonInChargeId = person.Id;
     }
 
     private void ClearSelectedPerson()
@@ -381,13 +373,7 @@
         searchDebounceTimer?.Dispose();
     }
 
-    // DTO class
-    public class PersonDto
-    {
-        public int Id { get; set; }
-        public string IndexNumber { get; set; } = string.Empty; // This will display the ID as string
-        public string FullName { get; set; } = string.Empty;
-    }
-    /////
+    
+
 
 }

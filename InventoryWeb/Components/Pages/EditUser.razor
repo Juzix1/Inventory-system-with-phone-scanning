@@ -77,7 +77,7 @@ else
             try{
                 user = await AccountsService.GetAccountByIdAsync(UserId.Value);
             }catch(Exception ex){
-                Console.WriteLine(ex.Message);
+                
                 errorMessage += $"\n{ex.Message}";
             }
         }

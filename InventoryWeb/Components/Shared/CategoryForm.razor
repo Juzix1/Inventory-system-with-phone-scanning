@@ -98,9 +98,6 @@
         case CategoryFormMode.Types:
             <TypeEditForm OnClose="@hideEditFormDialog" OnSubmit="@ChangeTitle" Name="@(Items[Id])"/>
             break;
-         @* case CategoryFormMode.Conditions:
-            <ConditionEditForm></ConditionEditForm>
-            break; *@
         case CategoryFormMode.Departments:
             navigation.NavigateTo($"/categories/Edit-Department/{Id}");
             break;

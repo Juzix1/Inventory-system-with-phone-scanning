@@ -44,7 +44,6 @@
     }
     else
     {
-        <!-- Statystyki KPI -->
         <div class="row g-3 mb-4">
             <div class="col-xl-3 col-md-6">
                 <SmallBoxStat Title="All" value="@allStocktakes.Count.ToString()" icon="IconName.Clipboard2DataFill"
@@ -67,8 +66,6 @@
                               color="#2bb0cb" />
             </div>
         </div>
-
-        <!-- Filtry -->
         <div class="card border-1 mb-4">
             <div class="card-body">
                 <div class="row g-3 align-items-end">
@@ -99,8 +96,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Lista inwentaryzacji -->
         <div class="row g-3 mb-4">
             @foreach (var stocktake in filteredStocktakes)
             {
@@ -224,8 +219,6 @@
     
 </div>
 
-
-<!-- Modal tworzenia -->
 @if (showCreateModal)
 {
     <div class="modal show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">

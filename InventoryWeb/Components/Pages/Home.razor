@@ -29,7 +29,6 @@ else if (hasError)
 else
 {
     <div class="container-fluid pt-3">
-        <!-- Key Metrics Row -->
         <div class="row mb-4">
             <div class="col-xl-3 col-md-6 mb-3">
                 <SmallBoxStat Title="Total Items" value="@stats.TotalItems.ToString()" Icon=IconName.Box2Fill
@@ -126,8 +125,6 @@ else
             </div>
         </div>
     </div>
-
-    <!-- Critical Items Alert -->
     @if (withoutInventoryData?.CriticalItems?.Any() == true)
     {
         <div class="row mb-4 px-2">
@@ -165,8 +162,6 @@ else
             </div>
         </div>
     }
-
-    <!-- Top Lost Categories -->
     @if (itemLossData?.TopLostCategories?.Any() == true)
     {
         <div class="row mb-4 px-2">
@@ -216,16 +211,12 @@ else
     private MonthlyItemLossData? itemLossData;
     private ItemConditionDistributionData? conditionData;
     private AssetValueTrendData? assetValueData;
-
-    // Chart data objects
     private ChartData? itemsCreatedChartData;
     private ChartData? categoryPieChartData;
     private ChartData? withoutInventoryChartData;
     private ChartData? itemLossChartData;
     private ChartData? conditionPieChartData;
     private ChartData? assetValueChartData;
-
-    // Chart options
     private LineChartOptions? itemsCreatedOptions;
     private PieChartOptions? categoryPieOptions;
     private BarChartOptions? withoutInventoryOptions;
@@ -261,7 +252,7 @@ else
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Error: {e.Message}");
+            Console.WriteLine($"Error: {e.Message}"); //poprawić na show message
             hasError = true;
         }
         finally

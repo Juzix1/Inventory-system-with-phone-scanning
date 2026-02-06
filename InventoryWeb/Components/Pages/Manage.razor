@@ -17,21 +17,17 @@
 
 
 <div class="manage-container">
-    <!-- Header Section -->
     <div class="page-header mb-4">
         <h2 class="page-title">
             <Icon Name="IconName.BoxSeamFill" Size="IconSize.x3" />
             Manage Inventory
         </h2>
     </div>
-
-    <!-- Filters Card -->
     <div class="filters-card">
 
 
         <div class="filters-body">
             <div class="row g-3">
-                <!-- Search -->
                 <div class="col-lg-4 col-md-6 col-sm-12">
                     <label class="form-label">
                         <Icon Name="IconName.Search" Size="IconSize.x4" />
@@ -44,8 +40,6 @@
                                   Placeholder="Type to search inventory items..."
                                   OnChanged="(InventoryItem item) => OnAutoCompleteChanged(item)" />
                 </div>
-
-                <!-- Sort -->
                 <div class="col-lg-4 col-md-6 col-sm-12">
                     <label class="form-label">
                         <Icon Name="IconName.SortDown" Size="IconSize.x4" />
@@ -74,8 +68,6 @@
                         </optgroup>
                     </select>
                 </div>
-
-                <!-- View Mode Toggle -->
                 <div class="col-lg-2 col-md-6 col-sm-12">
                     <label class="form-label">View Mode</label>
                     <div class="view-mode-toggle">
@@ -92,8 +84,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Create New Button -->
                 <div class="col-lg-2 col-md-6 col-sm-12">
                     <label class="form-label d-none d-lg-block">&nbsp;</label>
                     <button class="btn btn-primary w-100" @onclick='() => { Nav.NavigateTo("/create"); }'>
@@ -107,8 +97,6 @@
                 Reset All
             </button>
         </div>
-
-        <!-- Active Filters Display -->
         @if (!string.IsNullOrEmpty(currentSort) || !string.IsNullOrEmpty(ItemName) || showAllItems)
         {
             <div class="active-filters">
@@ -136,8 +124,6 @@
             </div>
         }
     </div>
-
-    <!-- Content Area -->
     <div class="content-area">
         @if (isLoading)
         {

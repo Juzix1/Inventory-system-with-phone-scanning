@@ -2,6 +2,7 @@
 @using InventoryLibrary.Services
 @using InventoryLibrary.Services.Interfaces
 @using InventoryLibrary.Services.data
+@using InventoryWeb.Models
 @using Microsoft.IdentityModel.Tokens
 @inject ILogger<BaseEditForm> Logger
 @inject IInventoryService inventoryService
@@ -229,14 +230,6 @@
         searchDebounceTimer?.Dispose();
     }
 
-    // DTO class
-    public class PersonDto
-    {
-        public int Id { get; set; }
-        public string IndexNumber { get; set; } = string.Empty; // This will display the ID as string
-        public string FullName { get; set; } = string.Empty;
-    }
-    /////
 
 
     protected override async Task OnInitializedAsync()
@@ -249,7 +242,6 @@
         conditions = (await conditionService.GetAllItemConditions()).ToList();
         oldImagePath = Model.imagePath;
 
-        // Load chosen department ID from settings and rooms for that department
         try
         {
             var settings = await SettingsService.GetSettings();
@@ -288,7 +280,6 @@
             }
         }
 
-        // Check if this is an update or create
         if (!string.IsNullOrEmpty(Model.itemName) && Model.Id > 0)
         {
             IsUpdating = true;
@@ -326,10 +317,7 @@
 
             if (result.Success)
             {
-                // Keep uploaded image locally until user confirms save.
                 pendingUploadedImage = result.ImageId;
-
-                // If there was an existing image and it's different, schedule it for deletion after successful save
                 if (!string.IsNullOrEmpty(Model.imagePath) && Model.imagePath != pendingUploadedImage)
                 {
                     pendingOldImageToDelete = Model.imagePath;
@@ -362,17 +350,13 @@
             {
                 item = await inventoryService.CreateItemAsync(Model);
             }
-
-
             
-            // After successful save, delete previously replaced image (if any)
             if (!string.IsNullOrEmpty(pendingOldImageToDelete))
             {
                 await imageService.DeleteImageAsync(pendingOldImageToDelete);
                 pendingOldImageToDelete = null;
             }
 
-            // clear pending uploaded marker
             pendingUploadedImage = null;
 
             navigationManager.NavigateTo("/manage");

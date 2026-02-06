@@ -60,8 +60,6 @@ else
         <p><em>No rooms assigned.</em></p>
     }
 
-    @* Room creation moved to CategoryForm / RoomEditForm. *@
-
     <h5>Assign Existing Unassigned Room</h5>
     @if (availableRooms?.Any() == true)
     {
@@ -149,7 +147,6 @@ else
         }
     }
 
-    // room creation removed from DepartmentEditForm (handled in CategoryForm / RoomEditForm)
 
     private async Task AssignSelectedRoom()
     {

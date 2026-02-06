@@ -24,7 +24,6 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Inicjalizuj wykres tylko raz, gdy dane są dostępne
         if (!initialized && ChartData != null && ChartOptions != null)
         {
             try
