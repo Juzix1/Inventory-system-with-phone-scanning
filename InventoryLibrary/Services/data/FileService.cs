@@ -156,7 +156,7 @@ public class FileService : IFileService
 
         try
         {
-            // ItemType (kolumna 1)
+            // ItemType
             var itemTypeName = GetCellValue(worksheet, row, 1);
             if (!string.IsNullOrWhiteSpace(itemTypeName) &&
                 itemTypes.TryGetValue(itemTypeName.ToLower(), out var itemType))
@@ -170,14 +170,14 @@ public class FileService : IFileService
                 return result;
             }
 
-            // ItemName (kolumna 2)
+            // ItemName
             item.itemName = GetCellValue(worksheet, row, 2);
             if (string.IsNullOrWhiteSpace(item.itemName))
             {
                 result.Errors.Add("ItemName is required");
             }
 
-            // Condition (kolumna 4)
+            // Condition
             var conditionName = GetCellValue(worksheet, row, 4);
             if (!string.IsNullOrWhiteSpace(conditionName) &&
                 itemConditions.TryGetValue(conditionName.ToLower(), out var condition))
@@ -185,19 +185,19 @@ public class FileService : IFileService
                 item.ItemCondition = condition;
             }
 
-            // Weight (kolumna 5)
+            // Weight
             if (double.TryParse(GetCellValue(worksheet, row, 5), out var weight))
             {
                 item.itemWeight = weight;
             }
 
-            // Price (kolumna 6)
+            // Price
             if (double.TryParse(GetCellValue(worksheet, row, 6), out var price))
             {
                 item.itemPrice = price;
             }
 
-            // AddedDate (kolumna 7)
+            // AddedDate
             if (DateTime.TryParse(GetCellValue(worksheet, row, 7), out var addedDate))
             {
                 item.addedDate = addedDate;
@@ -207,19 +207,19 @@ public class FileService : IFileService
                 item.addedDate = DateTime.Now;
             }
 
-            // WarrantyEnd (kolumna 8)
+            // WarrantyEnd
             if (DateTime.TryParse(GetCellValue(worksheet, row, 8), out var warrantyEnd))
             {
                 item.warrantyEnd = warrantyEnd;
             }
 
-            // LastInventoryDate (kolumna 9)
+            // LastInventoryDate
             if (DateTime.TryParse(GetCellValue(worksheet, row, 9), out var lastInventory))
             {
                 item.lastInventoryDate = lastInventory;
             }
 
-            // PersonEmail (kolumna 15)
+            // PersonEmail
             var personEmail = GetCellValue(worksheet, row, 15);
             if (!string.IsNullOrWhiteSpace(personEmail) &&
                 accounts.TryGetValue(personEmail.ToLower(), out var account))
@@ -227,7 +227,7 @@ public class FileService : IFileService
                 item.personInCharge = account;
             }
 
-            // RoomName (kolumna 16)
+            // RoomName
             var roomName = GetCellValue(worksheet, row, 16);
             if (!string.IsNullOrWhiteSpace(roomName) &&
                 rooms.TryGetValue(roomName.ToLower(), out var room))
@@ -235,7 +235,7 @@ public class FileService : IFileService
                 item.Location = room;
             }
 
-            // Description (kolumna 17)
+            // Description
             item.itemDescription = GetCellValue(worksheet, row, 17);
 
             result.IsSuccess = !result.Errors.Any();
@@ -310,8 +310,6 @@ public class FileService : IFileService
         }
 
         var items = new List<InventoryItem>();
-
-        // Przykładowy ItemType i Condition
         var generalType = new ItemType { Id = 1, TypeName = "NoType" };
         var furnitureType = new ItemType { Id = 3, TypeName = "Furniture" };
         var electronicsType = new ItemType { Id = 2, TypeName = "AGD" };
@@ -327,7 +325,6 @@ public class FileService : IFileService
         var room2 = new Department { DepartmentName = "Wydział Robotyki", Rooms = new List<Room> { new Room { RoomName = "Sala 112" } } };
         var room3 = new Department { DepartmentName = "Wydział Prawa", Rooms = new List<Room> { new Room { RoomName = "Aula15" } } };
 
-        // 1. Laptop Dell
         items.Add(new AGD
         {
             ItemType = electronicsType,
@@ -347,7 +344,6 @@ public class FileService : IFileService
             itemDescription = "High-performance business laptop for development work"
         });
 
-        // 2. Desktop HP
         items.Add(new AGD
         {
             ItemType = electronicsType,
@@ -405,7 +401,6 @@ public class FileService : IFileService
         switch (item)
         {
             case AGD agd:
-                //AGD
                 worksheet.Cells[column, 10].Value = $"{agd.ModelName}";
                 worksheet.Cells[column, 11].Value = $"{agd.CPU}";
                 worksheet.Cells[column, 12].Value = $"{agd.RAM}";
@@ -413,7 +408,6 @@ public class FileService : IFileService
                 worksheet.Cells[column, 14].Value = $"{agd.Graphics}";
                 break;
             case Furniture furniture:
-                //Meble
                 worksheet.Cells[column, 10].Value = $"{furniture.FurnitureType}";
 
                 break;

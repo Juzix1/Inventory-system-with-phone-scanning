@@ -28,7 +28,6 @@ namespace InventoryLibrary.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Account configuration
             modelBuilder.Entity<Account>()
                 .ToTable("Accounts")
                 .Property(a => a.Id)
@@ -55,13 +54,11 @@ namespace InventoryLibrary.Data
                     .HasForeignKey(i => i.StocktakeId)
                     .OnDelete(DeleteBehavior.SetNull);
 
-                // Relacja one-to-many z StocktakeCheckedItem
                 entity.HasMany(s => s.CheckedItems)
                     .WithOne(ci => ci.Stocktake)
                     .HasForeignKey(ci => ci.StocktakeId)
                     .OnDelete(DeleteBehavior.Cascade);
 
-                // Relacja many-to-many z Account (AuthorizedAccounts)
                 entity.HasMany(s => s.AuthorizedAccounts)
                     .WithMany()
                     .UsingEntity<Dictionary<string, object>>(
@@ -76,24 +73,20 @@ namespace InventoryLibrary.Data
                             .OnDelete(DeleteBehavior.Cascade)
                     );
 
-                // Indeksy dla lepszej wydajności
                 entity.HasIndex(s => s.Status);
                 entity.HasIndex(s => s.StartDate);
                 entity.HasIndex(s => s.EndDate);
             });
 
-            // StocktakeCheckedItem configuration
             modelBuilder.Entity<StocktakeCheckedItem>(entity =>
             {
                 entity.ToTable("StocktakeCheckedItems");
 
-                // Composite index for better query performance
                 entity.HasIndex(ci => new { ci.StocktakeId, ci.InventoryItemId })
                     .IsUnique();
 
                 entity.HasIndex(ci => ci.CheckedDate);
 
-                // Default value for CheckedDate
                 entity.Property(ci => ci.CheckedDate)
                     .HasDefaultValueSql("GETDATE()");
             });

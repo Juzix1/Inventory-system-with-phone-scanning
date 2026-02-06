@@ -183,7 +183,6 @@ namespace InventoryLibrary.Services
             return existingAccount == null;
         }
 
-        // do wywalenia bo i tak inaczej to będzie się sprawdzało 
         public async Task<bool> CanAccessScanner(int accountId)
         {
             var account = await _context.Accounts.FindAsync(accountId);

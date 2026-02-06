@@ -15,7 +15,6 @@ public class LocationService : ILocationService
         _logger = logger;
     }
 
-    // Departments
     public async Task<IEnumerable<Department>> GetAllDepartmentsAsync()
     {
         return await _context.Departments.Include(d => d.Rooms).ToListAsync();
@@ -82,7 +81,6 @@ public class LocationService : ILocationService
         }
     }
 
-    // Rooms
     public async Task<IEnumerable<Room>> GetAllRoomsAsync()
     {
         return await _context.Rooms.Include(r => r.Department).ToListAsync();

@@ -25,7 +25,6 @@ namespace InventoryLibrary.Model.Inventory {
         public DateTime warrantyEnd { get; set; }
 
         public DateTime lastInventoryDate { get; set; }
-        //when in charge is null, item is assigned to room
         public int? PersonInChargeId { get; set; }
         public Account? personInCharge { get; set; }
         public int? RoomId { get; set; }

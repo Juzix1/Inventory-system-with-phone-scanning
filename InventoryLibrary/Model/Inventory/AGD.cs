@@ -8,6 +8,5 @@
         public string Storage { get; set; }
         public string Graphics { get; set; }
 
-        // Add serial number and isbn for books (if needed)
     }
 }

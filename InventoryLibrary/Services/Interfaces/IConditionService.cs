@@ -6,5 +6,4 @@ namespace InventoryLibrary.Services.Interfaces;
 public interface IConditionService
 {
     Task<IEnumerable<ItemCondition>> GetAllItemConditions();
-
 }

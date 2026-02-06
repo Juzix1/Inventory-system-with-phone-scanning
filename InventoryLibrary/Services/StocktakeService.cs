@@ -42,7 +42,7 @@ public class StocktakeService : IStocktakeService
                 AllItems = items.Count,
                 ItemsToCheck = items,
                 AuthorizedAccounts = authorizedAccounts ?? new List<Account>(),
-                CheckedItems = new List<StocktakeCheckedItem>() // Nowa kolekcja
+                CheckedItems = new List<StocktakeCheckedItem>()
             };
             _context.Stocktakes.Add(stocktake);
             await _context.SaveChangesAsync();
@@ -54,8 +54,6 @@ public class StocktakeService : IStocktakeService
             throw;
         }
     }
-
-    // Stara nazwa metody dla kompatybilności
     public async Task CreateNewStocktake(List<InventoryItem> items, DateTime? startDate, DateTime endDate)
     {
         await CreateNewStocktake(
@@ -77,7 +75,7 @@ public class StocktakeService : IStocktakeService
                     .ThenInclude(i => i.Location)
                 .Include(s => s.ItemsToCheck)
                     .ThenInclude(i => i.ItemType)
-                .Include(s => s.CheckedItems) // Nowa kolekcja
+                .Include(s => s.CheckedItems)
                 .Include(s => s.AuthorizedAccounts)
                 .OrderByDescending(s => s.CreatedDate)
                 .ToListAsync();
@@ -105,7 +103,7 @@ public class StocktakeService : IStocktakeService
                     .ThenInclude(i => i.ItemCondition)
                 .Include(s => s.ItemsToCheck)
                     .ThenInclude(i => i.Location.Department)
-                .Include(s => s.CheckedItems) // Nowa kolekcja
+                .Include(s => s.CheckedItems)
                 .Include(s => s.AuthorizedAccounts)
                 .Where(i => i.EndDate > DateTime.Now)
                 .Where(a => a.AuthorizedAccounts.Any(a => a.Id == id))
@@ -133,7 +131,7 @@ public class StocktakeService : IStocktakeService
                     .ThenInclude(i => i.ItemCondition)
                 .Include(s => s.ItemsToCheck)
                     .ThenInclude(i => i.personInCharge)
-                .Include(s => s.CheckedItems) // Nowa kolekcja
+                .Include(s => s.CheckedItems)
                 .Include(s => s.AuthorizedAccounts)
                 .FirstOrDefaultAsync(s => s.Id == id);
 
@@ -165,7 +163,6 @@ public class StocktakeService : IStocktakeService
             if (existingStocktake == null)
                 throw new KeyNotFoundException($"Stocktake with Id {stocktake.Id} not found");
 
-            // Aktualizacja podstawowych właściwości
             existingStocktake.Name = stocktake.Name;
             existingStocktake.Description = stocktake.Description;
             existingStocktake.StartDate = stocktake.StartDate;
@@ -229,13 +226,11 @@ public class StocktakeService : IStocktakeService
             if (item == null)
                 throw new KeyNotFoundException($"Item with id {itemId} not found in stocktake {stocktakeId}");
 
-            // Sprawdź czy już nie jest oznaczony
             var existingCheck = await _context.StocktakeCheckedItems
                 .FirstOrDefaultAsync(ci => ci.StocktakeId == stocktakeId && ci.InventoryItemId == itemId);
 
             if (existingCheck == null)
             {
-                // Dodaj nowy wpis do tabeli StocktakeCheckedItems
                 var checkedItem = new StocktakeCheckedItem
                 {
                     StocktakeId = stocktakeId,
@@ -245,8 +240,6 @@ public class StocktakeService : IStocktakeService
                 };
 
                 _context.StocktakeCheckedItems.Add(checkedItem);
-
-                // Aktualizuj datę ostatniej inwentaryzacji
                 item.lastInventoryDate = DateTime.Now;
 
                 await _context.SaveChangesAsync();
@@ -254,7 +247,6 @@ public class StocktakeService : IStocktakeService
                 _logger?.LogInfo($"Marked item {itemId} as checked in stocktake {stocktakeId}" +
                                  (checkedBy != null ? $" by {checkedBy}" : ""));
 
-                // Auto-ukończenie jeśli wszystkie przedmioty sprawdzone
                 var checkedCount = await GetCheckedItemsCount(stocktakeId);
                 if (checkedCount == stocktake.AllItems)
                 {
@@ -273,7 +265,6 @@ public class StocktakeService : IStocktakeService
         }
     }
 
-    // Stara nazwa metody dla kompatybilności
     public async Task MarkItem(int id, InventoryItem item)
     {
         await MarkItemAsChecked(id, item.Id);
@@ -465,7 +456,6 @@ public class StocktakeService : IStocktakeService
             if (stocktake.Status != StockTakeStatus.InProgress)
                 throw new InvalidOperationException("Cannot mark items in a stocktake that is not in progress");
 
-            // Pobierz już sprawdzone przedmioty
             var existingCheckedIds = await _context.StocktakeCheckedItems
                 .Where(ci => ci.StocktakeId == stocktakeId && itemIds.Contains(ci.InventoryItemId))
                 .Select(ci => ci.InventoryItemId)
@@ -486,7 +476,6 @@ public class StocktakeService : IStocktakeService
 
                 await _context.StocktakeCheckedItems.AddRangeAsync(checkedItems);
 
-                // Aktualizuj daty ostatniej inwentaryzacji
                 var items = await _context.InventoryItems
                     .Where(i => itemsToCheck.Contains(i.Id))
                     .ToListAsync();
@@ -501,7 +490,6 @@ public class StocktakeService : IStocktakeService
                 _logger?.LogInfo($"Marked {itemsToCheck.Count} items as checked in stocktake {stocktakeId}" +
                                  (checkedBy != null ? $" by {checkedBy}" : ""));
 
-                // Auto-ukończenie jeśli wszystkie przedmioty sprawdzone
                 var totalChecked = await GetCheckedItemsCount(stocktakeId);
                 if (totalChecked == stocktake.AllItems)
                 {
