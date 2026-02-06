@@ -5,9 +5,12 @@
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.IdentityModel.Tokens
 @inject IAccountsService accountService;
 @inject NavigationManager nav;
 <PageTitle>Inventory Management</PageTitle>
+
+
 <div class="row">
     <div class="col-lg-4 offset-lg-4 pt-4 pb-4 border">
         <EditForm Model="@Model" OnValidSubmit="Authenticate" FormName="LoginForm">
@@ -25,28 +28,32 @@
                 <InputText @bind-Value="Model.Password" placeholder="Password" type="password" class="form-control" />
                 <ValidationMessage For="() => Model.Password" />
             </div>
-            
-            <div class="mb-3 d-grid gap-2">
-                <button type="submit" class="btn btn-primary">Login</button>
-            </div>
-        </EditForm>
-            @if (!string.IsNullOrEmpty(errorMessage))
+            @if (isLoading)
             {
-                <div class="mb-3 text-center">
-                    <Alert Color="AlertColor.Danger">@errorMessage</Alert>
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
                 </div>
             }
+            else
+            {
+                <div class="mb-3 d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                </div>
+            }
+        </EditForm>
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="mb-3 text-center">
+                <Alert Color="AlertColor.Danger">@errorMessage</Alert>
+            </div>
+        }
     </div>
 
-    @if (isLoading)
-    {
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </div>
-    }
+
 </div>
+
 
 
 
@@ -68,16 +75,20 @@
         try
         {
             isLoading = true;
+            errorMessage = "";
+            hasError = false;
             var account = await accountService.AuthenticateAsync(Model.Id, Model.Password);
-            
-            if (account is null)
+            if(account == null){
+                throw new Exception("No connection with Database");
+            }
+            if (Model.Id == null || Model.Password == null)
             {
                 errorMessage = "Invalid Index or Password";
                 Model.Password = string.Empty;
                 return;
             }
-            
-            if(account.resetPasswordOnNextLogin)
+
+            if (account.resetPasswordOnNextLogin)
             {
                 HttpContext.Response.Redirect($"/change-password/{account.Id}");
                 return;
@@ -85,23 +96,25 @@
             else
             {
                 var claims = new List<Claim>
-                {
+                    {
                     new Claim(ClaimTypes.Name, account.Name),
                     new Claim(ClaimTypes.Role, account.Role),
                     new Claim(ClaimTypes.NameIdentifier, account.Id.ToString())
-                };
-                
+                    };
+
                 var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                 var principal = new ClaimsPrincipal(identity);
-                
+
                 await HttpContext.SignInAsync(principal);
-                
+
                 HttpContext.Response.Redirect("/");
             }
         }
         catch (Exception e)
         {
-            errorMessage = $"Error: {e.Message}";
+            hasError = true;
+
+            errorMessage = $"There was an Error: {e.Message}";
         }
         finally
         {

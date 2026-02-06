@@ -23,17 +23,23 @@
                 Manage Inventory
             </h2>
         </div>
-        <button class="btn btn-primary btn-lg" @onclick="ShowCreateModal">
+        <button class="btn btn-primary btn-lg" @onclick="ShowCreateModal" disabled=@(hasError)>
             <i class="bi bi-plus-circle"></i> New Stocktake
         </button>
     </div>
 
     @if (isLoading)
     {
-        <div class="text-center py-5 ">
-            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
+        </div>
+    }
+    else if (hasError)
+    {
+        <div class="alert alert-danger">
+            <h3>@errorMessage</h3>
         </div>
     }
     else
@@ -42,23 +48,23 @@
         <div class="row g-3 mb-4">
             <div class="col-xl-3 col-md-6">
                 <SmallBoxStat Title="All" value="@allStocktakes.Count.ToString()" icon="IconName.Clipboard2DataFill"
-                    color="#5591fa" />
+                              color="#5591fa" />
             </div>
             <div class="col-xl-3 col-md-6">
                 <div class="flex-grow-1 ms-3">
                     <SmallBoxStat Title="In Progress"
-                        value="@allStocktakes.Count(s => s.Status == StockTakeStatus.InProgress).ToString()"
-                        icon="IconName.Hourglass" color="#ffc64b" />
+                                  value="@allStocktakes.Count(s => s.Status == StockTakeStatus.InProgress).ToString()"
+                                  icon="IconName.Hourglass" color="#ffc64b" />
                 </div>
             </div>
             <div class="col-xl-3 col-md-6">
                 <SmallBoxStat Title="Completed"
-                    value="@allStocktakes.Count(s => s.Status == StockTakeStatus.Completed).ToString()"
-                    icon="IconName.CheckCircleFill" color="#42986c" />
+                              value="@allStocktakes.Count(s => s.Status == StockTakeStatus.Completed).ToString()"
+                              icon="IconName.CheckCircleFill" color="#42986c" />
             </div>
             <div class="col-xl-3 col-md-6">
                 <SmallBoxStat Title="Success Rate" value="@($"{GetCompletionRate()}%")" icon="IconName.Percent"
-                    color="#2bb0cb" />
+                              color="#2bb0cb" />
             </div>
         </div>
 
@@ -69,7 +75,7 @@
                     <div class="col-md-3">
                         <label class="form-label small">Status</label>
                         <select class="form-select" value="@selectedStatus"
-                            @onchange="e => FilterByStatus(ParseStatus(e.Value?.ToString()))">
+                                @onchange="e => FilterByStatus(ParseStatus(e.Value?.ToString()))">
                             <option value="">All</option>
                             <option value="@StockTakeStatus.Planned">Planned</option>
                             <option value="@StockTakeStatus.InProgress">In Progress</option>
@@ -215,7 +221,9 @@
             </div>
         </div>
     }
+    
 </div>
+
 
 <!-- Modal tworzenia -->
 @if (showCreateModal)
@@ -256,66 +264,68 @@
                             <select class="form-select" @bind="itemFilterType" @bind:after="UpdateFilteredItems">
                                 <option value="all">All (@allItems.Count)</option>
                                 <option value="overdue">Overdue (@allItems.Count(i => (DateTime.Now -
-                                                                i.lastInventoryDate).Days
-                                                                > 180))</option>
-                        <option value="critical">Critical (@allItems.Count(i => (DateTime.Now -
-                                                        i.lastInventoryDate).Days > 365))</option>
-                        <option value="custom">Choose manually</option>
-                    </select>
-                </div>
-                @if (itemFilterType == "custom")
-                        {
-                            <div style="max-height: 300px; overflow-y: auto;" class="border rounded p-2">
-                                @foreach (var item in allItems)
+                                                                                                    i.lastInventoryDate).Days
+                                                                                                    > 180))</option>
+                                    <option value="critical">Critical (@allItems.Count(i => (DateTime.Now -
+                                                                                                i.lastInventoryDate).Days > 365))</option>
+                                        <option value="custom">Choose manually</option>
+                                    </select>
+                                </div>
+                                @if (itemFilterType == "custom")
                                 {
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" checked="@selectedItems.Contains(item)"
-                                            @onchange="e => ToggleItem(item, (bool)e.Value)" />
-                                        <label class="form-check-label">@item.itemName</label>
+                                    <div style="max-height: 300px; overflow-y: auto;" class="border rounded p-2">
+                                        @foreach (var item in allItems)
+                                        {
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" checked="@selectedItems.Contains(item)"
+                                                       @onchange="e => ToggleItem(item, (bool)e.Value)" />
+                                                <label class="form-check-label">@item.itemName</label>
+                                            </div>
+                                        }
                                     </div>
                                 }
-                            </div>
-                        }
-                        <div class="alert alert-info mt-2">Choosen: @selectedItems.Count</div>
-                    }
-                    @if (createStep == 3)
-                    {
-                        <label class="form-label">Authorized employees</label>
-                        <div style="max-height: 300px; overflow-y: auto;" class="border rounded p-2">
-                            @foreach (var acc in allAccounts)
+                                <div class="alert alert-info mt-2">Choosen: @selectedItems.Count</div>
+                            }
+                            @if (createStep == 3)
                             {
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" checked="@selectedAccounts.Contains(acc)"
-                                        @onchange="e => ToggleAccount(acc, (bool)e.Value)" />
-                                    <label class="form-check-label">@acc.Name</label>
+                                <label class="form-label">Authorized employees</label>
+                                <div style="max-height: 300px; overflow-y: auto;" class="border rounded p-2">
+                                    @foreach (var acc in allAccounts)
+                                    {
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" checked="@selectedAccounts.Contains(acc)"
+                                                   @onchange="e => ToggleAccount(acc, (bool)e.Value)" />
+                                            <label class="form-check-label">@acc.Name</label>
+                                        </div>
+                                    }
                                 </div>
+                                <div class="alert alert-info mt-2">Chosen: @selectedAccounts.Count</div>
                             }
                         </div>
-                        <div class="alert alert-info mt-2">Chosen: @selectedAccounts.Count</div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    @if (createStep > 1)
-                    {
-                        <button class="btn btn-secondary" @onclick="PreviousStep">Back</button>
-                    }
-                    <button class="btn btn-outline-secondary" @onclick="HideCreateModal">Cancel</button>
-                    @if (createStep < 3)
-                    {
-                        <button class="btn btn-primary" @onclick="NextStep">Next</button>
-                    }
-                    else
-                    {
-                        <button class="btn btn-success" @onclick="CreateStocktake">Create</button>
-                    }
+                        <div class="modal-footer">
+                            @if (createStep > 1)
+                            {
+                                <button class="btn btn-secondary" @onclick="PreviousStep">Back</button>
+                            }
+                            <button class="btn btn-outline-secondary" @onclick="HideCreateModal">Cancel</button>
+                            @if (createStep < 3)
+                            {
+                                <button class="btn btn-primary" @onclick="NextStep">Next</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-success" @onclick="CreateStocktake">Create</button>
+                            }
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-}
+        }
 
 @code {
     private bool isLoading = true;
+    private bool hasError = false;
+    private string errorMessage = "";
     private List<Stocktake> allStocktakes = new();
     private List<Stocktake> filteredStocktakes = new();
     private List<InventoryItem> allItems = new();
@@ -343,6 +353,8 @@
     private async Task LoadData()
     {
         isLoading = true;
+        hasError = false;
+        errorMessage = "";
         try
         {
             allStocktakes = (await StocktakeService.GetAllStocktakesAsync()).ToList();
@@ -358,6 +370,9 @@
 
             itemsNeedingCheck = allItems.OrderBy(x => x.lastInventoryDate).ToList();
             ApplyFilters();
+        }catch(Exception ex){
+            hasError = true;
+            errorMessage += $"There was an Error: {ex.Message}";
         }
         finally
         {

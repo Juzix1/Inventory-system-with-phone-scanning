@@ -17,14 +17,20 @@
 
         @if (isLoading)
         {
-
             <div class="text-center py-5">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
             </div>
         }
-        else if (!hasError)
+        else if (hasError)
+        {
+            <div class="alert alert-danger">
+                <h3>@errorMessage</h3>
+            </div>
+        }
+        else
+
         {
             <Card Style="width:50rem; margin-bottom:2rem">
                 <CardHeader>
@@ -73,16 +79,10 @@
                     </EditForm>
                 </CardBody>
             </Card>
-            
+
 
 
         }
-        else
-        {
-            <h3>No connection with Database</h3>
-        }
-
-
     </div>
 </div>
 
@@ -91,6 +91,7 @@
 @code {
     private bool isLoading = true;
     private bool hasError = false;
+    private string errorMessage = "";
     private List<Setting>? settings;
     private SettingsModel settingsModel = new();
     private bool showMessage = false;
@@ -106,6 +107,9 @@
     {
         try
         {
+            hasError = false;
+            isLoading = true;
+            errorMessage="";
             settings = await SettingsService.GetSettings();
 
             settingsModel.FileStoragePath = settings.Find(s => s.Key == "FileStoragePath")?.Value ?? "";
@@ -113,13 +117,10 @@
             ? int.Parse(settings.Find(s => s.Key == "MaxFileSize")!.Value) / (1024 * 1024)
             : 10;
             settingsModel.CompanyName = settings.Find(s => s.Key == "CompanyName")?.Value ?? "";
-            // load departments for chosen selection via DI
-            try
-            {
+
                 var deps = await departmentService.GetAllDepartmentsAsync();
                 if (deps != null) departments = deps.ToList();
-            }
-            catch { }
+
 
             if (settingsModel.ChosenDepartmentId == null && settings != null)
             {
@@ -128,10 +129,10 @@
                 cid;
             }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
             hasError = true;
-            Console.WriteLine($"Settings Error: {e.Message}");
+            errorMessage = $"There was an Error: {ex.Message}";
         }
         finally
         {

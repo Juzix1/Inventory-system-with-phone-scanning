@@ -9,6 +9,13 @@
 @inject IJSRuntime JS
 
 <PageTitle>Import Data</PageTitle>
+
+@if (hasError)
+{
+    <div class="alert alert-danger">
+        <h3>No connection with Database</h3>
+    </div>
+}else{
 <div class="container mt-4">
     <Card>
         <CardHeader>
@@ -109,8 +116,10 @@
         </div>
     }
 </div>
+}
 @code {
     private IBrowserFile? selectedFile;
+    private bool hasError = false;
     private bool isUploading = false;
     private bool isDownloading = false;
     private string errorMessage = string.Empty;
@@ -121,6 +130,7 @@
         try
         {
             isDownloading = true;
+            hasError = false;
             errorMessage = string.Empty;
 
             // Otwórz szablon w nowej karcie zamiast wymuszać pełną nawigację
@@ -131,7 +141,8 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error: {ex.Message}";
+            hasError = true;
+            errorMessage = $"There was an Error: {ex.Message}";
         }
         finally
         {

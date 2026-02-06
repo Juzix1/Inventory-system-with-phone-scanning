@@ -13,7 +13,6 @@
 @rendermode InteractiveServer
 
 <PageTitle>Szczegóły Inwentaryzacji</PageTitle>
-
 <div class="container-fluid py-4">
     @if (isLoading)
     {
@@ -392,7 +391,9 @@
     private List<int> CheckedItemIdList = new();
 
     private bool isLoading = true;
-    private bool isAuthorized = true;
+    private bool hasError = false;
+    private string errorMessage = "";
+    private bool isAuthorized = false;
     private int currentUserId;
 
     private string searchTerm = "";
@@ -409,6 +410,8 @@
     private async Task LoadData()
     {
         isLoading = true;
+        hasError = false;
+        errorMessage = "";
         try
         {
             stocktake = await StocktakeService.GetStocktakeById(Id);
@@ -433,7 +436,8 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading stocktake: {ex.Message}");
+            hasError = true;
+            errorMessage = $"There was an Error: {ex.Message}";
         }
         finally
         {
@@ -500,6 +504,8 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error checking item: {ex.Message}");
+            hasError = true;
+            errorMessage += $"\nError while marking item: {ex.Message}";
         }
     }
 
@@ -512,7 +518,8 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error unchecking item: {ex.Message}");
+            hasError = true;
+            errorMessage += $"\nError while unmarking item: {ex.Message}";
         }
     }
 
@@ -530,7 +537,8 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error checking selected items: {ex.Message}");
+            hasError = true;
+            errorMessage += $"\nError while checking items: {ex.Message}";
         }
     }
 

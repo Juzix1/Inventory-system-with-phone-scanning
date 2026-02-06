@@ -9,10 +9,15 @@
 @inject IJSRuntime JS
 
 <PageTitle>Export Data</PageTitle>
+
+@if (hasError)
+{
+    <div class="alert alert-danger">
+        <h3>No connection with Database</h3>
+    </div>
+}else{
+
 <div class="container mt-4">
-
-
-
     <Card>
         <CardHeader>
             <h3>Export data to Excel</h3>
@@ -31,8 +36,10 @@
     </Card>
 
 </div>
+}
 
 @code {
+    private bool hasError = false;
     private bool isDownloading = false;
     private string errorMessage = string.Empty;
     private Result? exportResult;
@@ -42,6 +49,7 @@
         try
         {
             isDownloading = true;
+            hasError = false;
             errorMessage = string.Empty;
 
             nav.NavigateTo("/api/import/download", forceLoad: true);
@@ -50,7 +58,8 @@
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error: {ex.Message}";
+            hasError = true;
+            errorMessage = $"There was an Error: {ex.Message}";
         }
         finally
         {

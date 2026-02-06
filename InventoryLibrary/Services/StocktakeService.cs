@@ -199,7 +199,7 @@ public class StocktakeService : IStocktakeService
             List<int> indexes = new();
             foreach (var chkItem in items)
             {
-                indexes.Add(chkItem.Id);
+                indexes.Add(chkItem.InventoryItemId);
             }
             return indexes;
         }catch(Exception ex)

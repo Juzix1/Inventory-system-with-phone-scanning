@@ -20,7 +20,7 @@
 else if (hasError)
 {
     <div class="alert alert-danger">
-        <h3>No connection with Database</h3>
+        <h3>@errorMessage</h3>
     </div>
 }
 else
@@ -68,6 +68,7 @@ else
 @code {
     private bool isLoading = true;
     private bool hasError = false;
+    private string errorMessage = "";
     private Dictionary<int, string> typesNames = new Dictionary<int, string>();
     private Dictionary<int, string> conditions = new Dictionary<int, string>();
     private Dictionary<int, string> departments = new Dictionary<int, string>();
@@ -82,6 +83,9 @@ else
     {
         try
         {
+            isLoading = true;
+            hasError = false;
+            errorMessage = "";
             typesNames = (await categoryService.GetAllTypesAsync())
             .ToDictionary(x => x.Id, x => x.TypeName);
 
@@ -97,7 +101,7 @@ else
         catch (Exception e)
         {
             hasError = true;
-            Console.WriteLine($"Categories Error: {e.Message}");
+            errorMessage = $"There was an Error: {e.Message}";
         }
         finally
         {

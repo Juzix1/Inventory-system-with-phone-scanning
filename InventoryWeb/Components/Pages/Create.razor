@@ -16,110 +16,147 @@
 @inject ILogger<Create> Logger
 @inject NavigationManager nav
 @rendermode InteractiveServer
-<PageTitle>@(EditID == null?"Create Item":"Edit Item")</PageTitle>
+<PageTitle>@(EditID == null ? "Create Item" : "Edit Item")</PageTitle>
 
-<div class="itemForm">
-    @if(EditID.HasValue)
-    {
-        <h3>Edit Item</h3>
-            @if(Item != null)
+@if (isLoading)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (hasError)
+{
+    <div class="alert alert-danger">
+        <h3>@errorMessage</h3>
+    </div>
+}
+else
+{
+    <div class="itemForm">
+        @if (EditID.HasValue)
         {
-            if (Item.ItemType.Id == 2)
-            { 
-                <AGDEditForm 
-                OnCancel="Cancel" 
-                itemTypeId="Item.ItemType.Id" 
-                Model="@AgdItem" />
-            }
-            else
+            <h3>Edit Item</h3>
+            @if (Item != null)
             {
-                <BaseEditForm 
-                OnCancel="Cancel" 
-                itemTypeId="Item.ItemType.Id"
-                Model="@Item"/>
-            }
-        }
-        else
-        {
-            <p>Item not found.</p>
-        }
-    }
-    else
-    {
-        <h3>Create new item</h3>
-        @if (selectedTypeId != 0)
-        {
-            if (selectedTypeId == 2)
-            {
-                <AGDEditForm OnCancel="Cancel" itemTypeId="selectedTypeId" />
-            }
-            else
-            {
-                <BaseEditForm OnCancel="Cancel" itemTypeId="selectedTypeId" />
-            }
-        }
-        else
-        {
-            <form class="form-container" method="post">
-                <div class="mb-3">
-                    <label for="itemType" class="form-label">Item Type</label>
-                    <select id="itemType" class="form-select" @bind="selectedTypeId">
-                        <option value="0">Select a type</option>
-                        @foreach (var type in types)
-                        {
-                            <option value="@type.Id">@type.TypeName</option>
-                        }
-                    </select>
-                </div>
-            </form>
-        }
-    }
-    
-    @if (!string.IsNullOrEmpty(uploadMessage))
-    {
-        <div class="alert alert-info mt-3">@uploadMessage</div>
-    }
-</div>
-
-@code {
-    [Parameter]
-    public int? EditID { get; set; }
-    
-    List<ItemType> types = new List<ItemType>();
-    InventoryItem Item;
-    AGD AgdItem;
-    int selectedTypeId;
-    string uploadMessage;
-    
-    protected override async Task OnInitializedAsync()
-    {
-        types = await typeService.GetAllTypesAsync();
-        
-        if(EditID.HasValue)
-        {
-            Item = await db.GetItemByIdAsync(EditID.Value);
-            if(Item != null)
-            {
-                selectedTypeId = Item.ItemType.Id;
-                if(Item.ItemType.Id == 2)
+                if (Item.ItemType.Id == 2)
                 {
-                    AgdItem = await db.GetItemByIdAsync(EditID.Value) as AGD;
+                    <AGDEditForm OnCancel="Cancel" itemTypeId="Item.ItemType.Id" Model="@AgdItem" />
+                }
+                else
+                {
+                    <BaseEditForm OnCancel="Cancel" itemTypeId="Item.ItemType.Id" Model="@Item" />
                 }
             }
+            else
+            {
+                <p>Item not found.</p>
+            }
+        }
+        else
+        {
+            <h3>Create new item</h3>
+            @if (selectedTypeId != 0)
+            {
+                if (selectedTypeId == 2)
+                {
+                    <AGDEditForm OnCancel="Cancel" itemTypeId="selectedTypeId" />
+                }
+                else
+                {
+                    <BaseEditForm OnCancel="Cancel" itemTypeId="selectedTypeId" />
+                }
+            }
+            else
+            {
+                <form class="form-container" method="post">
+                    <div class="mb-3">
+                        <label for="itemType" class="form-label">Item Type</label>
+                        <select id="itemType" class="form-select" @bind="selectedTypeId">
+                            <option value="0">Select a type</option>
+                            @foreach (var type in types)
+                            {
+                                <option value="@type.Id">@type.TypeName</option>
+                            }
+                        </select>
+                    </div>
+                </form>
+            }
+        }
+
+        @if (!string.IsNullOrEmpty(uploadMessage))
+        {
+            <div class="alert alert-info mt-3">@uploadMessage</div>
+        }
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private bool hasError = false;
+    private string errorMessage = "";
+    [Parameter]
+    public int? EditID { get; set; }
+
+    private List<ItemType> types = new List<ItemType>();
+    private InventoryItem Item;
+    private AGD AgdItem;
+    private int selectedTypeId;
+    private string uploadMessage;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        try
+        {
+            isLoading = true;
+            hasError = false;
+            errorMessage = "";
+            types = await typeService.GetAllTypesAsync();
+
+            if (EditID.HasValue)
+            {
+                Item = await db.GetItemByIdAsync(EditID.Value);
+                if (Item != null)
+                {
+                    selectedTypeId = Item.ItemType.Id;
+                    if (Item.ItemType.Id == 2)
+                    {
+                        AgdItem = await db.GetItemByIdAsync(EditID.Value) as AGD;
+                    }
+                }
+            }
+
+            
+        }
+        catch (Exception ex)
+        {
+            hasError = true;
+            errorMessage = $"There was an Error: {ex.Message}";
+        }finally{
+            isLoading = false;
         }
     }
 
-    
     private Task Cancel()
     {
-        if(EditID == null){
+        if (EditID == null)
+        {
             selectedTypeId = 0;
             return Task.CompletedTask;
-        }else{
+        }
+        else
+        {
             nav.NavigateTo("/manage");
             return Task.CompletedTask;
         }
     }
-    
-    
+
+
 }
