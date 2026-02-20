@@ -2,7 +2,6 @@
 
 This is a full-stack inventory management system that allows university administrators to scan barcode codes using a mobile app and manage inventory in real time through a web interface.
 
----
 ## 📸 Screenshots
 <div style="display:flex; flex-flow:column; align-items:center;">
     <h3>Mobile app pages</h3>
@@ -36,7 +35,7 @@ This is a full-stack inventory management system that allows university administ
     <img src="Docs/App Logs.png" alt="Categories" width="800"/>
 </div>
 
----
+
 
 ## 🧩 Architecture Overview
 
@@ -47,7 +46,6 @@ The system consists of **4 independent components**:
 
 All services are containerized and orchestrated using **Docker Compose**.
 
----
 
 ## 🚀 Tech Stack
 
@@ -61,7 +59,6 @@ All services are containerized and orchestrated using **Docker Compose**.
 | Unit Tests | xUnit |
 | DevOps | Docker, Docker Compose |
 
----
 
 ## ✨ Features
 
@@ -74,7 +71,6 @@ All services are containerized and orchestrated using **Docker Compose**.
 - **Unit tested** — business logic covered with xUnit tests
 - **Docker** — entire stack runs with a single `docker compose up` command
 
----
 
 ## 📁 Project Structure
 
@@ -89,7 +85,6 @@ All services are containerized and orchestrated using **Docker Compose**.
 └── Inventory System.sln   # Visual Studio solution file
 ```
 
----
 
 ## 🛠️ Getting Started
 
@@ -117,7 +112,6 @@ flutter run
 ```
 
 
----
 
 ## 🧪 Running Tests
 
@@ -126,7 +120,6 @@ cd UnitTests
 dotnet test
 ```
 
----
 
 
 
